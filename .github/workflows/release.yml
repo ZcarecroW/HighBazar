@@ -50,7 +50,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          HIGHBAZAR_TWITCH_CLIENT_ID: ${{ vars.TWITCH_CLIENT_ID }}
+          # A secret (not a variable) so it is masked in the public build logs.
+          HIGHBAZAR_TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "HighBazar ${{ github.ref_name }}"

@@ -64,7 +64,7 @@ pub async fn get_bootstrap(st: St<'_>) -> AppResult<Bootstrap> {
     let running = st.bot.current().await.map(|(channel_id, sandbox)| RunningInfo { channel_id, sandbox });
     Ok(Bootstrap {
         key_status: key_status(&st, &cfg),
-        client_id_configured: !cfg.twitch_client_id().starts_with("REPLACE_"),
+        client_id_configured: !cfg.twitch_client_id().is_empty(),
         config: cfg,
         providers: ai::providers(),
         version: env!("CARGO_PKG_VERSION").to_string(),
@@ -172,7 +172,7 @@ struct LoginEvent {
 #[tauri::command]
 pub async fn twitch_login_start(app: AppHandle, st: St<'_>, kind: String) -> AppResult<LoginStart> {
     let client_id = st.config.read().twitch_client_id();
-    if client_id.starts_with("REPLACE_") {
+    if client_id.is_empty() {
         return Err(AppError::msg("No Twitch Client ID configured. Enter one under Settings → Advanced."));
     }
     let scopes: &'static [&'static str] = if kind == "bot" { BOT_SCOPES } else { STREAMER_SCOPES };

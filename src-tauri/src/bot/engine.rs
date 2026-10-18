@@ -139,7 +139,7 @@ impl Session {
             (ch, broadcaster, bot)
         };
         if !sandbox {
-            if st.config.read().twitch_client_id().starts_with("REPLACE_") {
+            if st.config.read().twitch_client_id().is_empty() {
                 return Err(AppError::msg("No Twitch Client ID configured (Settings → Advanced)."));
             }
             let b = broadcaster

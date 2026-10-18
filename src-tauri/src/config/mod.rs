@@ -7,19 +7,25 @@ pub use types::*;
 
 use crate::error::AppResult;
 
-/// Built-in Twitch application (public client, device code flow), injected at
-/// build time via `HIGHBAZAR_TWITCH_CLIENT_ID`. Users can override it in the
-/// advanced settings.
-pub const TWITCH_CLIENT_ID: &str = match option_env!("HIGHBAZAR_TWITCH_CLIENT_ID") {
-    Some(id) if !id.is_empty() => id,
-    _ => "REPLACE_WITH_TWITCH_CLIENT_ID",
-};
+// Built-in Twitch application (public client, device code flow). The ID is
+// injected at build time from `HIGHBAZAR_TWITCH_CLIENT_ID` and stored masked,
+// see build.rs. Users can override it in the advanced settings.
+include!(concat!(env!("OUT_DIR"), "/twitch_client_id.rs"));
+
+fn builtin_twitch_client_id() -> String {
+    MASKED_CLIENT_ID
+        .iter()
+        .zip(CLIENT_ID_KEY)
+        .map(|(b, k)| (b ^ k) as char)
+        .collect()
+}
 
 impl Config {
+    /// Empty if neither a built-in nor a custom Client ID is available.
     pub fn twitch_client_id(&self) -> String {
         let custom = self.settings.twitch_client_id.trim();
         if custom.is_empty() {
-            TWITCH_CLIENT_ID.to_string()
+            builtin_twitch_client_id()
         } else {
             custom.to_string()
         }
@@ -160,6 +166,12 @@ pub fn save(dir: &Path, cfg: &Config) -> AppResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn client_id_mask_roundtrip() {
+        let expected = option_env!("HIGHBAZAR_TWITCH_CLIENT_ID").unwrap_or("").trim();
+        assert_eq!(builtin_twitch_client_id(), expected);
+    }
 
     #[test]
     fn normalize_creates_defaults() {
