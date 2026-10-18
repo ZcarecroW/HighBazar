@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7c3aed"/>
+      <stop offset="0.55" stop-color="#9146ff"/>
+      <stop offset="1" stop-color="#f59e0b"/>
+    </linearGradient>
+    <linearGradient id="bubble" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f3e8ff"/>
+    </linearGradient>
+  </defs>
+  <rect x="40" y="40" width="944" height="944" rx="220" fill="url(#bg)"/>
+  <!-- bazaar awning -->
+  <path d="M232 300 L792 300 L842 404 Q815 452 768 452 Q721 452 698 404 Q675 452 628 452 Q581 452 558 404 Q535 452 488 452 Q441 452 418 404 Q395 452 348 452 Q301 452 278 404 Q255 452 208 452 Q161 452 182 404 Z" fill="#fde68a"/>
+  <path d="M232 300 L338 300 L348 452 Q301 452 278 404 Q255 452 208 452 Q161 452 182 404 Z M458 300 L566 300 L558 404 Q535 452 488 452 Q441 452 418 404 Z M686 300 L792 300 L842 404 Q815 452 768 452 Q721 452 698 404 Z" fill="#f97316"/>
+  <!-- speech bubble -->
+  <path d="M232 470 H792 Q842 470 842 520 V700 Q842 750 792 750 H520 L392 850 L412 750 H232 Q182 750 182 700 V520 Q182 470 232 470 Z" fill="url(#bubble)"/>
+  <!-- chat dots -->
+  <circle cx="372" cy="610" r="44" fill="#7c3aed"/>
+  <circle cx="512" cy="610" r="44" fill="#9146ff"/>
+  <circle cx="652" cy="610" r="44" fill="#f59e0b"/>
+  <!-- sparkle -->
+  <path d="M818 150 L838 214 L902 234 L838 254 L818 318 L798 254 L734 234 L798 214 Z" fill="#ffffff" opacity="0.95"/>
+</svg>

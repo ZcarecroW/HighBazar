@@ -1,0 +1,23 @@
+# Dependencies & builds
+node_modules/
+dist/
+src-tauri/target/
+src-tauri/gen/
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+
+# Local tooling
+.claude/
+
+# Never commit signing keys or secrets
+*.key
+*.key.pub
+*.password*
+.env
+.env.*

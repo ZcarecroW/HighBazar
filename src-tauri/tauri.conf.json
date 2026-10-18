@@ -1,0 +1,67 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "HighBazar",
+  "version": "1.0.0",
+  "identifier": "io.github.zcarecrow.highbazar",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "HighBazar",
+        "width": 1600,
+        "height": 920,
+        "minWidth": 820,
+        "minHeight": 560,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data: https://static-cdn.jtvnw.net; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "app", "dmg", "appimage", "deb", "rpm"],
+    "createUpdaterArtifacts": true,
+    "publisher": "ZcarecroW",
+    "copyright": "© 2026 ZcarecroW – MIT License",
+    "category": "Utility",
+    "shortDescription": "AI companion and moderation bot for Twitch chat",
+    "longDescription": "HighBazar brings life into your Twitch chat: an AI companion that chats, welcomes, celebrates and shares game knowledge, plus fair, configurable AI moderation.",
+    "homepage": "https://github.com/ZcarecroW/HighBazar",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["English", "German"],
+        "displayLanguageSelector": false
+      }
+    },
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEM1Q0ZGNTgzNjZFQUE2N0MKUldSOHB1cG1nL1hQeFMyRExsT0QvdU9ibXFscEpLcXZYQ1lzaXQzL1cyaEJOLy9ER2ZCSkJ3dmsK",
+      "endpoints": [
+        "https://github.com/ZcarecroW/HighBazar/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

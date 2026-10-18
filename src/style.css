@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, "SF Pro Text", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Cascadia Code", "SF Mono", Consolas, "Liberation Mono", monospace;
+
+  --color-brand-50: #f5f0ff;
+  --color-brand-100: #ebe0ff;
+  --color-brand-200: #d6c2ff;
+  --color-brand-300: #b893ff;
+  --color-brand-400: #a06bff;
+  --color-brand-500: #9146ff;
+  --color-brand-600: #7c3aed;
+  --color-brand-700: #6526d4;
+  --color-brand-800: #4f1fa6;
+  --color-brand-900: #3b1880;
+
+  --color-amberish-400: #fbbf24;
+  --color-amberish-500: #f59e0b;
+}
+
+/* Semantic surface tokens, switched by the .dark class. */
+:root {
+  --bg: #f6f5fa;
+  --panel: #ffffff;
+  --panel-2: #f1eff7;
+  --line: #e4e1ee;
+  --text: #1c1830;
+  --muted: #6b6684;
+  color-scheme: light;
+}
+.dark {
+  --bg: #0f0e15;
+  --panel: #17151f;
+  --panel-2: #1f1c2a;
+  --line: #2c2839;
+  --text: #ece9f5;
+  --muted: #9a94b0;
+  color-scheme: dark;
+}
+
+@utility bg-app {
+  background-color: var(--bg);
+}
+@utility bg-panel {
+  background-color: var(--panel);
+}
+@utility bg-panel-2 {
+  background-color: var(--panel-2);
+}
+@utility border-line {
+  border-color: var(--line);
+}
+@utility text-fg {
+  color: var(--text);
+}
+@utility text-muted {
+  color: var(--muted);
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  user-select: none;
+}
+
+input,
+textarea,
+select,
+.selectable {
+  user-select: text;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-line bg-panel;
+  }
+  .card-pad {
+    @apply rounded-xl border border-line bg-panel p-4;
+  }
+  .input {
+    @apply w-full rounded-lg border border-line bg-panel-2 px-3 py-1.5 text-sm text-fg outline-none transition placeholder:text-muted focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg border border-line bg-panel-2 px-3 py-1.5 text-sm font-medium text-fg transition hover:border-brand-400 hover:text-brand-600 disabled:pointer-events-none disabled:opacity-50 dark:hover:text-brand-300;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-2 py-1 text-sm text-muted transition hover:bg-panel-2 hover:text-fg disabled:opacity-50;
+  }
+  .label {
+    @apply mb-1 block text-xs font-semibold tracking-wide text-muted uppercase;
+  }
+  .hint {
+    @apply mt-1 text-xs text-muted;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+  .section-title {
+    @apply mb-3 text-sm font-semibold text-fg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

@@ -1,0 +1,2023 @@
+{
+  "version": 1,
+  "settings": {
+    "theme": "system",
+    "language": "auto",
+    "checkUpdatesOnStart": true,
+    "wizardCompleted": false,
+    "activeChannelId": "5925b4888ec3",
+    "startBotOnLaunch": false,
+    "twitchClientId": "",
+    "feedLimit": 400
+  },
+  "accounts": [],
+  "channels": [
+    {
+      "id": "5925b4888ec3",
+      "name": "My channel",
+      "streamerAccountId": null,
+      "botAccountId": null,
+      "botName": "HighBazar",
+      "prefixEnabled": true,
+      "prefix": "[HighBazar]",
+      "companionEnabled": true,
+      "moderationEnabled": true,
+      "companionProfileId": "builtin-companion-balanced",
+      "moderationProfileId": "builtin-mod-balanced",
+      "aiProfileId": "builtin-ai-claude-opus",
+      "moderationAiProfileId": "",
+      "sendMode": "auto",
+      "previewDelaySecs": 10,
+      "aboutStream": "",
+      "dailyBudgetUsd": 2.0
+    }
+  ],
+  "companionProfiles": [
+    {
+      "id": "builtin-companion-balanced",
+      "name": "Balanced Companion",
+      "description": "Friendly, witty all-rounder. Reacts to chat, shares game facts, asks questions. Works for most streams.",
+      "builtin": true,
+      "persona": "A friendly, witty and curious chat companion who loves games and the community. Warm, playful, never mean.",
+      "humor": 60,
+      "energy": 55,
+      "snark": 20,
+      "emoteLevel": 2,
+      "customInstructions": "",
+      "avoidTopics": "politics, religion, real-world tragedies, viewer counts, begging for follows or subs",
+      "maxLength": 220,
+      "intervalEnabled": true,
+      "intervalMinSecs": 180,
+      "intervalMaxSecs": 300,
+      "onlyWhenLive": true,
+      "adaptive": true,
+      "busyThreshold": 25,
+      "maxUnanswered": 4,
+      "contextMessages": 40,
+      "contextMaxAgeMins": 20,
+      "mix": {
+        "chatReaction": 8,
+        "gameFact": 6,
+        "gameTip": 3,
+        "trivia": 3,
+        "joke": 4,
+        "question": 6,
+        "hype": 3,
+        "streamMoment": 3
+      },
+      "language": {
+        "mode": "stream",
+        "fixed": "en",
+        "replyInUserLanguage": true,
+        "allowSlang": true
+      },
+      "emotes": {
+        "twitch": true,
+        "bttv": true,
+        "ffz": true,
+        "seventv": true,
+        "preferPopular": true,
+        "maxPerMessage": 2
+      },
+      "mentions": {
+        "enabled": true,
+        "triggerWords": [],
+        "replies": true,
+        "userCooldownSecs": 30,
+        "globalCooldownSecs": 4,
+        "minRole": "everyone"
+      },
+      "welcome": {
+        "enabled": true,
+        "scope": "firstEver",
+        "delaySecs": 4,
+        "maxPerMinute": 3,
+        "instructions": ""
+      },
+      "events": {
+        "follow": true,
+        "sub": true,
+        "resub": true,
+        "gift": true,
+        "raid": true,
+        "cheer": true,
+        "minCheerBits": 100,
+        "followBatchSecs": 30
+      },
+      "commands": {
+        "enabled": true,
+        "prefix": "!hb",
+        "ask": {
+          "enabled": true,
+          "userCooldownSecs": 60,
+          "globalCooldownSecs": 5,
+          "minRole": "everyone"
+        },
+        "fact": {
+          "enabled": true,
+          "userCooldownSecs": 120,
+          "globalCooldownSecs": 20,
+          "minRole": "everyone"
+        },
+        "joke": {
+          "enabled": true,
+          "userCooldownSecs": 120,
+          "globalCooldownSecs": 20,
+          "minRole": "everyone"
+        },
+        "about": {
+          "enabled": true,
+          "userCooldownSecs": 60,
+          "globalCooldownSecs": 30,
+          "minRole": "everyone"
+        }
+      },
+      "research": {
+        "enabled": true,
+        "webSearch": true,
+        "wikipedia": true,
+        "refreshDays": 14
+      }
+    },
+    {
+      "id": "builtin-companion-booster",
+      "name": "Small Stream Booster",
+      "description": "Talks a bit more often and asks lots of questions to get lurkers chatting. Ideal for streams with few viewers.",
+      "builtin": true,
+      "persona": "A friendly, witty and curious chat companion who loves games and the community. Warm, playful, never mean.",
+      "humor": 60,
+      "energy": 65,
+      "snark": 20,
+      "emoteLevel": 2,
+      "customInstructions": "",
+      "avoidTopics": "politics, religion, real-world tragedies, viewer counts, begging for follows or subs",
+      "maxLength": 220,
+      "intervalEnabled": true,
+      "intervalMinSecs": 120,
+      "intervalMaxSecs": 210,
+      "onlyWhenLive": true,
+      "adaptive": true,
+      "busyThreshold": 25,
+      "maxUnanswered": 6,
+      "contextMessages": 40,
+      "contextMaxAgeMins": 20,
+      "mix": {
+        "chatReaction": 8,
+        "gameFact": 6,
+        "gameTip": 3,
+        "trivia": 3,
+        "joke": 4,
+        "question": 9,
+        "hype": 3,
+        "streamMoment": 5
+      },
+      "language": {
+        "mode": "stream",
+        "fixed": "en",
+        "replyInUserLanguage": true,
+        "allowSlang": true
+      },
+      "emotes": {
+        "twitch": true,
+        "bttv": true,
+        "ffz": true,
+        "seventv": true,
+        "preferPopular": true,
+        "maxPerMessage": 2
+      },
+      "mentions": {
+        "enabled": true,
+        "triggerWords": [],
+        "replies": true,
+        "userCooldownSecs": 30,
+        "globalCooldownSecs": 4,
+        "minRole": "everyone"
+      },
+      "welcome": {
+        "enabled": true,
+        "scope": "firstThisStream",
+        "delaySecs": 4,
+        "maxPerMinute": 3,
+        "instructions": ""
+      },
+      "events": {
+        "follow": true,
+        "sub": true,
+        "resub": true,
+        "gift": true,
+        "raid": true,
+        "cheer": true,
+        "minCheerBits": 100,
+        "followBatchSecs": 30
+      },
+      "commands": {
+        "enabled": true,
+        "prefix": "!hb",
+        "ask": {
+          "enabled": true,
+          "userCooldownSecs": 60,
+          "globalCooldownSecs": 5,
+          "minRole": "everyone"
+        },
+        "fact": {
+          "enabled": true,
+          "userCooldownSecs": 120,
+          "globalCooldownSecs": 20,
+          "minRole": "everyone"
+        },
+        "joke": {
+          "enabled": true,
+          "userCooldownSecs": 120,
+          "globalCooldownSecs": 20,
+          "minRole": "everyone"
+        },
+        "about": {
+          "enabled": true,
+          "userCooldownSecs": 60,
+          "globalCooldownSecs": 30,
+          "minRole": "everyone"
+        }
+      },
+      "research": {
+        "enabled": true,
+        "webSearch": true,
+        "wikipedia": true,
+        "refreshDays": 14
+      }
+    },
+    {
+      "id": "builtin-companion-cozy",
+      "name": "Cozy & Chill",
+      "description": "Calm, warm and laid-back. Fewer messages, gentle humor. Great for cozy games, art and just chatting.",
+      "builtin": true,
+      "persona": "A calm, warm and cozy chat companion. Speaks softly, appreciates the little things, makes everyone feel welcome.",
+      "humor": 45,
+      "energy": 25,
+      "snark": 5,
+      "emoteLevel": 1,
+      "customInstructions": "",
+      "avoidTopics": "politics, religion, real-world tragedies, viewer counts, begging for follows or subs",
+      "maxLength": 220,
+      "intervalEnabled": true,
+      "intervalMinSecs": 240,
+      "intervalMaxSecs": 420,
+      "onlyWhenLive": true,
+      "adaptive": true,
+      "busyThreshold": 25,
+      "maxUnanswered": 4,
+      "contextMessages": 40,
+      "contextMaxAgeMins": 20,
+      "mix": {
+        "chatReaction": 8,
+        "gameFact": 6,
+        "gameTip": 3,
+        "trivia": 3,
+        "joke": 2,
+        "question": 7,
+        "hype": 0,
+        "streamMoment": 5
+      },
+      "language": {
+        "mode": "stream",
+        "fixed": "en",
+        "replyInUserLanguage": true,
+        "allowSlang": true
+      },
+      "emotes": {
+        "twitch": true,
+        "bttv": true,
+        "ffz": true,
+        "seventv": true,
+        "preferPopular": true,
+        "maxPerMessage": 2
+      },
+      "mentions": {
+        "enabled": true,
+        "triggerWords": [],
+        "replies": true,
+        "userCooldownSecs": 30,
+        "globalCooldownSecs": 4,
+        "minRole": "everyone"
+      },
+      "welcome": {
+        "enabled": true,
+        "scope": "firstEver",
+        "delaySecs": 4,
+        "maxPerMinute": 3,
+        "instructions": ""
+      },
+      "events": {
+        "follow": true,
+        "sub": true,
+        "resub": true,
+        "gift": true,
+        "raid": true,
+        "cheer": true,
+        "minCheerBits": 100,
+        "followBatchSecs": 30
+      },
+      "commands": {
+        "enabled": true,
+        "prefix": "!hb",
+        "ask": {
+          "enabled": true,
+          "userCooldownSecs": 60,
+          "globalCooldownSecs": 5,
+          "minRole": "everyone"
+        },
+        "fact": {
+          "enabled": true,
+          "userCooldownSecs": 120,
+          "globalCooldownSecs": 20,
+          "minRole": "everyone"
+        },
+        "joke": {
+          "enabled": true,
+          "userCooldownSecs": 120,
+          "globalCooldownSecs": 20,
+          "minRole": "everyone"
+        },
+        "about": {
+          "enabled": true,
+          "userCooldownSecs": 60,
+          "globalCooldownSecs": 30,
+          "minRole": "everyone"
+        }
+      },
+      "research": {
+        "enabled": true,
+        "webSearch": true,
+        "wikipedia": true,
+        "refreshDays": 14
+      }
+    },
+    {
+      "id": "builtin-companion-hype",
+      "name": "Hype Buddy",
+      "description": "High energy, loves big moments, celebrates every play and every new chatter.",
+      "builtin": true,
+      "persona": "An enthusiastic hype buddy who gets excited about great plays, cheers people on and keeps the energy up — but never spams.",
+      "humor": 60,
+      "energy": 90,
+      "snark": 10,
+      "emoteLevel": 3,
+      "customInstructions": "",
+      "avoidTopics": "politics, religion, real-world tragedies, viewer counts, begging for follows or subs",
+      "maxLength": 220,
+      "intervalEnabled": true,
+      "intervalMinSecs": 150,
+      "intervalMaxSecs": 270,
+      "onlyWhenLive": true,
+      "adaptive": true,
+      "busyThreshold": 25,
+      "maxUnanswered": 4,
+      "contextMessages": 40,
+      "contextMaxAgeMins": 20,
+      "mix": {
+        "chatReaction": 8,
+        "gameFact": 6,
+        "gameTip": 3,
+        "trivia": 3,
+        "joke": 4,
+        "question": 6,
+        "hype": 8,
+        "streamMoment": 7
+      },
+      "language": {
+        "mode": "stream",
+        "fixed": "en",
+        "replyInUserLanguage": true,
+        "allowSlang": true
+      },
+      "emotes": {
+        "twitch": true,
+        "bttv": true,
+        "ffz": true,
+        "seventv": true,
+        "preferPopular": true,
+        "maxPerMessage": 2
+      },
+      "mentions": {
+        "enabled": true,
+        "triggerWords": [],
+        "replies": true,
+        "userCooldownSecs": 30,
+        "globalCooldownSecs": 4,
+        "minRole": "everyone"
+      },
+      "welcome": {
+        "enabled": true,
+        "scope": "firstEver",
+        "delaySecs": 4,
+        "maxPerMinute": 3,
+        "instructions": ""
+      },
+      "events": {
+        "follow": true,
+        "sub": true,
+        "resub": true,
+        "gift": true,
+        "raid": true,
+        "cheer": true,
+        "minCheerBits": 100,
+        "followBatchSecs": 30
+      },
+      "commands": {
+        "enabled": true,
+        "prefix": "!hb",
+        "ask": {
+          "enabled": true,
+          "userCooldownSecs": 60,
+          "globalCooldownSecs": 5,
+          "minRole": "everyone"
+        },
+        "fact": {
+          "enabled": true,
+          "userCooldownSecs": 120,
+          "globalCooldownSecs": 20,
+          "minRole": "everyone"
+        },
+        "joke": {
+          "enabled": true,
+          "userCooldownSecs": 120,
+          "globalCooldownSecs": 20,
+          "minRole": "everyone"
+        },
+        "about": {
+          "enabled": true,
+          "userCooldownSecs": 60,
+          "globalCooldownSecs": 30,
+          "minRole": "everyone"
+        }
+      },
+      "research": {
+        "enabled": true,
+        "webSearch": true,
+        "wikipedia": true,
+        "refreshDays": 14
+      }
+    },
+    {
+      "id": "builtin-companion-expert",
+      "name": "Game Expert",
+      "description": "Knows the game inside out: facts, lore, tips and trivia. Researches the current game online.",
+      "builtin": true,
+      "persona": "A knowledgeable gaming nerd who loves lore, speedrun trivia, development history and useful tips — explains things briefly and with fun.",
+      "humor": 40,
+      "energy": 45,
+      "snark": 20,
+      "emoteLevel": 2,
+      "customInstructions": "",
+      "avoidTopics": "politics, religion, real-world tragedies, viewer counts, begging for follows or subs",
+      "maxLength": 220,
+      "intervalEnabled": true,
+      "intervalMinSecs": 180,
+      "intervalMaxSecs": 300,
+      "onlyWhenLive": true,
+      "adaptive": true,
+      "busyThreshold": 25,
+      "maxUnanswered": 4,
+      "contextMessages": 40,
+      "contextMaxAgeMins": 20,
+      "mix": {
+        "chatReaction": 8,
+        "gameFact": 9,
+        "gameTip": 8,
+        "trivia": 5,
+        "joke": 2,
+        "question": 6,
+        "hype": 1,
+        "streamMoment": 3
+      },
+      "language": {
+        "mode": "stream",
+        "fixed": "en",
+        "replyInUserLanguage": true,
+        "allowSlang": true
+      },
+      "emotes": {
+        "twitch": true,
+        "bttv": true,
+        "ffz": true,
+        "seventv": true,
+        "preferPopular": true,
+        "maxPerMessage": 2
+      },
+      "mentions": {
+        "enabled": true,
+        "triggerWords": [],
+        "replies": true,
+        "userCooldownSecs": 30,
+        "globalCooldownSecs": 4,
+        "minRole": "everyone"
+      },
+      "welcome": {
+        "enabled": true,
+        "scope": "firstEver",
+        "delaySecs": 4,
+        "maxPerMinute": 3,
+        "instructions": ""
+      },
+      "events": {
+        "follow": true,
+        "sub": true,
+        "resub": true,
+        "gift": true,
+        "raid": true,
+        "cheer": true,
+        "minCheerBits": 100,
+        "followBatchSecs": 30
+      },
+      "commands": {
+        "enabled": true,
+        "prefix": "!hb",
+        "ask": {
+          "enabled": true,
+          "userCooldownSecs": 60,
+          "globalCooldownSecs": 5,
+          "minRole": "everyone"
+        },
+        "fact": {
+          "enabled": true,
+          "userCooldownSecs": 120,
+          "globalCooldownSecs": 20,
+          "minRole": "everyone"
+        },
+        "joke": {
+          "enabled": true,
+          "userCooldownSecs": 120,
+          "globalCooldownSecs": 20,
+          "minRole": "everyone"
+        },
+        "about": {
+          "enabled": true,
+          "userCooldownSecs": 60,
+          "globalCooldownSecs": 30,
+          "minRole": "everyone"
+        }
+      },
+      "research": {
+        "enabled": true,
+        "webSearch": true,
+        "wikipedia": true,
+        "refreshDays": 14
+      }
+    },
+    {
+      "id": "builtin-companion-comedian",
+      "name": "Comedian",
+      "description": "Quick-witted and playful with light teasing. Jokes, puns and funny takes on what happens in chat.",
+      "builtin": true,
+      "persona": "A quick-witted comedian with a playful, slightly cheeky sense of humor. Teases lightly, never punches down.",
+      "humor": 90,
+      "energy": 65,
+      "snark": 45,
+      "emoteLevel": 2,
+      "customInstructions": "",
+      "avoidTopics": "politics, religion, real-world tragedies, viewer counts, begging for follows or subs",
+      "maxLength": 220,
+      "intervalEnabled": true,
+      "intervalMinSecs": 180,
+      "intervalMaxSecs": 300,
+      "onlyWhenLive": true,
+      "adaptive": true,
+      "busyThreshold": 25,
+      "maxUnanswered": 4,
+      "contextMessages": 40,
+      "contextMaxAgeMins": 20,
+      "mix": {
+        "chatReaction": 9,
+        "gameFact": 6,
+        "gameTip": 1,
+        "trivia": 3,
+        "joke": 9,
+        "question": 6,
+        "hype": 3,
+        "streamMoment": 3
+      },
+      "language": {
+        "mode": "stream",
+        "fixed": "en",
+        "replyInUserLanguage": true,
+        "allowSlang": true
+      },
+      "emotes": {
+        "twitch": true,
+        "bttv": true,
+        "ffz": true,
+        "seventv": true,
+        "preferPopular": true,
+        "maxPerMessage": 2
+      },
+      "mentions": {
+        "enabled": true,
+        "triggerWords": [],
+        "replies": true,
+        "userCooldownSecs": 30,
+        "globalCooldownSecs": 4,
+        "minRole": "everyone"
+      },
+      "welcome": {
+        "enabled": true,
+        "scope": "firstEver",
+        "delaySecs": 4,
+        "maxPerMinute": 3,
+        "instructions": ""
+      },
+      "events": {
+        "follow": true,
+        "sub": true,
+        "resub": true,
+        "gift": true,
+        "raid": true,
+        "cheer": true,
+        "minCheerBits": 100,
+        "followBatchSecs": 30
+      },
+      "commands": {
+        "enabled": true,
+        "prefix": "!hb",
+        "ask": {
+          "enabled": true,
+          "userCooldownSecs": 60,
+          "globalCooldownSecs": 5,
+          "minRole": "everyone"
+        },
+        "fact": {
+          "enabled": true,
+          "userCooldownSecs": 120,
+          "globalCooldownSecs": 20,
+          "minRole": "everyone"
+        },
+        "joke": {
+          "enabled": true,
+          "userCooldownSecs": 120,
+          "globalCooldownSecs": 20,
+          "minRole": "everyone"
+        },
+        "about": {
+          "enabled": true,
+          "userCooldownSecs": 60,
+          "globalCooldownSecs": 30,
+          "minRole": "everyone"
+        }
+      },
+      "research": {
+        "enabled": true,
+        "webSearch": true,
+        "wikipedia": true,
+        "refreshDays": 14
+      }
+    },
+    {
+      "id": "builtin-companion-quiet",
+      "name": "Quiet Helper",
+      "description": "No timed messages. Only answers when addressed, welcomes newcomers, reacts to events and commands.",
+      "builtin": true,
+      "persona": "A friendly, witty and curious chat companion who loves games and the community. Warm, playful, never mean.",
+      "humor": 60,
+      "energy": 40,
+      "snark": 20,
+      "emoteLevel": 2,
+      "customInstructions": "",
+      "avoidTopics": "politics, religion, real-world tragedies, viewer counts, begging for follows or subs",
+      "maxLength": 220,
+      "intervalEnabled": false,
+      "intervalMinSecs": 180,
+      "intervalMaxSecs": 300,
+      "onlyWhenLive": true,
+      "adaptive": true,
+      "busyThreshold": 25,
+      "maxUnanswered": 4,
+      "contextMessages": 40,
+      "contextMaxAgeMins": 20,
+      "mix": {
+        "chatReaction": 8,
+        "gameFact": 6,
+        "gameTip": 3,
+        "trivia": 3,
+        "joke": 4,
+        "question": 6,
+        "hype": 3,
+        "streamMoment": 3
+      },
+      "language": {
+        "mode": "stream",
+        "fixed": "en",
+        "replyInUserLanguage": true,
+        "allowSlang": true
+      },
+      "emotes": {
+        "twitch": true,
+        "bttv": true,
+        "ffz": true,
+        "seventv": true,
+        "preferPopular": true,
+        "maxPerMessage": 2
+      },
+      "mentions": {
+        "enabled": true,
+        "triggerWords": [],
+        "replies": true,
+        "userCooldownSecs": 30,
+        "globalCooldownSecs": 4,
+        "minRole": "everyone"
+      },
+      "welcome": {
+        "enabled": true,
+        "scope": "firstEver",
+        "delaySecs": 4,
+        "maxPerMinute": 3,
+        "instructions": ""
+      },
+      "events": {
+        "follow": true,
+        "sub": true,
+        "resub": true,
+        "gift": true,
+        "raid": true,
+        "cheer": true,
+        "minCheerBits": 100,
+        "followBatchSecs": 30
+      },
+      "commands": {
+        "enabled": true,
+        "prefix": "!hb",
+        "ask": {
+          "enabled": true,
+          "userCooldownSecs": 60,
+          "globalCooldownSecs": 5,
+          "minRole": "everyone"
+        },
+        "fact": {
+          "enabled": true,
+          "userCooldownSecs": 120,
+          "globalCooldownSecs": 20,
+          "minRole": "everyone"
+        },
+        "joke": {
+          "enabled": true,
+          "userCooldownSecs": 120,
+          "globalCooldownSecs": 20,
+          "minRole": "everyone"
+        },
+        "about": {
+          "enabled": true,
+          "userCooldownSecs": 60,
+          "globalCooldownSecs": 30,
+          "minRole": "everyone"
+        }
+      },
+      "research": {
+        "enabled": true,
+        "webSearch": true,
+        "wikipedia": true,
+        "refreshDays": 14
+      }
+    }
+  ],
+  "moderationProfiles": [
+    {
+      "id": "builtin-mod-balanced",
+      "name": "Balanced",
+      "description": "Acts only on clear hate, harassment, threats, scams and spam. Banter, swearing and criticism stay allowed. Borderline cases are only logged for you.",
+      "builtin": true,
+      "mode": "auto",
+      "aiCheck": "all",
+      "strictness": 50,
+      "minConfidence": 0.8,
+      "maxAiCallsPerMin": 12,
+      "channelRules": "",
+      "exempt": {
+        "moderators": true,
+        "vips": true,
+        "subscribers": false,
+        "users": []
+      },
+      "categories": [
+        {
+          "category": "hate",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 1800
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "harassment",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 600
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "threat",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 3600
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "sexual",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 600
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "selfHarm",
+          "enabled": true,
+          "clearAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "spam",
+          "enabled": true,
+          "clearAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "scam",
+          "enabled": true,
+          "clearAction": {
+            "kind": "ban",
+            "durationSecs": 0
+          },
+          "borderlineAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "doxxing",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 3600
+          },
+          "borderlineAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "extremism",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 3600
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        }
+      ],
+      "escalation": {
+        "enabled": true,
+        "windowMins": 120,
+        "steps": [
+          {
+            "kind": "timeout",
+            "durationSecs": 1800
+          },
+          {
+            "kind": "timeout",
+            "durationSecs": 86400
+          },
+          {
+            "kind": "ban",
+            "durationSecs": 0
+          }
+        ]
+      },
+      "rules": {
+        "blockedTerms": [],
+        "blockedTermsAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "links": "allow",
+        "allowedDomains": [
+          "twitch.tv",
+          "clips.twitch.tv",
+          "youtube.com",
+          "youtu.be"
+        ],
+        "linksAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "capsEnabled": false,
+        "capsMinLength": 20,
+        "capsRatio": 0.8,
+        "capsAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "repeatEnabled": true,
+        "repeatCount": 4,
+        "repeatAction": {
+          "kind": "timeout",
+          "durationSecs": 60
+        },
+        "emoteSpamEnabled": false,
+        "maxEmotes": 15,
+        "emoteSpamAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "maxLength": 0,
+        "lengthAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        }
+      },
+      "reasonTemplate": "[HighBazar] {reason}",
+      "announceActions": false
+    },
+    {
+      "id": "builtin-mod-relaxed",
+      "name": "Relaxed",
+      "description": "Maximum freedom. Only the most severe cases (hate, threats, doxxing, scams) are acted on; everything else is logged.",
+      "builtin": true,
+      "mode": "auto",
+      "aiCheck": "all",
+      "strictness": 25,
+      "minConfidence": 0.9,
+      "maxAiCallsPerMin": 12,
+      "channelRules": "",
+      "exempt": {
+        "moderators": true,
+        "vips": true,
+        "subscribers": false,
+        "users": []
+      },
+      "categories": [
+        {
+          "category": "hate",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 1800
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "harassment",
+          "enabled": true,
+          "clearAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          },
+          "borderlineAction": {
+            "kind": "none",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "threat",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 3600
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "sexual",
+          "enabled": true,
+          "clearAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          },
+          "borderlineAction": {
+            "kind": "none",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "selfHarm",
+          "enabled": true,
+          "clearAction": {
+            "kind": "log",
+            "durationSecs": 0
+          },
+          "borderlineAction": {
+            "kind": "none",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "spam",
+          "enabled": true,
+          "clearAction": {
+            "kind": "log",
+            "durationSecs": 0
+          },
+          "borderlineAction": {
+            "kind": "none",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "scam",
+          "enabled": true,
+          "clearAction": {
+            "kind": "ban",
+            "durationSecs": 0
+          },
+          "borderlineAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "doxxing",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 3600
+          },
+          "borderlineAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "extremism",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 3600
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        }
+      ],
+      "escalation": {
+        "enabled": true,
+        "windowMins": 120,
+        "steps": [
+          {
+            "kind": "timeout",
+            "durationSecs": 3600
+          },
+          {
+            "kind": "timeout",
+            "durationSecs": 86400
+          }
+        ]
+      },
+      "rules": {
+        "blockedTerms": [],
+        "blockedTermsAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "links": "allow",
+        "allowedDomains": [
+          "twitch.tv",
+          "clips.twitch.tv",
+          "youtube.com",
+          "youtu.be"
+        ],
+        "linksAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "capsEnabled": false,
+        "capsMinLength": 20,
+        "capsRatio": 0.8,
+        "capsAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "repeatEnabled": false,
+        "repeatCount": 4,
+        "repeatAction": {
+          "kind": "timeout",
+          "durationSecs": 60
+        },
+        "emoteSpamEnabled": false,
+        "maxEmotes": 15,
+        "emoteSpamAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "maxLength": 0,
+        "lengthAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        }
+      },
+      "reasonTemplate": "[HighBazar] {reason}",
+      "announceActions": false
+    },
+    {
+      "id": "builtin-mod-family",
+      "name": "Family Friendly",
+      "description": "Strict. Also removes borderline content, sexual references, excessive caps and links from non-exempt users.",
+      "builtin": true,
+      "mode": "auto",
+      "aiCheck": "all",
+      "strictness": 80,
+      "minConfidence": 0.7,
+      "maxAiCallsPerMin": 12,
+      "channelRules": "",
+      "exempt": {
+        "moderators": true,
+        "vips": true,
+        "subscribers": false,
+        "users": []
+      },
+      "categories": [
+        {
+          "category": "hate",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 1800
+          },
+          "borderlineAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "harassment",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 600
+          },
+          "borderlineAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "threat",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 3600
+          },
+          "borderlineAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "sexual",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 1800
+          },
+          "borderlineAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "selfHarm",
+          "enabled": true,
+          "clearAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          },
+          "borderlineAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "spam",
+          "enabled": true,
+          "clearAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          },
+          "borderlineAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "scam",
+          "enabled": true,
+          "clearAction": {
+            "kind": "ban",
+            "durationSecs": 0
+          },
+          "borderlineAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "doxxing",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 3600
+          },
+          "borderlineAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "extremism",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 3600
+          },
+          "borderlineAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          }
+        }
+      ],
+      "escalation": {
+        "enabled": true,
+        "windowMins": 120,
+        "steps": [
+          {
+            "kind": "timeout",
+            "durationSecs": 1800
+          },
+          {
+            "kind": "timeout",
+            "durationSecs": 86400
+          },
+          {
+            "kind": "ban",
+            "durationSecs": 0
+          }
+        ]
+      },
+      "rules": {
+        "blockedTerms": [],
+        "blockedTermsAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "links": "block",
+        "allowedDomains": [
+          "twitch.tv",
+          "clips.twitch.tv",
+          "youtube.com",
+          "youtu.be"
+        ],
+        "linksAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "capsEnabled": true,
+        "capsMinLength": 20,
+        "capsRatio": 0.8,
+        "capsAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "repeatEnabled": true,
+        "repeatCount": 4,
+        "repeatAction": {
+          "kind": "timeout",
+          "durationSecs": 60
+        },
+        "emoteSpamEnabled": true,
+        "maxEmotes": 15,
+        "emoteSpamAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "maxLength": 0,
+        "lengthAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        }
+      },
+      "reasonTemplate": "[HighBazar] {reason}",
+      "announceActions": false
+    },
+    {
+      "id": "builtin-mod-suggest",
+      "name": "Suggest Only",
+      "description": "Never acts on its own. Flags problematic messages in the dashboard with a suggested action you can apply with one click.",
+      "builtin": true,
+      "mode": "suggest",
+      "aiCheck": "all",
+      "strictness": 50,
+      "minConfidence": 0.8,
+      "maxAiCallsPerMin": 12,
+      "channelRules": "",
+      "exempt": {
+        "moderators": true,
+        "vips": true,
+        "subscribers": false,
+        "users": []
+      },
+      "categories": [
+        {
+          "category": "hate",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 1800
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "harassment",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 600
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "threat",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 3600
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "sexual",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 600
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "selfHarm",
+          "enabled": true,
+          "clearAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "spam",
+          "enabled": true,
+          "clearAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "scam",
+          "enabled": true,
+          "clearAction": {
+            "kind": "ban",
+            "durationSecs": 0
+          },
+          "borderlineAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "doxxing",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 3600
+          },
+          "borderlineAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "extremism",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 3600
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        }
+      ],
+      "escalation": {
+        "enabled": true,
+        "windowMins": 120,
+        "steps": [
+          {
+            "kind": "timeout",
+            "durationSecs": 1800
+          },
+          {
+            "kind": "timeout",
+            "durationSecs": 86400
+          },
+          {
+            "kind": "ban",
+            "durationSecs": 0
+          }
+        ]
+      },
+      "rules": {
+        "blockedTerms": [],
+        "blockedTermsAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "links": "allow",
+        "allowedDomains": [
+          "twitch.tv",
+          "clips.twitch.tv",
+          "youtube.com",
+          "youtu.be"
+        ],
+        "linksAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "capsEnabled": false,
+        "capsMinLength": 20,
+        "capsRatio": 0.8,
+        "capsAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "repeatEnabled": true,
+        "repeatCount": 4,
+        "repeatAction": {
+          "kind": "timeout",
+          "durationSecs": 60
+        },
+        "emoteSpamEnabled": false,
+        "maxEmotes": 15,
+        "emoteSpamAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "maxLength": 0,
+        "lengthAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        }
+      },
+      "reasonTemplate": "[HighBazar] {reason}",
+      "announceActions": false
+    },
+    {
+      "id": "builtin-mod-log",
+      "name": "Watch & Log",
+      "description": "Only observes and writes a moderation log. No actions, no suggestions.",
+      "builtin": true,
+      "mode": "log",
+      "aiCheck": "all",
+      "strictness": 50,
+      "minConfidence": 0.8,
+      "maxAiCallsPerMin": 12,
+      "channelRules": "",
+      "exempt": {
+        "moderators": true,
+        "vips": true,
+        "subscribers": false,
+        "users": []
+      },
+      "categories": [
+        {
+          "category": "hate",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 1800
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "harassment",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 600
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "threat",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 3600
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "sexual",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 600
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "selfHarm",
+          "enabled": true,
+          "clearAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "spam",
+          "enabled": true,
+          "clearAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "scam",
+          "enabled": true,
+          "clearAction": {
+            "kind": "ban",
+            "durationSecs": 0
+          },
+          "borderlineAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "doxxing",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 3600
+          },
+          "borderlineAction": {
+            "kind": "delete",
+            "durationSecs": 0
+          }
+        },
+        {
+          "category": "extremism",
+          "enabled": true,
+          "clearAction": {
+            "kind": "timeout",
+            "durationSecs": 3600
+          },
+          "borderlineAction": {
+            "kind": "log",
+            "durationSecs": 0
+          }
+        }
+      ],
+      "escalation": {
+        "enabled": true,
+        "windowMins": 120,
+        "steps": [
+          {
+            "kind": "timeout",
+            "durationSecs": 1800
+          },
+          {
+            "kind": "timeout",
+            "durationSecs": 86400
+          },
+          {
+            "kind": "ban",
+            "durationSecs": 0
+          }
+        ]
+      },
+      "rules": {
+        "blockedTerms": [],
+        "blockedTermsAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "links": "allow",
+        "allowedDomains": [
+          "twitch.tv",
+          "clips.twitch.tv",
+          "youtube.com",
+          "youtu.be"
+        ],
+        "linksAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "capsEnabled": false,
+        "capsMinLength": 20,
+        "capsRatio": 0.8,
+        "capsAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "repeatEnabled": true,
+        "repeatCount": 4,
+        "repeatAction": {
+          "kind": "timeout",
+          "durationSecs": 60
+        },
+        "emoteSpamEnabled": false,
+        "maxEmotes": 15,
+        "emoteSpamAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "maxLength": 0,
+        "lengthAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        }
+      },
+      "reasonTemplate": "[HighBazar] {reason}",
+      "announceActions": false
+    }
+  ],
+  "aiProfiles": [
+    {
+      "id": "builtin-ai-claude-opus",
+      "name": "Claude Opus 5.5",
+      "description": "Anthropic's flagship. Best quality and humor; higher cost.",
+      "builtin": true,
+      "provider": "anthropic",
+      "baseUrl": "",
+      "model": "claude-opus-5-5",
+      "keyRef": "",
+      "maxOutputTokens": 2048,
+      "temperature": null,
+      "reasoning": "low",
+      "webSearch": true,
+      "timeoutSecs": 90,
+      "priceInputPerMtok": 4.0,
+      "priceOutputPerMtok": 20.0,
+      "extraHeaders": [],
+      "openaiResponses": true,
+      "geminiInteractions": true,
+      "cliPath": ""
+    },
+    {
+      "id": "builtin-ai-claude-sonnet",
+      "name": "Claude Sonnet 5.5",
+      "description": "Great quality at a moderate price.",
+      "builtin": true,
+      "provider": "anthropic",
+      "baseUrl": "",
+      "model": "claude-sonnet-5-5",
+      "keyRef": "",
+      "maxOutputTokens": 2048,
+      "temperature": null,
+      "reasoning": "low",
+      "webSearch": true,
+      "timeoutSecs": 90,
+      "priceInputPerMtok": 2.0,
+      "priceOutputPerMtok": 10.0,
+      "extraHeaders": [],
+      "openaiResponses": true,
+      "geminiInteractions": true,
+      "cliPath": ""
+    },
+    {
+      "id": "builtin-ai-claude-haiku",
+      "name": "Claude Haiku 5.5",
+      "description": "Fast and very cheap. Recommended for moderation and busy chats.",
+      "builtin": true,
+      "provider": "anthropic",
+      "baseUrl": "",
+      "model": "claude-haiku-5-5",
+      "keyRef": "",
+      "maxOutputTokens": 2048,
+      "temperature": null,
+      "reasoning": "low",
+      "webSearch": true,
+      "timeoutSecs": 90,
+      "priceInputPerMtok": 0.1,
+      "priceOutputPerMtok": 0.5,
+      "extraHeaders": [],
+      "openaiResponses": true,
+      "geminiInteractions": true,
+      "cliPath": ""
+    },
+    {
+      "id": "builtin-ai-openai-sol",
+      "name": "OpenAI GPT-6.1 Sol",
+      "description": "OpenAI's balanced model (Responses API).",
+      "builtin": true,
+      "provider": "openai",
+      "baseUrl": "",
+      "model": "gpt-6.1-sol",
+      "keyRef": "",
+      "maxOutputTokens": 2048,
+      "temperature": null,
+      "reasoning": "low",
+      "webSearch": true,
+      "timeoutSecs": 90,
+      "priceInputPerMtok": 2.0,
+      "priceOutputPerMtok": 10.0,
+      "extraHeaders": [],
+      "openaiResponses": true,
+      "geminiInteractions": true,
+      "cliPath": ""
+    },
+    {
+      "id": "builtin-ai-openai-luna",
+      "name": "OpenAI GPT-6 Luna",
+      "description": "OpenAI's fast, low-cost model.",
+      "builtin": true,
+      "provider": "openai",
+      "baseUrl": "",
+      "model": "gpt-6-luna",
+      "keyRef": "",
+      "maxOutputTokens": 2048,
+      "temperature": null,
+      "reasoning": "low",
+      "webSearch": true,
+      "timeoutSecs": 90,
+      "priceInputPerMtok": 0.1,
+      "priceOutputPerMtok": 0.5,
+      "extraHeaders": [],
+      "openaiResponses": true,
+      "geminiInteractions": true,
+      "cliPath": ""
+    },
+    {
+      "id": "builtin-ai-gemini-flash",
+      "name": "Gemini 3.8 Flash",
+      "description": "Google's recommended general-purpose model with Google Search grounding.",
+      "builtin": true,
+      "provider": "gemini",
+      "baseUrl": "",
+      "model": "gemini-3.8-flash",
+      "keyRef": "",
+      "maxOutputTokens": 2048,
+      "temperature": null,
+      "reasoning": "low",
+      "webSearch": true,
+      "timeoutSecs": 90,
+      "priceInputPerMtok": 0.75,
+      "priceOutputPerMtok": 3.75,
+      "extraHeaders": [],
+      "openaiResponses": true,
+      "geminiInteractions": true,
+      "cliPath": ""
+    },
+    {
+      "id": "builtin-ai-gemini-lite",
+      "name": "Gemini 3.5 Flash-Lite",
+      "description": "Google's cheapest high-volume model.",
+      "builtin": true,
+      "provider": "gemini",
+      "baseUrl": "",
+      "model": "gemini-3.5-flash-lite",
+      "keyRef": "",
+      "maxOutputTokens": 2048,
+      "temperature": null,
+      "reasoning": "minimal",
+      "webSearch": true,
+      "timeoutSecs": 90,
+      "priceInputPerMtok": 0.3,
+      "priceOutputPerMtok": 2.5,
+      "extraHeaders": [],
+      "openaiResponses": true,
+      "geminiInteractions": true,
+      "cliPath": ""
+    },
+    {
+      "id": "builtin-ai-openrouter-auto",
+      "name": "OpenRouter Auto",
+      "description": "Lets OpenRouter pick a model. One key for hundreds of models.",
+      "builtin": true,
+      "provider": "openrouter",
+      "baseUrl": "",
+      "model": "openrouter/auto",
+      "keyRef": "",
+      "maxOutputTokens": 2048,
+      "temperature": null,
+      "reasoning": "",
+      "webSearch": true,
+      "timeoutSecs": 90,
+      "priceInputPerMtok": 0.0,
+      "priceOutputPerMtok": 0.0,
+      "extraHeaders": [],
+      "openaiResponses": true,
+      "geminiInteractions": true,
+      "cliPath": ""
+    },
+    {
+      "id": "builtin-ai-mistral-small",
+      "name": "Mistral Small",
+      "description": "Mistral's efficient model (EU provider).",
+      "builtin": true,
+      "provider": "mistral",
+      "baseUrl": "",
+      "model": "mistral-small-latest",
+      "keyRef": "",
+      "maxOutputTokens": 2048,
+      "temperature": null,
+      "reasoning": "",
+      "webSearch": false,
+      "timeoutSecs": 90,
+      "priceInputPerMtok": 0.0,
+      "priceOutputPerMtok": 0.0,
+      "extraHeaders": [],
+      "openaiResponses": true,
+      "geminiInteractions": true,
+      "cliPath": ""
+    },
+    {
+      "id": "builtin-ai-deepseek",
+      "name": "DeepSeek Chat",
+      "description": "Low-cost model by DeepSeek.",
+      "builtin": true,
+      "provider": "deepseek",
+      "baseUrl": "",
+      "model": "deepseek-chat",
+      "keyRef": "",
+      "maxOutputTokens": 2048,
+      "temperature": null,
+      "reasoning": "",
+      "webSearch": false,
+      "timeoutSecs": 90,
+      "priceInputPerMtok": 0.0,
+      "priceOutputPerMtok": 0.0,
+      "extraHeaders": [],
+      "openaiResponses": true,
+      "geminiInteractions": true,
+      "cliPath": ""
+    },
+    {
+      "id": "builtin-ai-perplexity-sonar",
+      "name": "Perplexity Sonar",
+      "description": "Answers with built-in live web search.",
+      "builtin": true,
+      "provider": "perplexity",
+      "baseUrl": "",
+      "model": "sonar",
+      "keyRef": "",
+      "maxOutputTokens": 2048,
+      "temperature": null,
+      "reasoning": "",
+      "webSearch": true,
+      "timeoutSecs": 90,
+      "priceInputPerMtok": 0.0,
+      "priceOutputPerMtok": 0.0,
+      "extraHeaders": [],
+      "openaiResponses": true,
+      "geminiInteractions": true,
+      "cliPath": ""
+    },
+    {
+      "id": "builtin-ai-ollama",
+      "name": "Ollama (local)",
+      "description": "Runs models on your own PC for free. Pick an installed model in a copy of this profile.",
+      "builtin": true,
+      "provider": "ollama",
+      "baseUrl": "",
+      "model": "llama3.2",
+      "keyRef": "",
+      "maxOutputTokens": 2048,
+      "temperature": null,
+      "reasoning": "",
+      "webSearch": false,
+      "timeoutSecs": 90,
+      "priceInputPerMtok": 0.0,
+      "priceOutputPerMtok": 0.0,
+      "extraHeaders": [],
+      "openaiResponses": true,
+      "geminiInteractions": true,
+      "cliPath": ""
+    },
+    {
+      "id": "builtin-ai-lmstudio",
+      "name": "LM Studio (local)",
+      "description": "Uses the model currently loaded in LM Studio.",
+      "builtin": true,
+      "provider": "lmstudio",
+      "baseUrl": "",
+      "model": "local-model",
+      "keyRef": "",
+      "maxOutputTokens": 2048,
+      "temperature": null,
+      "reasoning": "",
+      "webSearch": false,
+      "timeoutSecs": 90,
+      "priceInputPerMtok": 0.0,
+      "priceOutputPerMtok": 0.0,
+      "extraHeaders": [],
+      "openaiResponses": true,
+      "geminiInteractions": true,
+      "cliPath": ""
+    },
+    {
+      "id": "builtin-ai-claude-cli",
+      "name": "Claude Code CLI (subscription)",
+      "description": "Uses your locally installed and logged-in Claude Code CLI. Whether automated bot use is covered by your plan's terms is your responsibility.",
+      "builtin": true,
+      "provider": "claudeCli",
+      "baseUrl": "",
+      "model": "haiku",
+      "keyRef": "",
+      "maxOutputTokens": 2048,
+      "temperature": null,
+      "reasoning": "",
+      "webSearch": false,
+      "timeoutSecs": 90,
+      "priceInputPerMtok": 0.0,
+      "priceOutputPerMtok": 0.0,
+      "extraHeaders": [],
+      "openaiResponses": true,
+      "geminiInteractions": true,
+      "cliPath": ""
+    }
+  ]
+}
