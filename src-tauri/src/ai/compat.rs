@@ -107,7 +107,7 @@ fn strip_think(s: &str) -> String {
     out.trim().to_string()
 }
 
-pub async fn list_models(http: &reqwest::Client, p: &AiProfile, key: &str) -> AppResult<Vec<String>> {
+pub async fn list_models(http: &reqwest::Client, p: &AiProfile, key: &str) -> AppResult<Vec<super::ModelInfo>> {
     let base = base_url(p);
     if base.is_empty() {
         return Err(AppError::msg("This AI profile needs a base URL."));
@@ -121,15 +121,46 @@ pub async fn list_models(http: &reqwest::Client, p: &AiProfile, key: &str) -> Ap
         return Err(error_from(&p.provider, resp).await);
     }
     let v: Value = resp.json().await?;
+    Ok(parse_models(&v))
+}
+
+fn parse_models(v: &Value) -> Vec<super::ModelInfo> {
     let list = v["data"].as_array().or_else(|| v.as_array());
-    Ok(list
-        .map(|a| a.iter().filter_map(|m| m["id"].as_str().map(str::to_string)).collect())
-        .unwrap_or_default())
+    list
+        .map(|a| {
+            a.iter()
+                // OpenRouter (and some others) send a readable "name".
+                .filter_map(|m| {
+                    let mut info = super::ModelInfo::new(m["id"].as_str()?, m["name"].as_str().unwrap_or_default());
+                    // OpenRouter: prices in USD per token, as strings.
+                    let per_mtok = |k: &str| m["pricing"][k].as_str().and_then(|s| s.parse::<f64>().ok()).filter(|p| *p >= 0.0).map(|p| (p * 1e6 * 1000.0).round() / 1000.0);
+                    info.price_in = per_mtok("prompt");
+                    info.price_out = per_mtok("completion");
+                    Some(info)
+                })
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parses_model_list_with_prices() {
+        let v = json!({"data": [
+            {"id": "anthropic/claude-haiku-5-5", "name": "Anthropic: Claude Haiku 5.5", "pricing": {"prompt": "0.000001", "completion": "0.000005"}},
+            {"id": "llama3"},
+            {"name": "no id"}
+        ]});
+        let m = parse_models(&v);
+        assert_eq!(m.len(), 2);
+        assert_eq!(m[0].price_in, Some(1.0));
+        assert_eq!(m[0].price_out, Some(5.0));
+        assert_eq!(m[1].name, "");
+        assert_eq!(m[1].price_in, None);
+    }
 
     #[test]
     fn parses_completion_and_strips_think() {

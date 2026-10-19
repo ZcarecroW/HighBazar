@@ -11,6 +11,7 @@ async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T
 import type {
   AiProfile,
   AiTestResult,
+  ModelInfo,
   Bootstrap,
   Config,
   LoginStart,
@@ -24,7 +25,7 @@ export const api = {
   keyStatus: () => invoke<Record<string, boolean>>("get_key_status"),
   setAiKey: (keyRef: string, key: string) => invoke<void>("set_ai_key", { keyRef, key }),
   aiTest: (profile: AiProfile, prompt?: string) => invoke<AiTestResult>("ai_test", { profile, prompt }),
-  aiListModels: (profile: AiProfile) => invoke<string[]>("ai_list_models", { profile }),
+  aiListModels: (profile: AiProfile) => invoke<ModelInfo[]>("ai_list_models", { profile }),
   detectClaudeCli: (path?: string) => invoke<string | null>("detect_claude_cli", { path }),
   twitchLoginStart: (kind: "streamer" | "bot", level?: string) => invoke<LoginStart>("twitch_login_start", { kind, level }),
   twitchLoginCancel: (loginId: string) => invoke<void>("twitch_login_cancel", { loginId }),

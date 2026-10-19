@@ -18,6 +18,7 @@ import {
 import { useApp, type View } from "./stores/app";
 import { setLocale } from "./i18n";
 import { checkForUpdate } from "./lib/updater";
+import { applyUiZoom, clampZoom, CHAT_ZOOM, UI_ZOOM } from "./lib/zoom";
 import DashboardView from "./views/DashboardView.vue";
 import StreamView from "./views/StreamView.vue";
 import ChannelsView from "./views/ChannelsView.vue";
@@ -66,10 +67,39 @@ applyTheme();
 watch(() => [app.config?.settings.theme, app.config?.settings.colorTheme], applyTheme);
 watch(() => app.config?.settings.language, (l) => setLocale(l ?? "auto"));
 
+// Zoom: Ctrl +/−/0 and Ctrl + mouse wheel change the UI size; over the live
+// chat the wheel changes the chat size instead.
+watch(
+  () => app.config?.settings.uiZoom,
+  (z) => applyUiZoom(z ?? 1).catch((e) => console.warn("zoom failed", e)),
+);
+function changeZoom(target: "uiZoom" | "chatZoom", dir: number) {
+  const s = app.config?.settings;
+  if (!s) return;
+  const r = target === "uiZoom" ? UI_ZOOM : CHAT_ZOOM;
+  s[target] = dir === 0 ? 1 : clampZoom((s[target] || 1) + dir * r.step, r);
+}
+function onZoomKey(e: KeyboardEvent) {
+  if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+  const dir = e.key === "+" || e.key === "=" ? 1 : e.key === "-" ? -1 : e.key === "0" ? 0 : null;
+  if (dir === null) return;
+  e.preventDefault();
+  changeZoom("uiZoom", dir);
+}
+function onZoomWheel(e: WheelEvent) {
+  if (!e.ctrlKey || e.deltaY === 0) return;
+  e.preventDefault();
+  const inChat = (e.target as Element | null)?.closest?.("[data-chat-zoom]");
+  changeZoom(inChat ? "chatZoom" : "uiZoom", e.deltaY < 0 ? 1 : -1);
+}
+window.addEventListener("keydown", onZoomKey);
+window.addEventListener("wheel", onZoomWheel, { passive: false });
+
 onMounted(async () => {
   await app.listenAll();
   await app.load();
   applyTheme();
+  applyUiZoom(app.config?.settings.uiZoom ?? 1).catch((e) => console.warn("zoom failed", e));
   setLocale(app.config?.settings.language ?? "auto");
   if (app.config?.settings.checkUpdatesOnStart) {
     checkForUpdate().catch((e) => console.warn("update check failed", e));

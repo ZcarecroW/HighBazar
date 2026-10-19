@@ -136,7 +136,7 @@ pub async fn ai_test(st: St<'_>, profile: AiProfile, prompt: Option<String>) -> 
 }
 
 #[tauri::command]
-pub async fn ai_list_models(st: St<'_>, profile: AiProfile) -> AppResult<Vec<String>> {
+pub async fn ai_list_models(st: St<'_>, profile: AiProfile) -> AppResult<Vec<ai::ModelInfo>> {
     let key = st.ai_key(&profile);
     ai::list_models(&st.http, &profile, key.as_deref()).await
 }

@@ -3,10 +3,10 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { pdesc, pname } from "../i18n";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { CircleCheck, CircleAlert, ExternalLink, Loader2, Plus, Send, Trash2, TriangleAlert, Download, Search, Cpu, FlaskConical } from "../icons";
+import { CircleCheck, CircleAlert, ExternalLink, Loader2, Plus, Send, Trash2, TriangleAlert, Search, Cpu, FlaskConical } from "../icons";
 import { useApp } from "../stores/app";
 import { api, errorText, newId } from "../lib/api";
-import type { AiProfile, AiTestResult, UsageStats } from "../lib/types";
+import type { AiProfile, AiTestResult, ModelInfo, UsageStats } from "../lib/types";
 import ProfileList from "../components/ProfileList.vue";
 import BuiltinBanner from "../components/BuiltinBanner.vue";
 import UiToggle from "../components/ui/UiToggle.vue";
@@ -14,9 +14,10 @@ import UiField from "../components/ui/UiField.vue";
 import UiNumber from "../components/ui/UiNumber.vue";
 import UiSegmented from "../components/ui/UiSegmented.vue";
 import ApiKeyInput from "../components/ApiKeyInput.vue";
+import ModelPicker from "../components/ModelPicker.vue";
 
 const app = useApp();
-const { t, locale } = useI18n();
+const { t, te, locale } = useI18n();
 const cfg = computed(() => app.config!);
 
 const tab = ref<"profiles" | "keys" | "usage">("profiles");
@@ -64,25 +65,30 @@ const ownKey = computed({
   set: (v) => (p.value.keyRef = v ? `profile-${p.value.id}` : ""),
 });
 
-// Models
-const models = ref<string[]>([]);
-const loadingModels = ref(false);
-async function loadModels() {
-  loadingModels.value = true;
-  try {
-    models.value = await api.aiListModels(JSON.parse(JSON.stringify(p.value)));
-    if (!models.value.length) app.toast("0 models", "info");
-  } catch (e) {
-    app.toast(errorText(e), "error", 7000);
-  } finally {
-    loadingModels.value = false;
-  }
-}
 watch(selectedId, () => {
-  models.value = [];
   testResult.value = null;
   testError.value = "";
 });
+// Another provider: the old model name, effort and prices don't fit any more.
+watch(
+  () => [selectedId.value, p.value.provider] as const,
+  ([id, provider], [oldId, oldProvider]) => {
+    if (id !== oldId || provider === oldProvider || ro.value) return;
+    p.value.model = "";
+    if (!info.value?.reasoningOptions.includes(p.value.reasoning)) p.value.reasoning = "";
+    p.value.priceInputPerMtok = 0;
+    p.value.priceOutputPerMtok = 0;
+  },
+);
+// The CLI bills the subscription and has no token limit or temperature;
+// local models cost nothing.
+const isCli = computed(() => p.value.provider === "claudeCli");
+const showPrices = computed(() => !info.value?.local || p.value.provider === "openaiCompatible");
+function onPicked(m: ModelInfo) {
+  // Providers that publish prices (OpenRouter) fill them in.
+  if (m.priceIn != null) p.value.priceInputPerMtok = m.priceIn;
+  if (m.priceOut != null) p.value.priceOutputPerMtok = m.priceOut;
+}
 
 // Temperature toggle
 const customTemp = computed({
@@ -182,17 +188,8 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
           </div>
 
           <div class="grid gap-5 md:grid-cols-2">
-            <UiField :label="t('ai.model')" :hint="t('ai.modelHint')">
-              <div class="flex gap-2">
-                <input v-model="p.model" class="input font-mono" list="hb-models" spellcheck="false" />
-                <datalist id="hb-models">
-                  <option v-for="m in models" :key="m" :value="m" />
-                </datalist>
-                <button type="button" class="btn shrink-0" :disabled="loadingModels" :title="t('ai.loadModels')" @click="loadModels">
-                  <Loader2 v-if="loadingModels" :size="15" class="animate-spin" />
-                  <Download v-else :size="15" />
-                </button>
-              </div>
+            <UiField :label="t('ai.model')">
+              <ModelPicker v-model="p.model" :profile="p" :disabled="ro" @picked="onPicked" />
             </UiField>
             <UiField v-if="p.provider !== 'claudeCli'" :label="t('ai.baseUrl')" :hint="t('ai.baseUrlHint')">
               <input v-model="p.baseUrl" class="input font-mono" :placeholder="info?.baseUrl" spellcheck="false" />
@@ -208,14 +205,14 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
           </div>
 
           <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-            <UiField v-if="(info?.reasoningOptions.length ?? 0) > 1" :label="t('ai.reasoning')">
+            <UiField v-if="(info?.reasoningOptions.length ?? 0) > 1" :label="t('ai.reasoning')" :hint="t('ai.reasoningHint')">
               <select v-model="p.reasoning" class="input">
-                <option v-for="r in info!.reasoningOptions" :key="r" :value="r">{{ r || t("ai.reasoningDefault") }}</option>
+                <option v-for="r in info!.reasoningOptions" :key="r" :value="r">{{ r ? (te(`ai.reasoningLevels.${r}`) ? t(`ai.reasoningLevels.${r}`) : r) : t("ai.reasoningDefault") }}</option>
               </select>
             </UiField>
-            <UiNumber v-model="p.maxOutputTokens" :label="t('ai.maxTokens')" :min="64" :max="64000" :step="64" :disabled="ro" />
+            <UiNumber v-if="!isCli" v-model="p.maxOutputTokens" :label="t('ai.maxTokens')" :min="64" :max="64000" :step="64" :disabled="ro" />
             <UiNumber v-model="p.timeoutSecs" :label="t('ai.timeout')" :min="10" :max="600" :suffix="t('common.seconds')" :disabled="ro" />
-            <div>
+            <div v-if="!isCli">
               <UiToggle v-model="customTemp" :label="t('ai.temperature')" :disabled="ro" />
               <input v-if="p.temperature !== null" v-model.number="p.temperature" type="number" step="0.1" min="0" max="2" class="input mt-2 w-24" />
               <p v-else class="hint">{{ t("ai.temperatureDefault") }}</p>
@@ -224,11 +221,11 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
 
           <div class="grid gap-4 md:grid-cols-2">
             <UiToggle v-if="info?.webSearch" v-model="p.webSearch" :label="t('ai.webSearch')" :disabled="ro" />
-            <UiToggle v-if="p.provider === 'openai'" v-model="p.openaiResponses" :label="t('ai.openaiResponses')" :disabled="ro" />
-            <UiToggle v-if="p.provider === 'gemini'" v-model="p.geminiInteractions" :label="t('ai.geminiInteractions')" :disabled="ro" />
+            <UiToggle v-if="p.provider === 'openai'" v-model="p.openaiResponses" :label="t('ai.openaiResponses')" :hint="t('ai.apiSwitchHint')" :disabled="ro" />
+            <UiToggle v-if="p.provider === 'gemini'" v-model="p.geminiInteractions" :label="t('ai.geminiInteractions')" :hint="t('ai.apiSwitchHint')" :disabled="ro" />
           </div>
 
-          <div>
+          <div v-if="showPrices">
             <span class="label">{{ t("ai.prices") }}</span>
             <div class="flex flex-wrap gap-5">
               <UiNumber v-model="p.priceInputPerMtok" :label="t('ai.priceIn')" :min="0" :max="1000" :step="0.01" suffix="$" :disabled="ro" />

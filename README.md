@@ -76,7 +76,7 @@ The bot writes with **your streamer account** by default (marked with a configur
 | **Claude Code CLI** *(optional)* | Uses your locally installed, logged-in `claude` CLI and thus your Claude subscription. See the [note below](#can-i-use-my-claude-pro-subscription). |
 
 Every provider is configured through **AI profiles** (model, reasoning effort, max tokens, temperature, timeout,
-prices, extra headers…). Load the model list from the provider, test the connection, see tokens and costs.
+prices, extra headers…). Pick the model from a searchable list loaded from the provider (or type any name), test the connection, see tokens and costs.
 You can use a **different, cheaper model for moderation**.
 
 ### 🎛️ Stream & channel manager
@@ -100,6 +100,7 @@ Bazaar, Midnight, Ocean, Aurora, Forest, Gold, Sunset, Crimson, Sakura and Cyber
 - **Setup wizard** on first start (skippable, can be reopened any time).
 - **Test mode + chat simulator** — try everything without sending anything to Twitch.
 - **Live feed** with chat, bot messages, events and moderation; delete / timeout / ban with one click. Twitch, BetterTTV, FrankerFaceZ and 7TV **emotes are shown as images** (can be switched off).
+- **Calm reading**: new chat messages **glide in** instead of jumping (speed and acceleration curve adjustable, with live preview), and the chat and the rest of the interface can be **zoomed separately** (Ctrl + mouse wheel, Ctrl + plus/minus).
 - **System, Dark and Light** themes, **English and German** UI, responsive layout optimized for 1920×1080.
 - **Automatic updates** from GitHub Releases (check on start, configurable).
 - **Lightweight**: native Rust core and the system's own webview instead of Electron; small installers.

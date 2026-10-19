@@ -127,7 +127,14 @@ export async function mockInvoke(cmd: string, args: any): Promise<any> {
       await new Promise((r) => setTimeout(r, 600));
       return { text: "Hey Chat! Ich bin HighBazar – euer neuer Lieblings-Mitbewohner im Chat. Wer hat Snacks? 🍿", inputTokens: 412, outputTokens: 38, costUsd: 0.00241, millis: 912, model: "claude-opus-5-5" };
     case "ai_list_models":
-      return ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5", "claude-fable-5-1"];
+      return (args.profile as { provider: string }).provider === "claudeCli"
+        ? ["haiku", "sonnet", "opus", "fable"].map((id) => ({ id, name: "" }))
+        : [
+            { id: "claude-opus-5-5", name: "Claude Opus 5.5" },
+            { id: "claude-sonnet-5-5", name: "Claude Sonnet 5.5" },
+            { id: "claude-haiku-5-5", name: "Claude Haiku 5.5" },
+            { id: "claude-fable-5-1", name: "Claude Fable 5.1" },
+          ];
     case "bot_start":
       running = { channelId: args.channelId, sandbox: args.sandbox };
       setTimeout(() => {

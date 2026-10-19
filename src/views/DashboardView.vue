@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { modReason } from "../i18n";
 import EmoteText from "../components/EmoteText.vue";
 import { Play, Square, FlaskConical, MessageSquarePlus, RefreshCw, Wifi, WifiOff, Gamepad2, Users, Clock, Coins, Send, Pencil, X, Trash2, TimerReset, Ban, ShieldAlert, Sparkles, Bot, Heart, Gift, Swords, Star, Brain, Smile, Activity, CircleAlert, Info, Bolt, Pin, Languages } from "../icons";
 import ModNote from "../components/ModNote.vue";
+import { SmoothFollow } from "../lib/smoothFollow";
+import { chatScale, clampZoom, CHAT_ZOOM } from "../lib/zoom";
 import { useTwitch } from "../lib/twitch";
 import { useApp } from "../stores/app";
 import type { FeedItem, PendingMessage } from "../lib/types";
@@ -25,6 +27,30 @@ const s = computed(() => app.status);
 const show = ref({ chat: true, bot: true, mod: true, system: true });
 const autoscroll = ref(true);
 const feedEl = ref<HTMLElement | null>(null);
+const feedInner = ref<HTMLElement | null>(null);
+const settings = computed(() => app.config!.settings);
+let follower: SmoothFollow | null = null;
+// Entries newer than this fade in; older ones (re-opened view) are just there.
+const mountedAt = Date.now();
+onMounted(() => {
+  if (!feedEl.value || !feedInner.value) return;
+  follower = new SmoothFollow(feedEl.value, feedInner.value, () => settings.value.chatScroll);
+  follower.onFollowChange = (v) => (autoscroll.value = v);
+  if (import.meta.env.DEV) (window as unknown as { __follower: SmoothFollow }).__follower = follower;
+  follower.follow();
+});
+onBeforeUnmount(() => follower?.destroy());
+watch(autoscroll, (v) => {
+  if (!follower || follower.following === v) return;
+  if (v) follower.follow();
+  else follower.stop();
+});
+const chatZoomStyle = computed(() => ({ zoom: chatScale(settings.value.chatZoom ?? 1, settings.value.uiZoom ?? 1) }));
+const fadeMs = computed(() => (settings.value.chatScroll.smooth ? Math.min(400, settings.value.chatScroll.durationMs) : 0));
+function stepChatZoom(dir: number) {
+  const s = settings.value;
+  s.chatZoom = dir === 0 ? 1 : clampZoom((s.chatZoom || 1) + dir * CHAT_ZOOM.step, CHAT_ZOOM);
+}
 const visible = computed(() =>
   app.feed.filter((f) => {
     if (f.kind === "chat") return show.value.chat;
@@ -33,19 +59,6 @@ const visible = computed(() =>
     return show.value.system;
   }),
 );
-watch(
-  () => app.feed.length,
-  async () => {
-    if (!autoscroll.value) return;
-    await nextTick();
-    feedEl.value?.scrollTo({ top: feedEl.value.scrollHeight });
-  },
-);
-function onScroll() {
-  const el = feedEl.value;
-  if (!el) return;
-  autoscroll.value = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-}
 
 function time(ts: number) {
   return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
@@ -250,13 +263,19 @@ function modEntry(item: FeedItem) {
               {{ t(`dashboard.filter${k === "mod" ? "Mod" : k[0]!.toUpperCase() + k.slice(1)}`) }}
             </button>
           </div>
-          <label class="ml-auto flex items-center gap-1.5 text-xs text-muted">
+          <div class="ml-auto flex items-center gap-0.5 text-xs text-muted" :title="t('dashboard.chatZoomHint')">
+            <button class="rounded px-1.5 py-0.5 font-semibold hover:bg-panel-2 hover:text-fg" :aria-label="t('dashboard.chatZoomOut')" @click="stepChatZoom(-1)">A−</button>
+            <button class="w-11 rounded py-0.5 tabular-nums hover:bg-panel-2 hover:text-fg" :aria-label="t('dashboard.chatZoomReset')" @click="stepChatZoom(0)">{{ Math.round((settings.chatZoom || 1) * 100) }} %</button>
+            <button class="rounded px-1.5 py-0.5 text-sm font-semibold hover:bg-panel-2 hover:text-fg" :aria-label="t('dashboard.chatZoomIn')" @click="stepChatZoom(1)">A+</button>
+          </div>
+          <label class="flex items-center gap-1.5 text-xs text-muted">
             <input v-model="autoscroll" type="checkbox" class="accent-brand-500" /> {{ t("dashboard.autoscroll") }}
           </label>
         </div>
 
-        <div ref="feedEl" class="selectable min-h-0 flex-1 overflow-y-auto px-2 py-2" @scroll="onScroll">
-          <div v-if="!visible.length" class="flex h-full flex-col items-center justify-center gap-2 p-8 text-center text-sm text-muted">
+        <div ref="feedEl" class="selectable min-h-0 flex-1 overflow-y-auto px-2 py-2" data-chat-zoom>
+          <div ref="feedInner" class="flex min-h-full flex-col" :style="{ ...chatZoomStyle, '--feed-in-ms': fadeMs + 'ms' }">
+          <div v-if="!visible.length" class="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center text-sm text-muted">
             <Sparkles :size="28" class="text-brand-400" />
             <p class="max-w-sm">{{ app.isRunning ? t("dashboard.feedEmpty") : t("dashboard.notRunningHint") }}</p>
           </div>
@@ -266,6 +285,7 @@ function modEntry(item: FeedItem) {
             :key="item.id"
             class="group relative flex gap-2 rounded-lg px-2 py-1 text-[13.5px] leading-snug hover:bg-panel-2"
             :class="{
+              'feed-in': fadeMs > 0 && item.ts >= mountedAt,
               'bg-brand-500/8': item.kind === 'bot',
               'bg-red-500/6': item.kind === 'mod' || item.kind === 'error',
               'bg-amber-500/8': item.kind === 'event',
@@ -346,6 +366,7 @@ function modEntry(item: FeedItem) {
             <div v-else class="min-w-0 flex-1 break-words text-muted">
               <Info :size="13" class="mr-1 inline" />{{ msg(item) }}
             </div>
+          </div>
           </div>
         </div>
       </section>

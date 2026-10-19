@@ -60,7 +60,7 @@ mit einem **eigenen Bot-Account**, wenn du einen verbindest.
 Anthropic Claude · OpenAI · Google Gemini · OpenRouter · Mistral · Groq · xAI · DeepSeek · Perplexity · Together AI ·
 **Ollama** und **LM Studio** (lokal, kostenlos) · beliebige OpenAI-kompatible Endpunkte · optional die **Claude Code CLI**
 (siehe [FAQ](#kann-ich-mein-claude-pro-abo-nutzen)). Alles über **KI-Profile** einstellbar (Modell, Denkaufwand,
-Tokens, Temperatur, Timeout, Preise, Header …) – inkl. Modell-Liste laden, Verbindungstest und Kostenanzeige. Für die
+Tokens, Temperatur, Timeout, Preise, Header …) – das Modell wählst du aus einer durchsuchbaren Liste des Anbieters (oder tippst einen beliebigen Namen), dazu Verbindungstest und Kostenanzeige. Für die
 Moderation kannst du ein **günstigeres Modell** wählen.
 
 ### 🎛️ Stream & Kanal verwalten
@@ -80,7 +80,7 @@ Bazaar, Mitternacht, Ozean, Polarlicht, Wald, Gold, Abendrot, Karmesin, Sakura u
 
 ### ✨ Außerdem
 Einrichtungsassistent (überspringbar, jederzeit wieder aufrufbar) · Testmodus mit Chat-Simulator · Live-Feed mit
-Löschen/Timeout/Bann per Klick · Emotes von Twitch, BTTV, FFZ und 7TV als Bilder (abschaltbar) · Designs System/Dunkel/Hell · Deutsch & Englisch · für 1920×1080 optimiert und
+Löschen/Timeout/Bann per Klick · Emotes von Twitch, BTTV, FFZ und 7TV als Bilder (abschaltbar) · neue Chatnachrichten **gleiten sanft ein** statt zu springen (Tempo und Kurve einstellbar, mit Vorschau) · Chat und Oberfläche **getrennt zoombar** (Strg + Mausrad, Strg + Plus/Minus) · Designs System/Dunkel/Hell · Deutsch & Englisch · für 1920×1080 optimiert und
 responsiv · automatische Updates über GitHub · schlanker Rust-Kern statt Electron.
 
 ## Installation

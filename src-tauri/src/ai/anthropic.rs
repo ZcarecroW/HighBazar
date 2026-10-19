@@ -112,7 +112,7 @@ pub fn parse(v: &Value) -> AppResult<AiResponse> {
     })
 }
 
-pub async fn list_models(http: &reqwest::Client, p: &AiProfile, key: &str) -> AppResult<Vec<String>> {
+pub async fn list_models(http: &reqwest::Client, p: &AiProfile, key: &str) -> AppResult<Vec<super::ModelInfo>> {
     let resp = apply_headers(
         http.get(format!("{}/v1/models?limit=1000", base_url(p)))
             .header("x-api-key", key)
@@ -127,7 +127,11 @@ pub async fn list_models(http: &reqwest::Client, p: &AiProfile, key: &str) -> Ap
     let v: Value = resp.json().await?;
     Ok(v["data"]
         .as_array()
-        .map(|a| a.iter().filter_map(|m| m["id"].as_str().map(str::to_string)).collect())
+        .map(|a| {
+            a.iter()
+                .filter_map(|m| m["id"].as_str().map(|id| super::ModelInfo::new(id, m["display_name"].as_str().unwrap_or_default())))
+                .collect()
+        })
         .unwrap_or_default())
 }
 

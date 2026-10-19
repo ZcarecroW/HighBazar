@@ -58,6 +58,29 @@ pub struct AppSettings {
     pub show_emotes: bool,
     /// Scope of the channel manager: "simple" | "advanced" | "expert".
     pub channel_manager_level: String,
+    /// Size of the live chat (1.0 = 100 %), independent of `ui_zoom`.
+    pub chat_zoom: f32,
+    /// Size of the rest of the app (1.0 = 100 %).
+    pub ui_zoom: f32,
+    /// How new chat messages move into view.
+    pub chat_scroll: ChatScroll,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct ChatScroll {
+    /// false = new messages appear instantly.
+    pub smooth: bool,
+    /// Length of the glide in milliseconds.
+    pub duration_ms: u32,
+    /// "easeInOut" | "easeOut" | "linear" | "spring"
+    pub easing: String,
+}
+
+impl Default for ChatScroll {
+    fn default() -> Self {
+        Self { smooth: true, duration_ms: 450, easing: "easeInOut".into() }
+    }
 }
 
 impl Default for AppSettings {
@@ -74,6 +97,9 @@ impl Default for AppSettings {
             feed_limit: 400,
             show_emotes: true,
             channel_manager_level: "simple".into(),
+            chat_zoom: 1.0,
+            ui_zoom: 1.0,
+            chat_scroll: ChatScroll::default(),
         }
     }
 }

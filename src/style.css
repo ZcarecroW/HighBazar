@@ -249,3 +249,19 @@ select,
   margin: -0.4em 0.05em;
   vertical-align: middle;
 }
+
+/* New live feed entries fade in while the feed glides up (see lib/smoothFollow.ts). */
+@keyframes feed-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.feed-in {
+  animation: feed-in var(--feed-in-ms, 300ms) ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .feed-in {
+    animation: none;
+  }
+}

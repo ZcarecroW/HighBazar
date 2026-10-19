@@ -4,15 +4,26 @@ All notable changes to HighBazar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.4.0] – 2026-10-20
+
+Tested with Claude Code (translation and mod notes in test mode with the Claude Code CLI, model picker for every provider including a live OpenRouter list, smooth scrolling and zoom measured in the running app, all pages at 100 % and 140 % without a console error). Windows build.
 
 ### Added
+- **Smooth chat:** new messages glide into the live feed instead of jumping, so your eyes don't lose the line while reading. Speed (150–1200 ms) and the acceleration/braking curve (*Gentle*, *Brisk*, *Steady*, *Natural*) are adjustable under Settings → *Chat & size*, with explanations and a live preview. Messages that arrive mid-glide continue the movement without a jerk; a very busy chat skips the backlog instead of scrolling through it. Respects the system's "reduce motion" setting.
+- **Zoom:** the chat and the rest of the interface have separate sizes (Settings → *Chat & size*, A− / A+ in the live feed). Shortcuts: Ctrl + plus/minus/0 and Ctrl + mouse wheel – over the chat it changes the chat size.
+- **Model picker** for every AI provider: a searchable dropdown instead of typing the exact name. Models load automatically (with readable names where the provider sends them); any other name can still be entered. The Claude Code CLI offers its short names (Haiku, Sonnet, Opus, Fable) with a short description, OpenRouter fills in the prices of the chosen model automatically and lists its models even without a key.
 - **Translation of foreign-language chat** (Channels → *Languages & translation*, also in the setup wizard):
   - Set the languages you understand; the first one is the translation target. Until they are set, nothing is translated and the dashboard shows a hint.
   - Messages in other languages show their translation right below them in the live feed (only in the app).
   - Language detection runs locally (script, language-specific letters, common words and statistics), so only foreign messages cost AI tokens. When AI moderation checks the message anyway, the translation comes in the same call.
   - Rule violations in another language are moderated as usual and get a **note with the translation and what is really meant** (slang, coded insults). The note appears in the live feed and the moderation log, and Twitch moderators see it as the timeout or ban reason. A plain deletion becomes a 1-second timeout so the note reaches the mods (can be switched off).
   - With "AI check: suspicious only", foreign messages always get the AI check, because the suspicious-word list only knows German and English.
+
+### Changed
+- AI page: effort levels are shown in plain words with an explanation, and the Claude Code CLI also offers "Very high" and "Maximum". Fields the CLI or local models ignore (max tokens, temperature, prices) are hidden. Switching a profile to another provider clears the model, effort and prices of the old one.
+
+### Fixed
+- The live feed stopped scrolling along once it reached its entry limit (400 by default).
 
 ## [1.3.0] – 2026-10-19
 

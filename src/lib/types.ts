@@ -24,6 +24,11 @@ export interface AppSettings {
   feedLimit: number;
   showEmotes: boolean;
   channelManagerLevel: ChannelLevel;
+  /** Size of the live chat (1 = 100 %), independent of uiZoom. */
+  chatZoom: number;
+  /** Size of the rest of the app (1 = 100 %). */
+  uiZoom: number;
+  chatScroll: ChatScroll;
 }
 
 export interface TwitchAccount {
@@ -369,4 +374,22 @@ export interface AiTestResult {
   costUsd: number;
   millis: number;
   model: string;
+}
+
+export interface ModelInfo {
+  id: string;
+  /** Display name from the provider; empty = use the id. */
+  name: string;
+  /** USD per million tokens, when the provider publishes prices (OpenRouter). */
+  priceIn?: number | null;
+  priceOut?: number | null;
+}
+
+export type ScrollEasing = "easeInOut" | "easeOut" | "linear" | "spring";
+
+export interface ChatScroll {
+  /** false = new messages appear instantly. */
+  smooth: boolean;
+  durationMs: number;
+  easing: ScrollEasing;
 }

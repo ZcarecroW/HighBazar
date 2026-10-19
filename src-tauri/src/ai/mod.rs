@@ -78,7 +78,7 @@ pub fn providers() -> Vec<ProviderInfo> {
         ProviderInfo { id: "ollama", name: "Ollama (local)", base_url: "http://localhost:11434/v1", needs_key: false, web_search: false, key_url: "https://ollama.com/download", local: true, reasoning_options: &[""] },
         ProviderInfo { id: "lmstudio", name: "LM Studio (local)", base_url: "http://localhost:1234/v1", needs_key: false, web_search: false, key_url: "https://lmstudio.ai", local: true, reasoning_options: &[""] },
         ProviderInfo { id: "openaiCompatible", name: "Custom (OpenAI-compatible)", base_url: "", needs_key: false, web_search: false, key_url: "", local: false, reasoning_options: EFFORT },
-        ProviderInfo { id: "claudeCli", name: "Claude Code CLI (subscription)", base_url: "", needs_key: false, web_search: false, key_url: "https://code.claude.com/docs/en/setup", local: true, reasoning_options: &["", "low", "medium", "high"] },
+        ProviderInfo { id: "claudeCli", name: "Claude Code CLI (subscription)", base_url: "", needs_key: false, web_search: false, key_url: "https://code.claude.com/docs/en/setup", local: true, reasoning_options: &["", "low", "medium", "high", "xhigh", "max"] },
     ]
 }
 
@@ -128,17 +128,41 @@ pub async fn complete(http: &reqwest::Client, p: &AiProfile, key: Option<&str>, 
     }
 }
 
-pub async fn list_models(http: &reqwest::Client, p: &AiProfile, key: Option<&str>) -> AppResult<Vec<String>> {
+/// A model offered in the model picker.
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ModelInfo {
+    pub id: String,
+    /// Display name from the provider (empty = use the id).
+    pub name: String,
+    /// USD per million tokens, when the provider publishes prices (OpenRouter).
+    pub price_in: Option<f64>,
+    pub price_out: Option<f64>,
+}
+
+impl ModelInfo {
+    pub fn new(id: impl Into<String>, name: impl Into<String>) -> Self {
+        Self { id: id.into(), name: name.into(), price_in: None, price_out: None }
+    }
+}
+
+pub async fn list_models(http: &reqwest::Client, p: &AiProfile, key: Option<&str>) -> AppResult<Vec<ModelInfo>> {
     let key = key.unwrap_or_default();
     let mut models = match p.provider.as_str() {
-        "anthropic" => anthropic::list_models(http, p, key).await?,
+        // Anthropic lists the newest models first; keep that order.
+        "anthropic" => return Ok(dedup(anthropic::list_models(http, p, key).await?)),
         "gemini" => gemini::list_models(http, p, key).await?,
-        "claudeCli" => vec!["haiku".into(), "sonnet".into(), "opus".into(), "fable".into()],
+        // Aliases of the Claude Code CLI always point to the latest model of each family.
+        "claudeCli" => return Ok(["haiku", "sonnet", "opus", "fable"].iter().map(|a| ModelInfo::new(*a, "")).collect()),
         _ => compat::list_models(http, p, key).await?,
     };
-    models.sort();
-    models.dedup();
-    Ok(models)
+    models.sort_by(|a, b| a.id.cmp(&b.id));
+    Ok(dedup(models))
+}
+
+fn dedup(models: Vec<ModelInfo>) -> Vec<ModelInfo> {
+    let mut seen = std::collections::HashSet::new();
+    models.into_iter().filter(|m| !m.id.is_empty() && seen.insert(m.id.clone())).collect()
 }
 
 pub(crate) fn timeout(p: &AiProfile) -> Duration {

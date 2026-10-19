@@ -139,7 +139,7 @@ pub fn parse_generate(v: &Value) -> AppResult<AiResponse> {
     })
 }
 
-pub async fn list_models(http: &reqwest::Client, p: &AiProfile, key: &str) -> AppResult<Vec<String>> {
+pub async fn list_models(http: &reqwest::Client, p: &AiProfile, key: &str) -> AppResult<Vec<super::ModelInfo>> {
     let resp = apply_headers(
         http.get(format!("{}/models?pageSize=1000", base_url(p)))
             .header("x-goog-api-key", key),
@@ -160,7 +160,9 @@ pub async fn list_models(http: &reqwest::Client, p: &AiProfile, key: &str) -> Ap
                         .as_array()
                         .is_none_or(|ms| ms.iter().any(|x| x == "generateContent"))
                 })
-                .filter_map(|m| m["name"].as_str().map(|n| n.trim_start_matches("models/").to_string()))
+                .filter_map(|m| {
+                    m["name"].as_str().map(|n| super::ModelInfo::new(n.trim_start_matches("models/"), m["displayName"].as_str().unwrap_or_default()))
+                })
                 .collect()
         })
         .unwrap_or_default())
