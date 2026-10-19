@@ -4,7 +4,7 @@ All notable changes to HighBazar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.3.0] – 2026-10-19
 
 Quality & maintenance pass: every integration was checked against the current Twitch, BetterTTV, FrankerFaceZ, 7TV and AI provider documentation and tested with Claude Code on a live channel.
 
