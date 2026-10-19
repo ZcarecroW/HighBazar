@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { Plus, Trash2, RefreshCw } from "@lucide/vue";
+import { Plus, Trash2, RefreshCw, ShieldCheck, Settings, Tag, Hammer, Bolt, Crown, Chat } from "../icons";
 import { useApp } from "../stores/app";
 import { modReason, pdesc, pname } from "../i18n";
 import { api, errorText } from "../lib/api";
@@ -33,6 +33,7 @@ const ro = computed(() => p.value.builtin);
 const isUsed = computed(() => app.activeChannel?.moderationProfileId === p.value.id);
 
 const sections = ["general", "categories", "escalation", "rules", "exemptions", "messages"] as const;
+const sectionIcons = { general: Settings, categories: Tag, escalation: Hammer, rules: Bolt, exemptions: Crown, messages: Chat };
 const section = ref<(typeof sections)[number]>("general");
 
 function duplicate(id = selectedId.value) {
@@ -97,7 +98,7 @@ function sourceLabel(source: string) {
   <div class="mx-auto max-w-[1500px] space-y-5 p-4 xl:p-6">
     <header class="flex flex-wrap items-end gap-4">
       <div class="min-w-0 flex-1">
-        <h1 class="text-xl font-bold">{{ t("moderation.title") }}</h1>
+        <h1 class="flex items-center gap-2 text-xl font-bold"><ShieldCheck :size="22" class="text-brand-500" /> {{ t("moderation.title") }}</h1>
         <p class="mt-1 text-sm text-muted">{{ t("moderation.intro") }}</p>
       </div>
       <UiSegmented
@@ -141,10 +142,11 @@ function sourceLabel(source: string) {
           <button
             v-for="s in sections"
             :key="s"
-            class="rounded-lg px-3 py-1.5 text-sm font-medium transition"
+            class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition"
             :class="section === s ? 'bg-brand-500 text-white' : 'text-muted hover:bg-panel-2 hover:text-fg'"
             @click="section = s"
           >
+            <component :is="sectionIcons[s]" :size="15" />
             {{ t(`moderation.sections.${s}`) }}
           </button>
         </div>

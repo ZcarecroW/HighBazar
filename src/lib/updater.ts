@@ -1,15 +1,17 @@
-import { ref } from "vue";
+import { markRaw, ref, shallowRef } from "vue";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 
-export const pendingUpdate = ref<Update | null>(null);
+// shallowRef + markRaw: the Update class uses private fields (#rid), which break
+// when Vue wraps the object in a reactive proxy ("Cannot read private member").
+export const pendingUpdate = shallowRef<Update | null>(null);
 export const updateProgress = ref<number | null>(null);
 export const updateInstalling = ref(false);
 
 /** Returns the update if one is available, null otherwise. */
 export async function checkForUpdate(): Promise<Update | null> {
   const u = await check({ timeout: 20000 });
-  pendingUpdate.value = u;
+  pendingUpdate.value = u ? markRaw(u) : null;
   return u;
 }
 

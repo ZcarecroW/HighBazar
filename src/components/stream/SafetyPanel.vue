@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { Plus, RefreshCw, Save, X } from "@lucide/vue";
+import { Plus, RefreshCw, Save, X, Shield } from "../../icons";
 import { useTwitch } from "../../lib/twitch";
 import UiToggle from "../ui/UiToggle.vue";
 
@@ -84,7 +84,7 @@ onMounted(load);
 <template>
   <section class="card-pad space-y-5">
     <div class="flex items-center gap-2">
-      <h2 class="section-title mb-0 flex-1">{{ t("stream.safety.title") }}</h2>
+      <h2 class="section-title mb-0 flex items-center gap-2 flex-1"><Shield :size="17" class="text-brand-500" /> {{ t("stream.safety.title") }}</h2>
       <button class="btn" :title="t('stream.reload')" @click="load"><RefreshCw :size="15" /></button>
     </div>
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { Loader2, RefreshCw, Save, Search, ShieldAlert, Radio } from "@lucide/vue";
+import { Loader2, RefreshCw, Save, Search, ShieldAlert, Radio, MonitorPlay } from "../icons";
 import { useTwitch, scopesFor } from "../lib/twitch";
 import type { ChannelLevel } from "../lib/types";
 import TwitchLogin from "../components/TwitchLogin.vue";
@@ -155,7 +155,7 @@ onMounted(load);
   <div class="mx-auto max-w-6xl space-y-5 p-4 xl:p-6">
     <header class="flex flex-wrap items-end gap-4">
       <div class="min-w-0 flex-1">
-        <h1 class="text-xl font-bold">{{ t("stream.title") }}</h1>
+        <h1 class="flex items-center gap-2 text-xl font-bold"><MonitorPlay :size="22" class="text-brand-500" /> {{ t("stream.title") }}</h1>
         <p class="text-sm text-muted">{{ t("stream.intro") }}</p>
       </div>
       <UiSegmented v-model="level" :label="t('stream.level')" :options="levelOptions" />
@@ -178,7 +178,7 @@ onMounted(load);
       <!-- Stream info (all levels) -->
       <section class="card-pad space-y-5">
         <div class="flex flex-wrap items-center gap-3">
-          <h2 class="section-title mb-0 flex-1">{{ t("stream.info") }}</h2>
+          <h2 class="section-title mb-0 flex flex-1 items-center gap-2"><MonitorPlay :size="17" class="text-brand-500" /> {{ t("stream.info") }}</h2>
           <span v-if="live" class="chip bg-red-500/15 text-red-600"><Radio :size="12" /> {{ t("stream.live", { n: live.viewer_count }) }}</span>
           <span v-else class="chip bg-panel-2 text-muted">{{ t("stream.offline") }}</span>
           <button class="btn" :disabled="loading" :title="t('stream.reload')" @click="load">

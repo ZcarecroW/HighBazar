@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import { Copy, Lock, Plus, Trash2, CircleCheck } from "@lucide/vue";
+import { Copy, Lock, Plus, Trash2, CircleCheck } from "../icons";
 import { pname } from "../i18n";
 
 interface Item {

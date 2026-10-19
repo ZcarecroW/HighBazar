@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Bot, Smile, Clock, Tag, Globe, Heart, Bell, Chat, Brain } from "../icons";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useApp } from "../stores/app";
@@ -28,6 +29,7 @@ const ro = computed(() => p.value.builtin);
 const isUsed = computed(() => app.activeChannel?.companionProfileId === p.value.id);
 
 const sections = ["personality", "timing", "content", "language", "emotes", "interactions", "commands", "research"] as const;
+const sectionIcons = { personality: Smile, timing: Clock, content: Tag, language: Globe, emotes: Heart, interactions: Bell, commands: Chat, research: Brain };
 const section = ref<(typeof sections)[number]>("personality");
 
 function duplicate(id = selectedId.value) {
@@ -73,7 +75,7 @@ const emoteLevels = computed(() => tm("companion.emoteLevels") as unknown as str
 <template>
   <div class="mx-auto max-w-[1500px] space-y-5 p-4 xl:p-6">
     <header>
-      <h1 class="text-xl font-bold">{{ t("companion.title") }}</h1>
+      <h1 class="flex items-center gap-2 text-xl font-bold"><Bot :size="22" class="text-brand-500" /> {{ t("companion.title") }}</h1>
       <p class="mt-1 text-sm text-muted">{{ t("companion.intro") }}</p>
     </header>
 
@@ -110,10 +112,11 @@ const emoteLevels = computed(() => tm("companion.emoteLevels") as unknown as str
           <button
             v-for="s in sections"
             :key="s"
-            class="rounded-lg px-3 py-1.5 text-sm font-medium transition"
+            class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition"
             :class="section === s ? 'bg-brand-500 text-white' : 'text-muted hover:bg-panel-2 hover:text-fg'"
             @click="section = s"
           >
+            <component :is="sectionIcons[s]" :size="15" />
             {{ t(`companion.sections.${s}`) }}
           </button>
         </div>

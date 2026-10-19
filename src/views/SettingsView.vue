@@ -2,7 +2,7 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { ExternalLink, FolderOpen, Loader2, RefreshCw, Sparkles, Trash2 } from "@lucide/vue";
+import { ExternalLink, FolderOpen, Loader2, RefreshCw, Sparkles, Trash2, Settings, Palette, Bolt, Key, Info } from "../icons";
 import { useApp } from "../stores/app";
 import { api, errorText } from "../lib/api";
 import { checkForUpdate } from "../lib/updater";
@@ -10,6 +10,7 @@ import UiToggle from "../components/ui/UiToggle.vue";
 import UiField from "../components/ui/UiField.vue";
 import UiNumber from "../components/ui/UiNumber.vue";
 import UiSegmented from "../components/ui/UiSegmented.vue";
+import ThemePicker from "../components/ThemePicker.vue";
 
 const app = useApp();
 const { t } = useI18n();
@@ -41,17 +42,21 @@ const repo = "https://github.com/ZcarecroW/HighBazar";
 
 <template>
   <div class="mx-auto max-w-4xl space-y-5 p-4 xl:p-6">
-    <h1 class="text-xl font-bold">{{ t("settings.title") }}</h1>
+    <h1 class="flex items-center gap-2 text-xl font-bold"><Settings :size="22" class="text-brand-500" /> {{ t("settings.title") }}</h1>
 
     <section class="card-pad space-y-5">
-      <h2 class="section-title mb-0">{{ t("settings.appearance") }}</h2>
+      <h2 class="section-title mb-0 flex items-center gap-2"><Palette :size="17" class="text-brand-500" /> {{ t("settings.appearance") }}</h2>
       <UiSegmented v-model="s.theme" :label="t('settings.theme')" :options="themeOptions" />
+      <div>
+        <span class="label">{{ t("settings.colorTheme") }}</span>
+        <ThemePicker v-model="s.colorTheme" />
+      </div>
       <UiSegmented v-model="s.language" :label="t('settings.language')" :options="langOptions" />
       <UiToggle v-model="s.showEmotes" :label="t('settings.showEmotes')" :hint="t('settings.showEmotesHint')" />
     </section>
 
     <section class="card-pad space-y-4">
-      <h2 class="section-title mb-0">{{ t("settings.startup") }}</h2>
+      <h2 class="section-title mb-0 flex items-center gap-2"><Bolt :size="17" class="text-brand-500" /> {{ t("settings.startup") }}</h2>
       <div class="flex flex-wrap items-center gap-4">
         <UiToggle v-model="s.checkUpdatesOnStart" :label="t('settings.checkUpdates')" class="flex-1" />
         <button class="btn" :disabled="checking" @click="checkNow">
@@ -67,7 +72,7 @@ const repo = "https://github.com/ZcarecroW/HighBazar";
     </section>
 
     <section class="card-pad space-y-4">
-      <h2 class="section-title mb-0">{{ t("settings.data") }}</h2>
+      <h2 class="section-title mb-0 flex items-center gap-2"><FolderOpen :size="17" class="text-brand-500" /> {{ t("settings.data") }}</h2>
       <div class="flex flex-wrap gap-2">
         <button class="btn" @click="api.openDataDir()"><FolderOpen :size="15" /> {{ t("settings.openData") }}</button>
         <button class="btn" @click="clearResearch"><Trash2 :size="15" /> {{ t("settings.clearResearch") }}</button>
@@ -80,7 +85,7 @@ const repo = "https://github.com/ZcarecroW/HighBazar";
     </section>
 
     <section class="card-pad space-y-4">
-      <h2 class="section-title mb-0">{{ t("settings.advanced") }}</h2>
+      <h2 class="section-title mb-0 flex items-center gap-2"><Key :size="17" class="text-brand-500" /> {{ t("settings.advanced") }}</h2>
       <UiField :label="t('settings.clientId')" :hint="t('settings.clientIdHint')">
         <input v-model="s.twitchClientId" class="input font-mono" spellcheck="false" autocomplete="off" />
       </UiField>
@@ -88,7 +93,7 @@ const repo = "https://github.com/ZcarecroW/HighBazar";
     </section>
 
     <section class="card-pad space-y-3">
-      <h2 class="section-title mb-0">{{ t("settings.about") }}</h2>
+      <h2 class="section-title mb-0 flex items-center gap-2"><Info :size="17" class="text-brand-500" /> {{ t("settings.about") }}</h2>
       <div class="flex items-center gap-3">
         <img src="/icon.png" class="h-12 w-12 rounded-xl" alt="" />
         <div>

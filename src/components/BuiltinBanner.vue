@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import { Lock } from "@lucide/vue";
+import { Lock } from "../icons";
 
 const emit = defineEmits<{ duplicate: [] }>();
 const { t } = useI18n();

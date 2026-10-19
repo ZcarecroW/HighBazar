@@ -42,6 +42,8 @@ impl Default for Config {
 pub struct AppSettings {
     /// "system" | "dark" | "light"
     pub theme: String,
+    /// Color theme id (see src/lib/themes.ts), each with a light and a dark variant.
+    pub color_theme: String,
     /// "auto" | "en" | "de"
     pub language: String,
     pub check_updates_on_start: bool,
@@ -62,6 +64,7 @@ impl Default for AppSettings {
     fn default() -> Self {
         Self {
             theme: "system".into(),
+            color_theme: "bazaar".into(),
             language: "auto".into(),
             check_updates_on_start: true,
             wizard_completed: false,

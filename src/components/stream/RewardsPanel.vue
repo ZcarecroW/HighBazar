@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { Plus, RefreshCw, Trash2, Lock } from "@lucide/vue";
+import { Plus, RefreshCw, Trash2, Lock, Gift } from "../../icons";
 import { useTwitch } from "../../lib/twitch";
 import UiToggle from "../ui/UiToggle.vue";
 import UiNumber from "../ui/UiNumber.vue";
@@ -78,7 +78,7 @@ onMounted(load);
 <template>
   <section class="card-pad space-y-4">
     <div class="flex items-center gap-2">
-      <h2 class="section-title mb-0 flex-1">{{ t("stream.rewards.title") }}</h2>
+      <h2 class="section-title mb-0 flex items-center gap-2 flex-1"><Gift :size="17" class="text-brand-500" /> {{ t("stream.rewards.title") }}</h2>
       <button class="btn" :title="t('stream.reload')" @click="load"><RefreshCw :size="15" /></button>
     </div>
     <p class="hint -mt-2">{{ t("stream.rewards.hint") }}</p>

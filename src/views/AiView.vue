@@ -3,7 +3,7 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { pdesc, pname } from "../i18n";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { CircleCheck, CircleAlert, ExternalLink, Loader2, Plus, Send, Trash2, TriangleAlert, Download, Search } from "@lucide/vue";
+import { CircleCheck, CircleAlert, ExternalLink, Loader2, Plus, Send, Trash2, TriangleAlert, Download, Search, Cpu, FlaskConical } from "../icons";
 import { useApp } from "../stores/app";
 import { api, errorText, newId } from "../lib/api";
 import type { AiProfile, AiTestResult, UsageStats } from "../lib/types";
@@ -137,7 +137,7 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
   <div class="mx-auto max-w-[1500px] space-y-5 p-4 xl:p-6">
     <header class="flex flex-wrap items-end gap-4">
       <div class="min-w-0 flex-1">
-        <h1 class="text-xl font-bold">{{ t("ai.title") }}</h1>
+        <h1 class="flex items-center gap-2 text-xl font-bold"><Cpu :size="22" class="text-brand-500" /> {{ t("ai.title") }}</h1>
         <p class="mt-1 text-sm text-muted">{{ t("ai.intro") }}</p>
       </div>
       <UiSegmented
@@ -264,7 +264,7 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
 
         <!-- Test (works for built-in profiles too) -->
         <section class="card-pad space-y-3">
-          <h2 class="section-title mb-0">{{ t("common.test") }}</h2>
+          <h2 class="section-title mb-0 flex items-center gap-2"><FlaskConical :size="17" class="text-brand-500" /> {{ t("common.test") }}</h2>
           <div class="flex gap-2">
             <input v-model="testPrompt" class="input" :placeholder="t('ai.testPrompt')" @keydown.enter="runTest" />
             <button class="btn-primary shrink-0" :disabled="testing" @click="runTest">

@@ -2,6 +2,8 @@
 // normal browser). Never included in production builds.
 import cfgJson from "./mock-config.json";
 import { mockEmit } from "./events";
+import { scopesFor } from "./twitch";
+import pkg from "../../package.json";
 import type { BotStatus, Config, FeedItem, ModLogEntry, PendingMessage, ProviderInfo } from "./types";
 
 const providers: ProviderInfo[] = [
@@ -26,6 +28,9 @@ const params = new URLSearchParams(location.search);
 config.settings.wizardCompleted = !params.has("wizard");
 if (params.get("theme") === "light" || params.get("theme") === "dark") config.settings.theme = params.get("theme") as "light" | "dark";
 if (params.get("lang") === "de" || params.get("lang") === "en") config.settings.language = params.get("lang") as "de" | "en";
+if (params.get("color")) config.settings.colorTheme = params.get("color")!;
+if (params.get("level")) config.settings.channelManagerLevel = params.get("level") as "simple" | "advanced" | "expert";
+config.accounts[0]!.scopes = scopesFor("expert");
 
 let running: { channelId: string; sandbox: boolean } | null = null;
 let seq = 0;
@@ -103,7 +108,7 @@ export async function mockInvoke(cmd: string, args: any): Promise<any> {
       return {
         config: JSON.parse(JSON.stringify(config)),
         providers,
-        version: "1.0.0",
+        version: pkg.version,
         secretsBackend: "os",
         dataDir: "C:\\Users\\you\\AppData\\Roaming\\io.github.zcarecrow.highbazar",
         clientIdConfigured: true,
@@ -137,9 +142,65 @@ export async function mockInvoke(cmd: string, args: any): Promise<any> {
       return running;
     case "get_modlog":
       return [];
+    case "get_emote_urls":
+      return {};
+    case "twitch_api":
+      return mockTwitch(args.method as string, args.path as string);
     case "get_usage":
       return { "2026-10-18": { [config.channels[0]!.id]: { calls: 312, inputTokens: 401233, outputTokens: 18321, costUsd: 0.184, messagesSent: 41, modActions: 2 } } };
     default:
       return null;
+  }
+}
+
+// Channel manager data for the browser preview.
+function mockTwitch(method: string, path: string): unknown {
+  if (method !== "GET") return null;
+  switch (path) {
+    case "/channels":
+      return {
+        data: [
+          {
+            title: "Elden Ring Nightreign — blind run with the Krähen",
+            game_id: "1",
+            game_name: "ELDEN RING NIGHTREIGN",
+            broadcaster_language: "de",
+            tags: ["Deutsch", "Soulslike", "Blind", "Community"],
+            content_classification_labels: ["ViolentGraphic"],
+            is_branded_content: false,
+          },
+        ],
+      };
+    case "/streams":
+      return { data: [{ viewer_count: 87, started_at: new Date(Date.now() - 5_400_000).toISOString() }] };
+    case "/content_classification_labels":
+      return {
+        data: [
+          { id: "ViolentGraphic", name: "Drastische Gewaltdarstellungen", description: "Realistische Gewalt, Blut, extreme Verletzungen." },
+          { id: "ProfanityVulgarity", name: "Obszöne und vulgäre Sprache", description: "Wiederholter Gebrauch von Schimpfwörtern." },
+        ],
+      };
+    case "/chat/settings":
+      return {
+        data: [
+          {
+            emote_mode: false,
+            follower_mode: true,
+            follower_mode_duration: 10,
+            slow_mode: false,
+            slow_mode_wait_time: 30,
+            subscriber_mode: false,
+            unique_chat_mode: true,
+            non_moderator_chat_delay: false,
+            non_moderator_chat_delay_duration: 2,
+          },
+        ],
+      };
+    case "/channels/followers":
+      return { data: [], total: 1284 };
+    case "/subscriptions":
+      return { data: [], total: 42, points: 47 };
+    default:
+      return { data: [] };
   }
 }

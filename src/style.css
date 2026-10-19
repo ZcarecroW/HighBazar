@@ -6,39 +6,145 @@
   --font-sans: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, "SF Pro Text", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "Cascadia Code", "SF Mono", Consolas, "Liberation Mono", monospace;
 
-  --color-brand-50: #f5f0ff;
-  --color-brand-100: #ebe0ff;
-  --color-brand-200: #d6c2ff;
-  --color-brand-300: #b893ff;
-  --color-brand-400: #a06bff;
-  --color-brand-500: #9146ff;
-  --color-brand-600: #7c3aed;
-  --color-brand-700: #6526d4;
-  --color-brand-800: #4f1fa6;
-  --color-brand-900: #3b1880;
-
   --color-amberish-400: #fbbf24;
   --color-amberish-500: #f59e0b;
 }
 
+/* Accent palette computed from the active theme's hue (--h) and chroma (--c). */
+@theme inline {
+  --color-brand-50: oklch(0.97 calc(var(--c) * 0.15) var(--h));
+  --color-brand-100: oklch(0.94 calc(var(--c) * 0.3) var(--h));
+  --color-brand-200: oklch(0.88 calc(var(--c) * 0.55) var(--h));
+  --color-brand-300: oklch(0.8 calc(var(--c) * 0.8) var(--h));
+  --color-brand-400: oklch(0.7 calc(var(--c) * 0.95) var(--h));
+  --color-brand-500: oklch(var(--bl, 0.57) var(--c) var(--h));
+  --color-brand-600: oklch(0.5 calc(var(--c) * 0.95) var(--h));
+  --color-brand-700: oklch(0.43 calc(var(--c) * 0.85) var(--h));
+  --color-brand-800: oklch(0.36 calc(var(--c) * 0.7) var(--h));
+  --color-brand-900: oklch(0.29 calc(var(--c) * 0.55) var(--h));
+}
+
+/*
+ * Themes: each sets the accent hue/chroma (--h, --c), the tint of the surfaces
+ * (--sh, --sc) and the hue of the icons' secondary color (--h2). Light and dark
+ * surfaces below are derived from these, so every theme has both variants.
+ */
+:root,
+[data-theme="bazaar"] {
+  --h: 293;
+  --c: 0.23;
+  --sh: 293;
+  --sc: 0.014;
+  --h2: 293;
+}
+[data-theme="midnight"] {
+  --h: 268;
+  --c: 0.18;
+  --sh: 262;
+  --sc: 0.02;
+  --h2: 230;
+}
+[data-theme="ocean"] {
+  /* green/cyan hues look lighter: darker accent keeps white text readable */
+  --bl: 0.53;
+  --h: 238;
+  --c: 0.15;
+  --sh: 230;
+  --sc: 0.016;
+  --h2: 200;
+}
+[data-theme="aurora"] {
+  /* green/cyan hues look lighter: darker accent keeps white text readable */
+  --bl: 0.52;
+  --h: 182;
+  --c: 0.12;
+  --sh: 200;
+  --sc: 0.014;
+  --h2: 150;
+}
+[data-theme="forest"] {
+  /* green/cyan hues look lighter: darker accent keeps white text readable */
+  --bl: 0.52;
+  --h: 152;
+  --c: 0.14;
+  --sh: 145;
+  --sc: 0.014;
+  --h2: 125;
+}
+[data-theme="gold"] {
+  --h: 72;
+  --c: 0.14;
+  --sh: 75;
+  --sc: 0.018;
+  --h2: 85;
+}
+[data-theme="sunset"] {
+  --h: 42;
+  --c: 0.18;
+  --sh: 40;
+  --sc: 0.016;
+  --h2: 70;
+}
+[data-theme="crimson"] {
+  --h: 22;
+  --c: 0.2;
+  --sh: 15;
+  --sc: 0.014;
+  --h2: 40;
+}
+[data-theme="sakura"] {
+  --h: 355;
+  --c: 0.16;
+  --sh: 350;
+  --sc: 0.016;
+  --h2: 320;
+}
+[data-theme="cyber"] {
+  --h: 328;
+  --c: 0.26;
+  --sh: 275;
+  --sc: 0.03;
+  --h2: 200;
+}
+
 /* Semantic surface tokens, switched by the .dark class. */
 :root {
-  --bg: #f6f5fa;
-  --panel: #ffffff;
-  --panel-2: #f1eff7;
-  --line: #e4e1ee;
-  --text: #1c1830;
-  --muted: #6b6684;
+  --bg: oklch(0.975 calc(var(--sc) * 0.8) var(--sh));
+  --panel: oklch(0.995 calc(var(--sc) * 0.25) var(--sh));
+  --panel-2: oklch(0.96 var(--sc) var(--sh));
+  --line: oklch(0.9 calc(var(--sc) * 1.4) var(--sh));
+  --text: oklch(0.22 calc(var(--sc) * 2.2) var(--sh));
+  --muted: oklch(0.52 calc(var(--sc) * 2) var(--sh));
+  --glow: oklch(0.7 var(--c) var(--h) / 0.1);
+  --nc-c2: oklch(0.6 calc(var(--c) * 0.95) var(--h2));
   color-scheme: light;
 }
 .dark {
-  --bg: #0f0e15;
-  --panel: #17151f;
-  --panel-2: #1f1c2a;
-  --line: #2c2839;
-  --text: #ece9f5;
-  --muted: #9a94b0;
+  --bg: oklch(0.155 calc(var(--sc) * 1.3) var(--sh));
+  --panel: oklch(0.195 calc(var(--sc) * 1.4) var(--sh));
+  --panel-2: oklch(0.23 calc(var(--sc) * 1.5) var(--sh));
+  --line: oklch(0.3 calc(var(--sc) * 1.6) var(--sh));
+  --text: oklch(0.94 calc(var(--sc) * 0.8) var(--sh));
+  --muted: oklch(0.7 calc(var(--sc) * 1.8) var(--sh));
+  --glow: oklch(0.6 var(--c) var(--h) / 0.13);
+  --nc-c2: oklch(0.74 calc(var(--c) * 0.9) var(--h2));
   color-scheme: dark;
+}
+
+/* Nucleo icons: two-tone, the secondary parts follow the theme. */
+.nc-icon {
+  display: inline-block;
+  flex-shrink: 0;
+}
+.nc-icon .nc-c2 {
+  color: var(--nc-c2);
+}
+/* On solid accent backgrounds both tones stay readable. */
+.bg-brand-500 .nc-icon .nc-c2,
+.btn-primary .nc-icon .nc-c2,
+.btn-danger .nc-icon .nc-c2 {
+  color: currentColor;
+  opacity: 0.75;
 }
 
 @utility bg-app {
@@ -68,7 +174,10 @@ body,
 
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    radial-gradient(900px 420px at 0% -10%, var(--glow), transparent 70%),
+    radial-gradient(700px 360px at 100% 110%, var(--glow), transparent 70%),
+    var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
   font-size: 14px;

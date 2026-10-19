@@ -14,7 +14,7 @@ import {
   CircleCheck,
   Info,
   MonitorPlay,
-} from "@lucide/vue";
+} from "./icons";
 import { useApp, type View } from "./stores/app";
 import { setLocale } from "./i18n";
 import { checkForUpdate } from "./lib/updater";
@@ -58,11 +58,12 @@ function applyTheme() {
   const pref = app.config?.settings.theme ?? "system";
   const dark = pref === "dark" || (pref === "system" && media.matches);
   document.documentElement.classList.toggle("dark", dark);
+  document.documentElement.dataset.theme = app.config?.settings.colorTheme || "bazaar";
 }
 media.addEventListener("change", applyTheme);
 applyTheme();
 
-watch(() => app.config?.settings.theme, applyTheme);
+watch(() => [app.config?.settings.theme, app.config?.settings.colorTheme], applyTheme);
 watch(() => app.config?.settings.language, (l) => setLocale(l ?? "auto"));
 
 onMounted(async () => {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { X } from "@lucide/vue";
+import { X } from "../../icons";
 
 withDefaults(defineProps<{ title?: string; width?: string; closable?: boolean }>(), { width: "max-w-lg", closable: true });
 const emit = defineEmits<{ close: [] }>();

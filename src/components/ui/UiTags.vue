@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { X } from "@lucide/vue";
+import { X } from "../../icons";
 
 defineProps<{ label?: string; hint?: string; placeholder?: string; disabled?: boolean }>();
 const model = defineModel<string[]>({ required: true });

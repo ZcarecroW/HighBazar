@@ -86,6 +86,11 @@ Change your stream right from HighBazar, in three levels (default: *Simple*):
 
 HighBazar only asks Twitch for the permissions of the level you pick; switching to a higher level asks you to approve the extra ones once.
 
+### 🎨 10 themes, light and dark
+Bazaar, Midnight, Ocean, Aurora, Forest, Gold, Sunset, Crimson, Sakura and Cyber — each in a light and a dark version (or following your system). All themes are checked for readable contrast (WCAG AA). Two-tone icons pick up the theme's colors.
+
+<img src="docs/screenshots/themes.png" alt="Theme picker" width="700" />
+
 ### 🧩 Profiles everywhere
 - **Channel profiles** (global profiles) — one per Twitch channel or setup, each with its own accounts, prefix, companion, moderation and AI profiles. Switch any time.
 - **Companion, moderation and AI profiles** — built-in presets are read-only and improve with updates; duplicate one and make it yours, or start from scratch.
@@ -106,6 +111,7 @@ HighBazar only asks Twitch for the permissions of the level you pick; switching 
 | ![Companion](docs/screenshots/companion.png) | ![Moderation](docs/screenshots/moderation.png) |
 | ![AI](docs/screenshots/ai.png) | ![Channels](docs/screenshots/channels.png) |
 | ![Light mode, German](docs/screenshots/dashboard-light.png) | ![Setup wizard](docs/screenshots/wizard.png) |
+| ![Stream & channel manager](docs/screenshots/stream.png) | ![Themes](docs/screenshots/themes.png) |
 
 </details>
 
@@ -277,3 +283,5 @@ Issues and pull requests are welcome! Please describe what you changed and run t
 ## License
 
 [MIT](LICENSE) © ZcarecroW. HighBazar is not affiliated with Twitch, Anthropic, OpenAI, Google or any other provider.
+
+Icons: [Nucleo](https://nucleoapp.com) — licensed to the author for use in HighBazar and **not** covered by the MIT license; they may not be extracted or reused as an icon set (src/icons/nucleo.ts).

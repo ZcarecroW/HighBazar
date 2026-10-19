@@ -2,7 +2,7 @@
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { Megaphone, Heart, Swords, Scissors, Bookmark, X } from "@lucide/vue";
+import { Megaphone, Heart, Swords, Scissors, Bookmark, X, Bolt } from "../../icons";
 import { useTwitch } from "../../lib/twitch";
 
 defineProps<{ live: boolean }>();
@@ -87,7 +87,7 @@ const marker = () =>
 
 <template>
   <section class="card-pad space-y-5">
-    <h2 class="section-title mb-0">{{ t("stream.actions.title") }}</h2>
+    <h2 class="section-title mb-0 flex items-center gap-2"><Bolt :size="17" class="text-brand-500" /> {{ t("stream.actions.title") }}</h2>
 
     <div>
       <span class="label">{{ t("stream.actions.announcement") }}</span>

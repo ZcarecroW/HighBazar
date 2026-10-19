@@ -70,6 +70,9 @@ Moderation kannst du ein **günstigeres Modell** wählen.
 
 HighBazar fragt bei Twitch nur die Berechtigungen der gewählten Stufe an; beim Wechsel auf eine höhere Stufe bestätigst du die zusätzlichen einmal.
 
+### 🎨 10 Themes, hell und dunkel
+Bazaar, Mitternacht, Ozean, Polarlicht, Wald, Gold, Abendrot, Karmesin, Sakura und Cyber – jeweils in einer hellen und einer dunklen Variante (oder automatisch wie das System). Alle Themes sind auf gut lesbare Kontraste geprüft (WCAG AA); die zweifarbigen Icons übernehmen die Farben des Themes.
+
 ### 🧩 Profile überall
 - **Kanalprofile** (globale Profile) – eins pro Twitch-Kanal oder Setup, jederzeit umschaltbar.
 - **Begleiter-, Moderations- und KI-Profile** – Vorlagen sind schreibgeschützt und werden mit Updates besser; duplizieren und anpassen oder neu anlegen.
@@ -156,3 +159,5 @@ npm run tauri dev
 ## Lizenz
 
 [MIT](LICENSE) © ZcarecroW. HighBazar steht in keiner Verbindung zu Twitch, Anthropic, OpenAI, Google oder anderen Anbietern.
+
+Icons: [Nucleo](https://nucleoapp.com) – für HighBazar lizenziert und **nicht** Teil der MIT-Lizenz; sie dürfen nicht herausgelöst oder als Icon-Set weiterverwendet werden (src/icons/nucleo.ts).

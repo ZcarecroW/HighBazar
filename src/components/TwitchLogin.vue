@@ -3,7 +3,7 @@ import { onBeforeUnmount, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { onEvent } from "../lib/events";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { ExternalLink, Loader2 } from "@lucide/vue";
+import { ExternalLink, Loader2 } from "../icons";
 import TwitchIcon from "./TwitchIcon.vue";
 import { api, errorText } from "../lib/api";
 import type { LoginEvent, LoginStart, TwitchAccount } from "../lib/types";

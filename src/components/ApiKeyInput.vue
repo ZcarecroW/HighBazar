@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { Eye, EyeOff, Trash2 } from "@lucide/vue";
+import { Eye, EyeOff, Trash2 } from "../icons";
 import { api, errorText } from "../lib/api";
 import { useApp } from "../stores/app";
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { Plus, RefreshCw, X, Undo2 } from "@lucide/vue";
+import { Plus, RefreshCw, X, Undo2, Users } from "../../icons";
 import { useTwitch } from "../../lib/twitch";
 import UiSegmented from "../ui/UiSegmented.vue";
 
@@ -84,7 +84,7 @@ onMounted(load);
 <template>
   <section class="card-pad space-y-4">
     <div class="flex flex-wrap items-center gap-2">
-      <h2 class="section-title mb-0 flex-1">{{ t("stream.community.title") }}</h2>
+      <h2 class="section-title mb-0 flex items-center gap-2 flex-1"><Users :size="17" class="text-brand-500" /> {{ t("stream.community.title") }}</h2>
       <button class="btn" :title="t('stream.reload')" @click="load"><RefreshCw :size="15" /></button>
     </div>
     <UiSegmented v-model="tab" :options="tabs" />

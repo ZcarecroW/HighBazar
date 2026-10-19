@@ -3,37 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n";
 import { modReason } from "../i18n";
 import EmoteText from "../components/EmoteText.vue";
-import {
-  Play,
-  Square,
-  FlaskConical,
-  MessageSquarePlus,
-  RefreshCw,
-  Wifi,
-  WifiOff,
-  Gamepad2,
-  Users,
-  Clock,
-  Coins,
-  Send,
-  Pencil,
-  X,
-  Trash2,
-  TimerReset,
-  Ban,
-  ShieldAlert,
-  Sparkles,
-  Bot,
-  Heart,
-  Gift,
-  Swords,
-  Star,
-  Brain,
-  Smile,
-  Activity,
-  CircleAlert,
-  Info,
-} from "@lucide/vue";
+import { Play, Square, FlaskConical, MessageSquarePlus, RefreshCw, Wifi, WifiOff, Gamepad2, Users, Clock, Coins, Send, Pencil, X, Trash2, TimerReset, Ban, ShieldAlert, Sparkles, Bot, Heart, Gift, Swords, Star, Brain, Smile, Activity, CircleAlert, Info, Bolt } from "../icons";
 import { useApp } from "../stores/app";
 import type { FeedItem, PendingMessage } from "../lib/types";
 import UiToggle from "../components/ui/UiToggle.vue";
@@ -379,7 +349,7 @@ function modEntry(item: FeedItem) {
 
         <!-- Quick controls -->
         <div v-if="channel" class="card-pad space-y-3">
-          <h3 class="section-title mb-1">{{ t("dashboard.quick") }}</h3>
+          <h3 class="section-title mb-1 flex items-center gap-2"><Bolt :size="16" class="text-brand-500" /> {{ t("dashboard.quick") }}</h3>
           <UiToggle v-model="channel.companionEnabled" :label="t('dashboard.companionOn')" />
           <UiToggle v-model="channel.moderationEnabled" :label="t('dashboard.moderationOn')" />
           <div>
@@ -394,7 +364,7 @@ function modEntry(item: FeedItem) {
 
         <!-- Pending -->
         <div v-if="app.pending.length" class="card-pad space-y-2">
-          <h3 class="section-title mb-1">{{ t("dashboard.pending") }} ({{ app.pending.length }})</h3>
+          <h3 class="section-title mb-1 flex items-center gap-2"><Send :size="16" class="text-brand-500" /> {{ t("dashboard.pending") }} ({{ app.pending.length }})</h3>
           <div v-for="p in app.pending" :key="p.id" class="rounded-lg border border-line bg-panel-2 p-2.5">
             <textarea v-if="editing === p.id" v-model="editText" rows="3" class="input mb-2" />
             <p v-else class="selectable mb-2 text-sm"><EmoteText :text="p.text" /></p>
@@ -417,7 +387,7 @@ function modEntry(item: FeedItem) {
 
         <!-- Simulator -->
         <div v-if="app.isRunning" class="card-pad space-y-2.5">
-          <h3 class="section-title mb-0">{{ t("dashboard.simulator") }}</h3>
+          <h3 class="section-title mb-0 flex items-center gap-2"><FlaskConical :size="16" class="text-brand-500" /> {{ t("dashboard.simulator") }}</h3>
           <p class="hint mt-0">{{ t("dashboard.simulatorHint") }}</p>
           <div class="grid grid-cols-2 gap-2">
             <input v-model="sim.user" class="input" :placeholder="t('dashboard.simUser')" />

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { Loader2, Save } from "@lucide/vue";
+import { Loader2, Save, Chat } from "../../icons";
 import { useTwitch } from "../../lib/twitch";
 import UiToggle from "../ui/UiToggle.vue";
 import UiNumber from "../ui/UiNumber.vue";
@@ -63,7 +63,7 @@ onMounted(load);
 
 <template>
   <section class="card-pad space-y-4">
-    <h2 class="section-title mb-0">{{ t("stream.chat.title") }}</h2>
+    <h2 class="section-title mb-0 flex items-center gap-2"><Chat :size="17" class="text-brand-500" /> {{ t("stream.chat.title") }}</h2>
     <p v-if="!s" class="text-sm text-muted">{{ t("common.loading") }}</p>
     <template v-else>
       <UiToggle v-model="s.emote_mode" :label="t('stream.chat.emoteOnly')" />

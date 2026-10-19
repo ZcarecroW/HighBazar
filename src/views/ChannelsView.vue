@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { CircleCheck, LogOut, TriangleAlert } from "@lucide/vue";
+import { CircleCheck, LogOut, TriangleAlert, Radio, Users, Bolt, Layers, Send } from "../icons";
 import { useApp } from "../stores/app";
 import { api, errorText, newId } from "../lib/api";
 import { pname } from "../i18n";
@@ -73,7 +73,7 @@ const bot = computed(() => app.account(ch.value?.botAccountId));
 <template>
   <div class="mx-auto max-w-[1500px] space-y-5 p-4 xl:p-6">
     <header>
-      <h1 class="text-xl font-bold">{{ t("channels.title") }}</h1>
+      <h1 class="flex items-center gap-2 text-xl font-bold"><Radio :size="22" class="text-brand-500" /> {{ t("channels.title") }}</h1>
       <p class="mt-1 max-w-3xl text-sm text-muted">{{ t("channels.intro") }}</p>
     </header>
 
@@ -102,7 +102,7 @@ const bot = computed(() => app.account(ch.value?.botAccountId));
 
         <!-- Accounts -->
         <section class="card-pad">
-          <h2 class="section-title">{{ t("channels.accounts") }}</h2>
+          <h2 class="section-title flex items-center gap-2"><Users :size="17" class="text-brand-500" /> {{ t("channels.accounts") }}</h2>
           <div class="grid gap-5 xl:grid-cols-2">
             <div>
               <span class="label">{{ t("channels.streamer") }}</span>
@@ -147,7 +147,7 @@ const bot = computed(() => app.account(ch.value?.botAccountId));
 
         <!-- Identity & features -->
         <section class="card-pad">
-          <h2 class="section-title">{{ t("channels.features") }}</h2>
+          <h2 class="section-title flex items-center gap-2"><Bolt :size="17" class="text-brand-500" /> {{ t("channels.features") }}</h2>
           <div class="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
             <UiField :label="t('channels.botName')" :hint="t('channels.botNameHint')">
               <input v-model="ch.botName" class="input" />
@@ -166,7 +166,7 @@ const bot = computed(() => app.account(ch.value?.botAccountId));
 
         <!-- Profiles -->
         <section class="card-pad">
-          <h2 class="section-title">{{ t("channels.profilesSection") }}</h2>
+          <h2 class="section-title flex items-center gap-2"><Layers :size="17" class="text-brand-500" /> {{ t("channels.profilesSection") }}</h2>
           <div class="grid gap-5 md:grid-cols-2">
             <UiField :label="t('channels.companionProfile')">
               <div class="flex gap-2">
@@ -205,7 +205,7 @@ const bot = computed(() => app.account(ch.value?.botAccountId));
 
         <!-- Behavior -->
         <section class="card-pad">
-          <h2 class="section-title">{{ t("channels.behavior") }}</h2>
+          <h2 class="section-title flex items-center gap-2"><Send :size="17" class="text-brand-500" /> {{ t("channels.behavior") }}</h2>
           <div class="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
             <UiField :label="t('channels.sendMode')">
               <select v-model="ch.sendMode" class="input">

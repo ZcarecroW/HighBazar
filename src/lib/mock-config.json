@@ -2,10 +2,11 @@
   "version": 1,
   "settings": {
     "theme": "system",
+    "colorTheme": "bazaar",
     "language": "auto",
     "checkUpdatesOnStart": true,
     "wizardCompleted": false,
-    "activeChannelId": "4f115df085fa",
+    "activeChannelId": "352843c44c3e",
     "startBotOnLaunch": false,
     "twitchClientId": "",
     "feedLimit": 400,
@@ -15,7 +16,7 @@
   "accounts": [],
   "channels": [
     {
-      "id": "4f115df085fa",
+      "id": "352843c44c3e",
       "name": "My channel",
       "streamerAccountId": null,
       "botAccountId": null,

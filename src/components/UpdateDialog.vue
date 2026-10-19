@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { Download, Loader2 } from "@lucide/vue";
+import { Download, Loader2 } from "../icons";
 import UiModal from "./ui/UiModal.vue";
 import { installUpdate, pendingUpdate, updateInstalling, updateProgress } from "../lib/updater";
 import { errorText } from "../lib/api";

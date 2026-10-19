@@ -14,6 +14,7 @@ export type ChannelLevel = "simple" | "advanced" | "expert";
 
 export interface AppSettings {
   theme: "system" | "dark" | "light";
+  colorTheme: string;
   language: "auto" | "en" | "de";
   checkUpdatesOnStart: boolean;
   wizardCompleted: boolean;

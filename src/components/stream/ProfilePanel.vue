@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { Save } from "@lucide/vue";
+import { Save, UserAdd } from "../../icons";
 import { useTwitch } from "../../lib/twitch";
 
 const { t } = useI18n();
@@ -63,7 +63,7 @@ onMounted(load);
 
 <template>
   <section class="card-pad space-y-4">
-    <h2 class="section-title mb-0">{{ t("stream.profile.title") }}</h2>
+    <h2 class="section-title mb-0 flex items-center gap-2"><UserAdd :size="17" class="text-brand-500" /> {{ t("stream.profile.title") }}</h2>
     <div v-if="user" class="flex items-center gap-3">
       <img :src="user.profile_image_url" class="h-12 w-12 rounded-full" alt="" />
       <div>

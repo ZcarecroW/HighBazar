@@ -4,6 +4,22 @@ All notable changes to HighBazar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] – 2026-10-19
+
+Tested with Claude Code (update download, contrast of all themes in both modes, icons in every view and the setup wizard). Windows build.
+
+> **Please install this version manually once:** versions 1.0.0–1.1.0 show the update dialog but fail with "Cannot read private member…" when installing. 1.2.0 fixes this, so later updates install from inside the app again.
+
+### Fixed
+- In-app updates failed with "Cannot read private member from an object whose class did not declare it" (the update object was wrapped in a reactive proxy).
+
+### Added
+- **10 color themes** — Bazaar, Midnight, Ocean, Aurora, Forest, Gold, Sunset, Crimson, Sakura and Cyber — each with a light and a dark version (Settings → Appearance and in the setup wizard). Contrast checked against WCAG AA.
+- **Nucleo icons** throughout the app: two-tone icons whose second color follows the theme, plus icons for page titles, section headings, companion/moderation tabs and the setup wizard steps.
+
+### Changed
+- Lucide icons removed; README screenshots show the new themes and the channel manager.
+
 ## [1.1.0] – 2026-10-19
 
 Tested with Claude Code on a live channel (all read calls, reversible write tests for title/tags, chat settings, blocked terms and chat color, emote images from every source). Windows build.

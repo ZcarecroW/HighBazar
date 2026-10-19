@@ -2,7 +2,7 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { ArrowLeft, ArrowRight, Check, CircleCheck, ExternalLink, FlaskConical, Loader2, Play, Send, TriangleAlert } from "@lucide/vue";
+import { ArrowLeft, ArrowRight, Bot, Check, CircleCheck, Cpu, ExternalLink, FlaskConical, Loader2, MonitorPlay, Play, Send, ShieldCheck, Smile, Sparkles, TriangleAlert, Trophy } from "../icons";
 import { useApp } from "../stores/app";
 import { api, errorText } from "../lib/api";
 import { pdesc, pname } from "../i18n";
@@ -10,6 +10,7 @@ import TwitchLogin from "../components/TwitchLogin.vue";
 import ApiKeyInput from "../components/ApiKeyInput.vue";
 import UiToggle from "../components/ui/UiToggle.vue";
 import UiSegmented from "../components/ui/UiSegmented.vue";
+import ThemePicker from "../components/ThemePicker.vue";
 
 const app = useApp();
 const { t } = useI18n();
@@ -19,6 +20,7 @@ const ch = computed(() => app.activeChannel!);
 const steps = ["welcome", "twitch", "bot", "ai", "companion", "moderation", "done"] as const;
 const idx = ref(0);
 const step = computed(() => steps[idx.value]!);
+const stepIcons = { welcome: Sparkles, twitch: MonitorPlay, bot: Bot, ai: Cpu, companion: Smile, moderation: ShieldCheck, done: Trophy };
 
 function next() {
   if (idx.value < steps.length - 1) idx.value++;
@@ -87,8 +89,19 @@ const recommendedModAi = "builtin-ai-claude-haiku";
         </header>
 
         <!-- Progress -->
-        <div class="flex gap-1 px-6 pt-4">
-          <div v-for="(s, i) in steps" :key="s" class="h-1 flex-1 rounded-full" :class="i <= idx ? 'bg-brand-500' : 'bg-panel-2'" />
+        <div class="flex items-center gap-1.5 px-6 pt-4">
+          <template v-for="(s, i) in steps" :key="s">
+            <button
+              type="button"
+              class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition"
+              :class="i < idx ? 'bg-brand-500/15 text-brand-600 dark:text-brand-300' : i === idx ? 'bg-brand-500 text-white shadow-sm' : 'bg-panel-2 text-muted'"
+              :title="t(`wizard.steps.${s}`)"
+              @click="idx = i"
+            >
+              <component :is="stepIcons[s]" :size="14" />
+            </button>
+            <div v-if="i < steps.length - 1" class="h-0.5 flex-1 rounded-full" :class="i < idx ? 'bg-brand-500' : 'bg-panel-2'" />
+          </template>
         </div>
 
         <!-- Body -->
@@ -98,6 +111,10 @@ const recommendedModAi = "builtin-ai-claude-haiku";
             <p class="text-[15px] leading-relaxed">{{ t("wizard.welcomeText") }}</p>
             <UiSegmented v-model="cfg.settings.language" :label="t('settings.language')" :options="langOptions" />
             <UiSegmented v-model="cfg.settings.theme" :label="t('settings.theme')" :options="themeOptions" />
+            <div>
+              <span class="label">{{ t("settings.colorTheme") }}</span>
+              <ThemePicker v-model="cfg.settings.colorTheme" />
+            </div>
           </div>
 
           <!-- Twitch -->

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { Clapperboard, Plus, RefreshCw, Trash2, AlarmClockOff } from "@lucide/vue";
+import { Clapperboard, Plus, RefreshCw, Trash2, AlarmClockOff, Calendar } from "../../icons";
 import { useTwitch } from "../../lib/twitch";
 import UiToggle from "../ui/UiToggle.vue";
 import UiNumber from "../ui/UiNumber.vue";
@@ -90,7 +90,7 @@ onMounted(load);
 <template>
   <section class="card-pad space-y-5">
     <div class="flex items-center gap-2">
-      <h2 class="section-title mb-0 flex-1">{{ t("stream.ads.title") }}</h2>
+      <h2 class="section-title mb-0 flex items-center gap-2 flex-1"><Calendar :size="17" class="text-brand-500" /> {{ t("stream.ads.title") }}</h2>
       <button class="btn" :title="t('stream.reload')" @click="load"><RefreshCw :size="15" /></button>
     </div>
 

@@ -1,7 +1,7 @@
 {
   "name": "highbazar",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "HighBazar – an AI companion and moderation bot for Twitch chat",
   "license": "MIT",
   "type": "module",
@@ -13,7 +13,6 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@lucide/vue": "^1.59.0",
     "@tauri-apps/api": "^2.12.4",
     "@tauri-apps/plugin-opener": "^2.7.2",
     "@tauri-apps/plugin-process": "^2.4.0",
