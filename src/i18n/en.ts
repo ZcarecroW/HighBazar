@@ -338,7 +338,7 @@ export default {
     blockedTerms: "Blocked terms",
     blockedTermsHint: "One per entry, * as wildcard. Leetspeak (h4te) is detected.",
     scamPhrases: "Known spam phrases",
-    scamPhrasesHint: "Built-in list of typical viewer-bot and gift-card spam (“cheap viewers”, “free followers”, “free nitro” …). Works without AI.",
+    scamPhrasesHint: "Built-in list of typical viewer-bot and gift-card spam (“cheap viewers”, “free followers”, “free nitro” …). Acts without AI and without context, so viewers joking about bots are hit too — off by default. With AI moderation these messages are checked in context anyway.",
     links: "Links",
     linkModes: { allow: "Allow", block: "Block (except allowed domains)" },
     allowedDomains: "Allowed domains",

@@ -671,7 +671,9 @@ impl Default for LocalRules {
         Self {
             blocked_terms: Vec::new(),
             blocked_terms_action: ModAction::new("delete", 0),
-            scam_phrases_enabled: true,
+            // Off by default: viewers also quote these phrases to mock bots.
+            // With AI moderation they are checked in context instead.
+            scam_phrases_enabled: false,
             scam_phrases_action: ModAction::new("delete", 0),
             links: "allow".into(),
             allowed_domains: vec![

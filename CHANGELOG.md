@@ -4,7 +4,9 @@ All notable changes to HighBazar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.0.1] – 2026-10-19
+
+Bug-fix release after an end-to-end test of the whole app with Claude Code (live Twitch login and chat, AI replies via the Claude Code CLI, moderation, test mode, settings and setup wizard). Windows build; macOS and Linux follow once the CI builds run again.
 
 ### Fixed
 - Twitch login failed with "Unexpected device code response" (the device-code answer was parsed in the wrong field case).
@@ -16,7 +18,7 @@ All notable changes to HighBazar are documented here. The format follows
 - "Next message" countdown now shows the offline pause right away.
 
 ### Added
-- Built-in "known spam phrases" rule (viewer-bot and gift-card spam such as "cheap viewers", "free followers", "free nitro") that works without AI; on by default.
+- Built-in "known spam phrases" rule (viewer-bot and gift-card spam such as "cheap viewers", "free followers", "free nitro") that works without AI. Off by default, because viewers also quote these phrases to joke about bots; with AI moderation such messages are checked in context.
 - The Claude Code CLI bridge also finds the CLI bundled with the Claude desktop app and explains how to log it in.
 
 ### Changed

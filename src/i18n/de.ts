@@ -340,7 +340,7 @@ const de: typeof en = {
     blockedTerms: "Gesperrte Begriffe",
     blockedTermsHint: "Ein Begriff pro Eintrag, * als Platzhalter. Leetspeak (h4ss) wird erkannt.",
     scamPhrases: "Bekannte Spam-Phrasen",
-    scamPhrasesHint: "Eingebaute Liste typischer Viewer-Bot- und Gutschein-Spams („cheap viewers“, „free followers“, „free nitro“ …). Funktioniert ohne KI.",
+    scamPhrasesHint: "Eingebaute Liste typischer Viewer-Bot- und Gutschein-Spams („cheap viewers“, „free followers“, „free nitro“ …). Greift ohne KI und ohne Kontext, trifft also auch Zuschauer, die sich über Bots lustig machen – deshalb standardmäßig aus. Mit KI-Moderation werden solche Nachrichten ohnehin im Kontext geprüft.",
     links: "Links",
     linkModes: { allow: "Erlauben", block: "Blockieren (außer erlaubte Domains)" },
     allowedDomains: "Erlaubte Domains",

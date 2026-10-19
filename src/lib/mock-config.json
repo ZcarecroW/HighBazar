@@ -5,7 +5,7 @@
     "language": "auto",
     "checkUpdatesOnStart": true,
     "wizardCompleted": false,
-    "activeChannelId": "a9c5f113250d",
+    "activeChannelId": "150c8eee87ac",
     "startBotOnLaunch": false,
     "twitchClientId": "",
     "feedLimit": 400
@@ -13,7 +13,7 @@
   "accounts": [],
   "channels": [
     {
-      "id": "a9c5f113250d",
+      "id": "150c8eee87ac",
       "name": "My channel",
       "streamerAccountId": null,
       "botAccountId": null,
@@ -928,7 +928,7 @@
           "kind": "delete",
           "durationSecs": 0
         },
-        "scamPhrasesEnabled": true,
+        "scamPhrasesEnabled": false,
         "scamPhrasesAction": {
           "kind": "delete",
           "durationSecs": 0
@@ -1119,7 +1119,7 @@
           "kind": "delete",
           "durationSecs": 0
         },
-        "scamPhrasesEnabled": true,
+        "scamPhrasesEnabled": false,
         "scamPhrasesAction": {
           "kind": "delete",
           "durationSecs": 0
@@ -1314,7 +1314,7 @@
           "kind": "delete",
           "durationSecs": 0
         },
-        "scamPhrasesEnabled": true,
+        "scamPhrasesEnabled": false,
         "scamPhrasesAction": {
           "kind": "timeout",
           "durationSecs": 600
@@ -1509,7 +1509,7 @@
           "kind": "delete",
           "durationSecs": 0
         },
-        "scamPhrasesEnabled": true,
+        "scamPhrasesEnabled": false,
         "scamPhrasesAction": {
           "kind": "delete",
           "durationSecs": 0
@@ -1704,7 +1704,7 @@
           "kind": "delete",
           "durationSecs": 0
         },
-        "scamPhrasesEnabled": true,
+        "scamPhrasesEnabled": false,
         "scamPhrasesAction": {
           "kind": "delete",
           "durationSecs": 0

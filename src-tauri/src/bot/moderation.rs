@@ -397,7 +397,9 @@ mod tests {
 
     #[test]
     fn scam_phrases_without_ai() {
-        let p = ModerationProfile::default();
+        let mut p = ModerationProfile::default();
+        assert!(!p.rules.scam_phrases_enabled, "off by default");
+        p.rules.scam_phrases_enabled = true;
         let mut s = RuleState::default();
         let f = s.check(&p, &msg("Cheap VIEWERS on streamboo .com"), 0).unwrap();
         assert_eq!(f.source, "rule:scam");
