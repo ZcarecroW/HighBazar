@@ -52,6 +52,10 @@ pub struct AppSettings {
     pub twitch_client_id: String,
     /// Maximum number of entries kept in the live feed.
     pub feed_limit: u32,
+    /// Show Twitch/BTTV/FFZ/7TV emotes as images in the feed.
+    pub show_emotes: bool,
+    /// Scope of the channel manager: "simple" | "advanced" | "expert".
+    pub channel_manager_level: String,
 }
 
 impl Default for AppSettings {
@@ -65,6 +69,8 @@ impl Default for AppSettings {
             start_bot_on_launch: false,
             twitch_client_id: String::new(),
             feed_limit: 400,
+            show_emotes: true,
+            channel_manager_level: "simple".into(),
         }
     }
 }

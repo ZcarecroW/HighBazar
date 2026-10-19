@@ -95,6 +95,8 @@ pub fn run() {
             commands::get_modlog,
             commands::get_usage,
             commands::clear_research_cache,
+            commands::get_emote_urls,
+            commands::twitch_api,
             commands::open_data_dir,
         ])
         .run(tauri::generate_context!())

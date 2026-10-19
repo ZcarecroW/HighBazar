@@ -78,6 +78,14 @@ Every provider is configured through **AI profiles** (model, reasoning effort, m
 prices, extra headers…). Load the model list from the provider, test the connection, see tokens and costs.
 You can use a **different, cheaper model for moderation**.
 
+### 🎛️ Stream & channel manager
+Change your stream right from HighBazar, in three levels (default: *Simple*):
+- **Simple** — title, category (search with box art), language and tags.
+- **Advanced** — plus content classification labels and branded content, chat settings (emote-only, followers-only, slow mode, subs-only, unique chat, chat delay), announcements, shoutouts, raids, clips and stream markers.
+- **Expert** — everything Twitch allows: polls and predictions, channel point rewards, mods, VIPs and bans, Twitch AutoMod levels, shield mode and blocked terms, ads (run / snooze), stream schedule, channel description and chat color, follower/sub numbers.
+
+HighBazar only asks Twitch for the permissions of the level you pick; switching to a higher level asks you to approve the extra ones once.
+
 ### 🧩 Profiles everywhere
 - **Channel profiles** (global profiles) — one per Twitch channel or setup, each with its own accounts, prefix, companion, moderation and AI profiles. Switch any time.
 - **Companion, moderation and AI profiles** — built-in presets are read-only and improve with updates; duplicate one and make it yours, or start from scratch.
@@ -85,7 +93,7 @@ You can use a **different, cheaper model for moderation**.
 ### ✨ And also
 - **Setup wizard** on first start (skippable, can be reopened any time).
 - **Test mode + chat simulator** — try everything without sending anything to Twitch.
-- **Live feed** with chat, bot messages, events and moderation; delete / timeout / ban with one click.
+- **Live feed** with chat, bot messages, events and moderation; delete / timeout / ban with one click. Twitch, BetterTTV, FrankerFaceZ and 7TV **emotes are shown as images** (can be switched off).
 - **System, Dark and Light** themes, **English and German** UI, responsive layout optimized for 1920×1080.
 - **Automatic updates** from GitHub Releases (check on start, configurable).
 - **Lightweight**: native Rust core and the system's own webview instead of Electron; small installers.

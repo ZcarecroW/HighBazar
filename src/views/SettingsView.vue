@@ -47,6 +47,7 @@ const repo = "https://github.com/ZcarecroW/HighBazar";
       <h2 class="section-title mb-0">{{ t("settings.appearance") }}</h2>
       <UiSegmented v-model="s.theme" :label="t('settings.theme')" :options="themeOptions" />
       <UiSegmented v-model="s.language" :label="t('settings.language')" :options="langOptions" />
+      <UiToggle v-model="s.showEmotes" :label="t('settings.showEmotes')" :hint="t('settings.showEmotesHint')" />
     </section>
 
     <section class="card-pad space-y-4">

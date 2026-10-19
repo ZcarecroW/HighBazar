@@ -33,6 +33,8 @@ pub struct ChatMessage {
     pub message_type: String,
     pub emote_count: u32,
     pub emotes: Vec<String>,
+    /// Native Twitch emotes in this message: (name, emote id).
+    pub twitch_emotes: Vec<(String, String)>,
     pub bits: u32,
     pub mentions: Vec<String>,
     /// Unix millis.
@@ -329,11 +331,15 @@ pub fn parse_chat(e: &Value) -> ChatMessage {
         .unwrap_or_default();
     let has = |id: &str| badges.iter().any(|b| b == id);
     let mut emotes = Vec::new();
+    let mut twitch_emotes = Vec::new();
     let mut mentions = Vec::new();
     if let Some(frags) = e["message"]["fragments"].as_array() {
         for f in frags {
             match f["type"].as_str() {
-                Some("emote") => emotes.push(s(&f["text"])),
+                Some("emote") => {
+                    emotes.push(s(&f["text"]));
+                    twitch_emotes.push((s(&f["text"]), s(&f["emote"]["id"])));
+                }
                 Some("mention") => mentions.push(s(&f["mention"]["user_login"])),
                 _ => {}
             }
@@ -357,6 +363,7 @@ pub fn parse_chat(e: &Value) -> ChatMessage {
         message_type: s(&e["message_type"]),
         emote_count: emotes.len() as u32,
         emotes,
+        twitch_emotes,
         bits: e["cheer"]["bits"].as_u64().unwrap_or(0) as u32,
         mentions,
         ts: chrono::Utc::now().timestamp_millis(),
@@ -386,6 +393,7 @@ mod tests {
         assert_eq!(m.login, "bob");
         assert!(m.is_mod && m.is_sub && !m.is_vip);
         assert_eq!(m.emotes, vec!["Kappa"]);
+        assert_eq!(m.twitch_emotes, vec![("Kappa".to_string(), "25".to_string())]);
         assert_eq!(m.mentions, vec!["alice"]);
         assert_eq!(m.role_rank(), 3);
     }

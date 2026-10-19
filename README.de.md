@@ -62,13 +62,21 @@ Anthropic Claude · OpenAI · Google Gemini · OpenRouter · Mistral · Groq · 
 Tokens, Temperatur, Timeout, Preise, Header …) – inkl. Modell-Liste laden, Verbindungstest und Kostenanzeige. Für die
 Moderation kannst du ein **günstigeres Modell** wählen.
 
+### 🎛️ Stream & Kanal verwalten
+Ändere deinen Stream direkt in HighBazar, in drei Stufen (Standard: *Einfach*):
+- **Einfach** – Titel, Kategorie (Suche mit Cover), Sprache und Tags.
+- **Erweitert** – zusätzlich Inhaltskennzeichnungen und Markeninhalte, Chat-Einstellungen (Nur Emotes, Nur Follower, langsamer Modus, Nur Abos, einzigartiger Chat, Chat-Verzögerung), Ankündigungen, Shoutouts, Raids, Clips und Stream-Marker.
+- **Experte** – alles, was Twitch erlaubt: Umfragen und Vorhersagen, Kanalpunkte-Belohnungen, Mods, VIPs und Sperren, Twitch-AutoMod, Schild-Modus und gesperrte Begriffe, Werbung (starten/verschieben), Zeitplan, Kanalbeschreibung und Chat-Farbe, Follower- und Abo-Zahlen.
+
+HighBazar fragt bei Twitch nur die Berechtigungen der gewählten Stufe an; beim Wechsel auf eine höhere Stufe bestätigst du die zusätzlichen einmal.
+
 ### 🧩 Profile überall
 - **Kanalprofile** (globale Profile) – eins pro Twitch-Kanal oder Setup, jederzeit umschaltbar.
 - **Begleiter-, Moderations- und KI-Profile** – Vorlagen sind schreibgeschützt und werden mit Updates besser; duplizieren und anpassen oder neu anlegen.
 
 ### ✨ Außerdem
 Einrichtungsassistent (überspringbar, jederzeit wieder aufrufbar) · Testmodus mit Chat-Simulator · Live-Feed mit
-Löschen/Timeout/Bann per Klick · Designs System/Dunkel/Hell · Deutsch & Englisch · für 1920×1080 optimiert und
+Löschen/Timeout/Bann per Klick · Emotes von Twitch, BTTV, FFZ und 7TV als Bilder (abschaltbar) · Designs System/Dunkel/Hell · Deutsch & Englisch · für 1920×1080 optimiert und
 responsiv · automatische Updates über GitHub · schlanker Rust-Kern statt Electron.
 
 ## Installation

@@ -10,6 +10,8 @@ export interface Config {
   aiProfiles: AiProfile[];
 }
 
+export type ChannelLevel = "simple" | "advanced" | "expert";
+
 export interface AppSettings {
   theme: "system" | "dark" | "light";
   language: "auto" | "en" | "de";
@@ -19,6 +21,8 @@ export interface AppSettings {
   startBotOnLaunch: boolean;
   twitchClientId: string;
   feedLimit: number;
+  showEmotes: boolean;
+  channelManagerLevel: ChannelLevel;
 }
 
 export interface TwitchAccount {

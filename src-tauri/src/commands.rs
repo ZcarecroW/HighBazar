@@ -18,7 +18,7 @@ use crate::error::{AppError, AppResult};
 use crate::secrets::ai_key_name;
 use crate::state::AppState;
 use crate::storage;
-use crate::twitch::auth::{self, BOT_SCOPES, PollResult, STREAMER_SCOPES};
+use crate::twitch::auth::{self, BOT_SCOPES, PollResult};
 
 type St<'a> = State<'a, Arc<AppState>>;
 
@@ -170,13 +170,14 @@ struct LoginEvent {
 }
 
 #[tauri::command]
-pub async fn twitch_login_start(app: AppHandle, st: St<'_>, kind: String) -> AppResult<LoginStart> {
+pub async fn twitch_login_start(app: AppHandle, st: St<'_>, kind: String, level: Option<String>) -> AppResult<LoginStart> {
     let client_id = st.config.read().twitch_client_id();
     if client_id.is_empty() {
         return Err(AppError::msg("No Twitch Client ID configured. Enter one under Settings → Advanced."));
     }
-    let scopes: &'static [&'static str] = if kind == "bot" { BOT_SCOPES } else { STREAMER_SCOPES };
-    let dc = auth::start_device_flow(&st.http, &client_id, scopes).await?;
+    let level = level.unwrap_or_else(|| st.config.read().settings.channel_manager_level.clone());
+    let scopes: Vec<&'static str> = if kind == "bot" { BOT_SCOPES.to_vec() } else { auth::streamer_scopes(&level) };
+    let dc = auth::start_device_flow(&st.http, &client_id, &scopes).await?;
     let login_id = new_id();
     let cancelled = Arc::new(AtomicBool::new(false));
     st.logins.lock().insert(login_id.clone(), cancelled.clone());
@@ -204,7 +205,7 @@ pub async fn twitch_login_start(app: AppHandle, st: St<'_>, kind: String) -> App
                 emit("expired", None, String::new());
                 break;
             }
-            match auth::poll_device_token(&state.http, &client_id, scopes, &device_code).await {
+            match auth::poll_device_token(&state.http, &client_id, &scopes, &device_code).await {
                 Ok(PollResult::Pending) => {}
                 Ok(PollResult::SlowDown) => interval += 2,
                 Ok(PollResult::Done(tokens)) => {
@@ -370,6 +371,93 @@ pub fn get_modlog(st: St<'_>, channel_id: String, limit: Option<usize>) -> AppRe
 pub fn get_usage(st: St<'_>) -> BTreeMap<String, BTreeMap<String, UsageStats>> {
     let u = st.usage.lock();
     u.days.iter().rev().take(31).map(|(k, v)| (k.clone(), v.clone())).collect()
+}
+
+#[tauri::command]
+pub fn get_emote_urls(st: St<'_>) -> HashMap<String, String> {
+    (**st.emote_urls.read()).clone()
+}
+
+// ---------------------------------------------------------------------------
+// Channel manager: allow-listed Helix calls with a connected account's token
+// ---------------------------------------------------------------------------
+
+const CHANNEL_API: &[(&str, &str)] = &[
+    ("GET", "/users"),
+    ("PUT", "/users"),
+    ("GET", "/channels"),
+    ("PATCH", "/channels"),
+    ("GET", "/streams"),
+    ("GET", "/search/categories"),
+    ("GET", "/games"),
+    ("GET", "/content_classification_labels"),
+    ("POST", "/streams/markers"),
+    ("GET", "/chat/settings"),
+    ("PATCH", "/chat/settings"),
+    ("POST", "/chat/announcements"),
+    ("POST", "/chat/shoutouts"),
+    ("GET", "/chat/color"),
+    ("PUT", "/chat/color"),
+    ("POST", "/raids"),
+    ("DELETE", "/raids"),
+    ("POST", "/clips"),
+    ("GET", "/polls"),
+    ("POST", "/polls"),
+    ("PATCH", "/polls"),
+    ("GET", "/predictions"),
+    ("POST", "/predictions"),
+    ("PATCH", "/predictions"),
+    ("GET", "/channel_points/custom_rewards"),
+    ("POST", "/channel_points/custom_rewards"),
+    ("PATCH", "/channel_points/custom_rewards"),
+    ("DELETE", "/channel_points/custom_rewards"),
+    ("GET", "/moderation/moderators"),
+    ("POST", "/moderation/moderators"),
+    ("DELETE", "/moderation/moderators"),
+    ("GET", "/channels/vips"),
+    ("POST", "/channels/vips"),
+    ("DELETE", "/channels/vips"),
+    ("GET", "/moderation/automod/settings"),
+    ("PUT", "/moderation/automod/settings"),
+    ("GET", "/moderation/blocked_terms"),
+    ("POST", "/moderation/blocked_terms"),
+    ("DELETE", "/moderation/blocked_terms"),
+    ("GET", "/moderation/shield_mode"),
+    ("PUT", "/moderation/shield_mode"),
+    ("GET", "/moderation/banned"),
+    ("DELETE", "/moderation/bans"),
+    ("POST", "/channels/commercial"),
+    ("GET", "/channels/ads"),
+    ("POST", "/channels/ads/schedule/snooze"),
+    ("GET", "/schedule"),
+    ("POST", "/schedule/segment"),
+    ("DELETE", "/schedule/segment"),
+    ("PATCH", "/schedule/settings"),
+    ("GET", "/channels/followers"),
+    ("GET", "/subscriptions"),
+    ("GET", "/channels/editors"),
+];
+
+#[tauri::command]
+pub async fn twitch_api(
+    st: St<'_>,
+    account_id: String,
+    method: String,
+    path: String,
+    query: Option<Vec<(String, String)>>,
+    body: Option<Value>,
+) -> AppResult<Value> {
+    let method = method.to_uppercase();
+    if !CHANNEL_API.iter().any(|(m, p)| *m == method && *p == path) {
+        return Err(AppError::msg(format!("Twitch API call not allowed: {method} {path}")));
+    }
+    if st.config.read().account(&account_id).is_none() {
+        return Err(AppError::msg("Unknown Twitch account — connect it first."));
+    }
+    let m = reqwest::Method::from_bytes(method.as_bytes()).map_err(|e| AppError::msg(e.to_string()))?;
+    let query = query.unwrap_or_default();
+    let q: Vec<(&str, &str)> = query.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
+    st.helix().raw(m, &path, &account_id, &q, body).await
 }
 
 #[tauri::command]

@@ -17,7 +17,7 @@ import type {
   ProviderInfo,
 } from "../lib/types";
 
-export type View = "dashboard" | "channels" | "companion" | "moderation" | "ai" | "settings";
+export type View = "dashboard" | "stream" | "channels" | "companion" | "moderation" | "ai" | "settings";
 
 export interface Toast {
   id: number;
@@ -45,6 +45,8 @@ export const useApp = defineStore("app", () => {
   const feed = shallowRef<FeedItem[]>([]);
   const pending = ref<PendingMessage[]>([]);
   const modEntries = ref<Map<string, ModLogEntry>>(new Map());
+  /** Emote name → image URL of the channel the bot loaded (Twitch, BTTV, FFZ, 7TV). */
+  const emoteUrls = shallowRef<Record<string, string>>({});
   const toasts = ref<Toast[]>([]);
   const saving = ref(false);
 
@@ -80,6 +82,7 @@ export const useApp = defineStore("app", () => {
       applyBootstrap(await api.bootstrap());
       // The bot outlives a reload of the window.
       running.value = await api.botRunning().catch(() => null);
+      emoteUrls.value = await api.emoteUrls().catch(() => ({}));
       ready.value = true;
       if (!config.value!.settings.wizardCompleted) wizardOpen.value = true;
       if (import.meta.env.DEV) {
@@ -243,6 +246,7 @@ export const useApp = defineStore("app", () => {
       else if (!running.value) running.value = { channelId: p.channelId, sandbox: p.sandbox };
     });
     await onEvent<PendingMessage[]>("hb:pending", (p) => (pending.value = p));
+    await onEvent<Record<string, string>>("hb:emotes", (p) => (emoteUrls.value = p));
     await onEvent<ModLogEntry>("hb:modlog", (p) => {
       const m = new Map(modEntries.value);
       m.set(p.id, p);
@@ -269,6 +273,7 @@ export const useApp = defineStore("app", () => {
     feed,
     pending,
     modEntries,
+    emoteUrls,
     toasts,
     saving,
     settings,

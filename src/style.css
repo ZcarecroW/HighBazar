@@ -131,3 +131,12 @@ select,
     animation: none !important;
   }
 }
+
+/* Twitch/BTTV/FFZ/7TV emotes inline in chat text */
+.emote {
+  display: inline-block;
+  height: 1.75em;
+  width: auto;
+  margin: -0.4em 0.05em;
+  vertical-align: middle;
+}

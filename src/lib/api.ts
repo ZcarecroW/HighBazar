@@ -26,7 +26,7 @@ export const api = {
   aiTest: (profile: AiProfile, prompt?: string) => invoke<AiTestResult>("ai_test", { profile, prompt }),
   aiListModels: (profile: AiProfile) => invoke<string[]>("ai_list_models", { profile }),
   detectClaudeCli: (path?: string) => invoke<string | null>("detect_claude_cli", { path }),
-  twitchLoginStart: (kind: "streamer" | "bot") => invoke<LoginStart>("twitch_login_start", { kind }),
+  twitchLoginStart: (kind: "streamer" | "bot", level?: string) => invoke<LoginStart>("twitch_login_start", { kind, level }),
   twitchLoginCancel: (loginId: string) => invoke<void>("twitch_login_cancel", { loginId }),
   twitchRemoveAccount: (id: string) => invoke<Config>("twitch_remove_account", { id }),
   botStart: (channelId: string, sandbox: boolean) => invoke<void>("bot_start", { channelId, sandbox }),
@@ -37,6 +37,9 @@ export const api = {
   usage: () => invoke<Record<string, Record<string, UsageStats>>>("get_usage"),
   clearResearchCache: () => invoke<void>("clear_research_cache"),
   openDataDir: () => invoke<void>("open_data_dir"),
+  emoteUrls: () => invoke<Record<string, string>>("get_emote_urls"),
+  twitchApi: <T = any>(accountId: string, method: string, path: string, query?: [string, string][], body?: unknown) =>
+    invoke<T>("twitch_api", { accountId, method, path, query, body }),
 };
 
 export function errorText(e: unknown): string {

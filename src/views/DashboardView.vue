@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { modReason } from "../i18n";
+import EmoteText from "../components/EmoteText.vue";
 import {
   Play,
   Square,
@@ -269,8 +270,8 @@ function modEntry(item: FeedItem) {
             <div v-if="item.kind === 'chat'" class="min-w-0 flex-1 break-words">
               <span v-for="b in item.badges" :key="b" class="mr-0.5 text-[11px]">{{ badgeLabel[b] ?? "" }}</span>
               <span class="font-semibold" :style="{ color: nameColor(item) }">{{ item.user }}</span><span class="text-muted">: </span>
-              <span>{{ item.text }}</span>
-              <span v-if="item.meta?.firstMsg" class="chip ml-1 bg-emerald-500/15 text-emerald-600">new</span>
+              <span><EmoteText :text="item.text" :emotes="item.meta?.emotes" /></span>
+              <span v-if="item.meta?.firstMsg" class="chip ml-1 bg-emerald-500/15 text-emerald-600">{{ t("dashboard.newChatter") }}</span>
               <span v-if="item.meta?.bits" class="chip ml-1 bg-purple-500/15 text-purple-600">{{ item.meta.bits }} bits</span>
               <span v-if="app.isRunning && item.userId" class="absolute top-0.5 right-1 hidden gap-0.5 rounded-md border border-line bg-panel p-0.5 shadow-sm group-hover:flex">
                 <button class="rounded p-1 text-muted hover:text-fg" :title="t('dashboard.deleteMsg')" @click="manual(item, 'delete')"><Trash2 :size="13" /></button>
@@ -283,7 +284,7 @@ function modEntry(item: FeedItem) {
             <div v-else-if="item.kind === 'bot'" class="min-w-0 flex-1 break-words">
               <Bot :size="13" class="mr-1 inline text-brand-500" />
               <span class="font-semibold text-brand-600 dark:text-brand-300">{{ item.user || "HighBazar" }}</span><span class="text-muted">: </span>
-              <span>{{ item.text }}</span>
+              <span><EmoteText :text="item.text" /></span>
               <span v-if="item.meta?.reason" class="chip ml-1 bg-brand-500/12 text-brand-600 dark:text-brand-300">{{ t(`dashboard.reasons.${item.meta.reason}`) }}</span>
             </div>
 
@@ -396,7 +397,7 @@ function modEntry(item: FeedItem) {
           <h3 class="section-title mb-1">{{ t("dashboard.pending") }} ({{ app.pending.length }})</h3>
           <div v-for="p in app.pending" :key="p.id" class="rounded-lg border border-line bg-panel-2 p-2.5">
             <textarea v-if="editing === p.id" v-model="editText" rows="3" class="input mb-2" />
-            <p v-else class="selectable mb-2 text-sm">{{ p.text }}</p>
+            <p v-else class="selectable mb-2 text-sm"><EmoteText :text="p.text" /></p>
             <div class="flex flex-wrap items-center gap-1.5">
               <span class="chip bg-brand-500/12 text-brand-600 dark:text-brand-300">{{ t(`dashboard.reasons.${p.reason}`) }}</span>
               <span class="text-xs text-muted">{{ pendingIn(p) !== null ? t("dashboard.sendsIn", { s: pendingIn(p) }) : t("dashboard.needsApproval") }}</span>

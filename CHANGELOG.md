@@ -4,6 +4,21 @@ All notable changes to HighBazar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] – 2026-10-19
+
+Tested with Claude Code on a live channel (all read calls, reversible write tests for title/tags, chat settings, blocked terms and chat color, emote images from every source). Windows build.
+
+### Added
+- **Stream & channel manager** (new "Stream" page) in three levels, default *Simple*:
+  - *Simple*: title, category search with box art, language, tags.
+  - *Advanced*: content classification labels, branded content, chat settings, announcements, shoutouts, raids (with cancel), clips, stream markers.
+  - *Expert*: polls, predictions, channel point rewards, mods, VIPs, banned users (unban), Twitch AutoMod (overall or per category), shield mode, Twitch blocked terms, ads (run/snooze), stream schedule, channel description, chat color, follower/sub/editor overview.
+  - Only the permissions of the chosen level are requested; a banner offers to grant missing ones.
+- **Emotes as images** in the live feed and pending messages (Twitch, BetterTTV, FrankerFaceZ, 7TV; also sub emotes from other channels). On by default, switch off under Settings → Appearance.
+
+### Changed
+- New Twitch logins also request `channel:manage:broadcast` (needed for the Simple level).
+
 ## [1.0.1] – 2026-10-19
 
 Bug-fix release after an end-to-end test of the whole app with Claude Code (live Twitch login and chat, AI replies via the Claude Code CLI, moderation, test mode, settings and setup wizard). Windows build; macOS and Linux follow once the CI builds run again.

@@ -75,6 +75,7 @@ pub struct DropReason {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Emote {
+    pub id: String,
     pub name: String,
 }
 
@@ -259,18 +260,30 @@ impl Helix {
         Ok(())
     }
 
-    pub async fn global_emotes(&self, as_user: &str) -> AppResult<Vec<String>> {
+    pub async fn global_emotes(&self, as_user: &str) -> AppResult<Vec<Emote>> {
         let r: Option<DataList<Emote>> = self
             .request(Method::GET, "/chat/emotes/global", as_user, &[], None)
             .await?;
-        Ok(r.map(|d| d.data.into_iter().map(|e| e.name).collect()).unwrap_or_default())
+        Ok(r.map(|d| d.data).unwrap_or_default())
     }
 
-    pub async fn channel_emotes(&self, as_user: &str, broadcaster_id: &str) -> AppResult<Vec<String>> {
+    pub async fn channel_emotes(&self, as_user: &str, broadcaster_id: &str) -> AppResult<Vec<Emote>> {
         let r: Option<DataList<Emote>> = self
             .request(Method::GET, "/chat/emotes", as_user, &[("broadcaster_id", broadcaster_id)], None)
             .await?;
-        Ok(r.map(|d| d.data.into_iter().map(|e| e.name).collect()).unwrap_or_default())
+        Ok(r.map(|d| d.data).unwrap_or_default())
+    }
+
+    /// Generic Helix call for the channel manager (path must be allow-listed by the caller).
+    pub async fn raw(
+        &self,
+        method: Method,
+        path: &str,
+        as_user: &str,
+        query: &[(&str, &str)],
+        body: Option<Value>,
+    ) -> AppResult<Value> {
+        Ok(self.request::<Value>(method, path, as_user, query, body).await?.unwrap_or(Value::Null))
     }
 }
 

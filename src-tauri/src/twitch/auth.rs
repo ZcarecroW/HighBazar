@@ -20,6 +20,49 @@ pub const STREAMER_SCOPES: &[&str] = &[
 
 pub const BOT_SCOPES: &[&str] = &["user:write:chat"];
 
+/// Extra scopes of the channel manager, per level (each level adds to the previous).
+pub const CHANNEL_SIMPLE_SCOPES: &[&str] = &["channel:manage:broadcast"];
+pub const CHANNEL_ADVANCED_SCOPES: &[&str] = &[
+    "moderator:manage:chat_settings",
+    "moderator:manage:announcements",
+    "moderator:manage:shoutouts",
+    "channel:manage:raids",
+    "clips:edit",
+];
+pub const CHANNEL_EXPERT_SCOPES: &[&str] = &[
+    "channel:manage:polls",
+    "channel:manage:predictions",
+    "channel:manage:redemptions",
+    "channel:manage:moderators",
+    "channel:manage:vips",
+    "moderator:manage:automod_settings",
+    "moderator:manage:blocked_terms",
+    "moderator:manage:shield_mode",
+    "moderation:read",
+    "channel:edit:commercial",
+    "channel:read:ads",
+    "channel:manage:ads",
+    "channel:manage:schedule",
+    "channel:read:subscriptions",
+    "channel:read:editors",
+    "user:edit",
+    "user:manage:chat_color",
+];
+
+/// Scopes for a streamer login with the channel manager at `level`
+/// ("simple" | "advanced" | "expert").
+pub fn streamer_scopes(level: &str) -> Vec<&'static str> {
+    let mut s: Vec<&'static str> = STREAMER_SCOPES.to_vec();
+    s.extend(CHANNEL_SIMPLE_SCOPES);
+    if matches!(level, "advanced" | "expert") {
+        s.extend(CHANNEL_ADVANCED_SCOPES);
+    }
+    if level == "expert" {
+        s.extend(CHANNEL_EXPERT_SCOPES);
+    }
+    s
+}
+
 /// Twitch's answer to `POST /oauth2/device` (snake_case on the wire).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeviceCode {

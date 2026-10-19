@@ -384,7 +384,10 @@ impl Session {
         }
         let cat = emotes::fetch(&self.st.helix(), &self.broadcaster_id).await;
         let n = cat.total();
+        let urls = Arc::new(cat.urls.clone());
         *self.emotes.write() = cat;
+        *self.st.emote_urls.write() = urls.clone();
+        let _ = self.app.emit(super::EVT_EMOTES, &*urls);
         log::info!("loaded {n} emotes");
         self.emit_status();
     }
@@ -565,7 +568,13 @@ impl Session {
         item.message_id = m.id.clone();
         item.color = m.color.clone();
         item.badges = m.badges.clone();
-        item.meta = json!({ "bits": m.bits, "firstMsg": m.message_type == "user_intro" });
+        // Native emotes can come from any channel (subs), so they are sent per message.
+        let emote_urls: serde_json::Map<String, serde_json::Value> = m
+            .twitch_emotes
+            .iter()
+            .map(|(name, id)| (name.clone(), json!(emotes::twitch_emote_url(id))))
+            .collect();
+        item.meta = json!({ "bits": m.bits, "firstMsg": m.message_type == "user_intro", "emotes": emote_urls });
         self.feed(item);
 
         if other_bot {

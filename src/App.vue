@@ -13,11 +13,13 @@ import {
   CircleAlert,
   CircleCheck,
   Info,
+  MonitorPlay,
 } from "@lucide/vue";
 import { useApp, type View } from "./stores/app";
 import { setLocale } from "./i18n";
 import { checkForUpdate } from "./lib/updater";
 import DashboardView from "./views/DashboardView.vue";
+import StreamView from "./views/StreamView.vue";
 import ChannelsView from "./views/ChannelsView.vue";
 import CompanionView from "./views/CompanionView.vue";
 import ModerationView from "./views/ModerationView.vue";
@@ -31,6 +33,7 @@ const { t } = useI18n();
 
 const nav: { id: View; icon: any }[] = [
   { id: "dashboard", icon: LayoutDashboard },
+  { id: "stream", icon: MonitorPlay },
   { id: "channels", icon: Radio },
   { id: "companion", icon: Bot },
   { id: "moderation", icon: ShieldCheck },
@@ -40,6 +43,7 @@ const nav: { id: View; icon: any }[] = [
 
 const views = {
   dashboard: DashboardView,
+  stream: StreamView,
   channels: ChannelsView,
   companion: CompanionView,
   moderation: ModerationView,

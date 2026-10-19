@@ -10,7 +10,7 @@ import type { LoginEvent, LoginStart, TwitchAccount } from "../lib/types";
 import { useApp } from "../stores/app";
 import UiModal from "./ui/UiModal.vue";
 
-const props = defineProps<{ kind: "streamer" | "bot"; label?: string; primary?: boolean }>();
+const props = defineProps<{ kind: "streamer" | "bot"; label?: string; primary?: boolean; level?: string }>();
 const emit = defineEmits<{ connected: [account: TwitchAccount] }>();
 const { t } = useI18n();
 const app = useApp();
@@ -39,7 +39,7 @@ async function start() {
         message.value = payload.error;
       }
     });
-    flow.value = await api.twitchLoginStart(props.kind);
+    flow.value = await api.twitchLoginStart(props.kind, props.level);
     await openUrl(flow.value.verificationUri);
   } catch (e) {
     app.toast(errorText(e), "error", 7000);

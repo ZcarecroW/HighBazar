@@ -22,6 +22,8 @@ pub struct AppState {
     pub usage: parking_lot::Mutex<crate::bot::usage::UsageBook>,
     /// Device-code logins in progress (id → cancelled flag).
     pub logins: parking_lot::Mutex<std::collections::HashMap<String, Arc<std::sync::atomic::AtomicBool>>>,
+    /// Emote name → image URL of the channel the bot last loaded (for the UI).
+    pub emote_urls: RwLock<Arc<std::collections::HashMap<String, String>>>,
 }
 
 impl AppState {
@@ -47,6 +49,7 @@ impl AppState {
             tokens,
             bot: BotManager::default(),
             logins: Default::default(),
+            emote_urls: Default::default(),
         }
     }
 

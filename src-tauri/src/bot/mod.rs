@@ -22,6 +22,7 @@ pub const EVT_FEED: &str = "hb:feed";
 pub const EVT_STATUS: &str = "hb:status";
 pub const EVT_PENDING: &str = "hb:pending";
 pub const EVT_MODLOG: &str = "hb:modlog";
+pub const EVT_EMOTES: &str = "hb:emotes";
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]

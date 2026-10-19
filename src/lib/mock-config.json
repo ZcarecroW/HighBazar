@@ -5,15 +5,17 @@
     "language": "auto",
     "checkUpdatesOnStart": true,
     "wizardCompleted": false,
-    "activeChannelId": "150c8eee87ac",
+    "activeChannelId": "4f115df085fa",
     "startBotOnLaunch": false,
     "twitchClientId": "",
-    "feedLimit": 400
+    "feedLimit": 400,
+    "showEmotes": true,
+    "channelManagerLevel": "simple"
   },
   "accounts": [],
   "channels": [
     {
-      "id": "150c8eee87ac",
+      "id": "4f115df085fa",
       "name": "My channel",
       "streamerAccountId": null,
       "botAccountId": null,
