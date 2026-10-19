@@ -2,7 +2,7 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { ArrowLeft, ArrowRight, Bot, Check, CircleCheck, Cpu, ExternalLink, FlaskConical, Loader2, MonitorPlay, Play, Send, ShieldCheck, Smile, Sparkles, TriangleAlert, Trophy } from "../icons";
+import { ArrowLeft, ArrowRight, Bot, Check, CircleCheck, Cpu, ExternalLink, FlaskConical, Loader2, MonitorPlay, Play, Send, ShieldCheck, Smile, Sparkles, TriangleAlert, Trophy, Languages } from "../icons";
 import { useApp } from "../stores/app";
 import { api, errorText } from "../lib/api";
 import { pdesc, pname } from "../i18n";
@@ -11,6 +11,7 @@ import ApiKeyInput from "../components/ApiKeyInput.vue";
 import UiToggle from "../components/ui/UiToggle.vue";
 import UiSegmented from "../components/ui/UiSegmented.vue";
 import ThemePicker from "../components/ThemePicker.vue";
+import LanguagePicker from "../components/LanguagePicker.vue";
 
 const app = useApp();
 const { t } = useI18n();
@@ -251,6 +252,11 @@ const recommendedModAi = "builtin-ai-claude-haiku";
                 <option v-for="a in cfg.aiProfiles" :key="a.id" :value="a.id">{{ a.name }}{{ a.id === recommendedModAi ? " ★" : "" }}{{ app.hasKey(a) ? "" : " ⚠" }}</option>
               </select>
               <p class="hint">{{ t("wizard.modAiHint") }}</p>
+            </div>
+            <div v-if="ch.translation" class="rounded-xl bg-panel-2 p-4">
+              <span class="label flex items-center gap-1.5"><Languages :size="14" class="text-brand-500" /> {{ t("translation.languages") }}</span>
+              <p class="hint mb-2.5">{{ t("translation.wizardHint") }}</p>
+              <LanguagePicker v-model="ch.translation.languages" />
             </div>
           </div>
 

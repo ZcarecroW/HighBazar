@@ -4,6 +4,16 @@ All notable changes to HighBazar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Translation of foreign-language chat** (Channels → *Languages & translation*, also in the setup wizard):
+  - Set the languages you understand; the first one is the translation target. Until they are set, nothing is translated and the dashboard shows a hint.
+  - Messages in other languages show their translation right below them in the live feed (only in the app).
+  - Language detection runs locally (script, language-specific letters, common words and statistics), so only foreign messages cost AI tokens. When AI moderation checks the message anyway, the translation comes in the same call.
+  - Rule violations in another language are moderated as usual and get a **note with the translation and what is really meant** (slang, coded insults). The note appears in the live feed and the moderation log, and Twitch moderators see it as the timeout or ban reason. A plain deletion becomes a 1-second timeout so the note reaches the mods (can be switched off).
+  - With "AI check: suspicious only", foreign messages always get the AI check, because the suspicious-word list only knows German and English.
+
 ## [1.3.0] – 2026-10-19
 
 Quality & maintenance pass: every integration was checked against the current Twitch, BetterTTV, FrankerFaceZ, 7TV and AI provider documentation and tested with Claude Code on a live channel.

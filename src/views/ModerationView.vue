@@ -8,6 +8,7 @@ import { api, errorText } from "../lib/api";
 import type { ModLogEntry, ModerationProfile } from "../lib/types";
 import ProfileList from "../components/ProfileList.vue";
 import BuiltinBanner from "../components/BuiltinBanner.vue";
+import ModNote from "../components/ModNote.vue";
 import ActionPicker from "../components/ActionPicker.vue";
 import UiToggle from "../components/ui/UiToggle.vue";
 import UiField from "../components/ui/UiField.vue";
@@ -315,6 +316,7 @@ function sourceLabel(source: string) {
                   {{ t(`moderation.categories.${e.category}`) }} · {{ t(`moderation.log.verdicts.${e.verdict}`) }}<template v-if="e.source === 'ai'"> · {{ Math.round(e.confidence * 100) }}%</template>
                   <template v-if="e.reason"> — {{ modReason(e.reason) }}</template>
                 </div>
+                <ModNote :entry="e" :note-on-delete="app.activeChannel?.translation?.noteOnDelete ?? true" />
                 <div v-if="e.error" class="text-xs text-red-500">{{ e.error }}</div>
               </td>
               <td class="px-2 py-2.5 whitespace-nowrap">

@@ -122,6 +122,7 @@ pub struct ChannelProfile {
     pub about_stream: String,
     /// 0 = unlimited.
     pub daily_budget_usd: f64,
+    pub translation: TranslationSettings,
 }
 
 impl Default for ChannelProfile {
@@ -144,7 +145,37 @@ impl Default for ChannelProfile {
             preview_delay_secs: 10,
             about_stream: String::new(),
             daily_budget_usd: 2.0,
+            translation: TranslationSettings::default(),
         }
+    }
+}
+
+/// Translation of chat messages the streamer doesn't understand.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct TranslationSettings {
+    pub enabled: bool,
+    /// Languages the streamer understands (ISO 639-1); the first one is the
+    /// translation target. Empty = not set up yet, nothing is translated.
+    pub languages: Vec<String>,
+    /// Deleting a translated message becomes a 1-second timeout, so the
+    /// translation reaches the moderators as the timeout reason.
+    pub note_on_delete: bool,
+}
+
+impl Default for TranslationSettings {
+    fn default() -> Self {
+        Self { enabled: true, languages: Vec::new(), note_on_delete: true }
+    }
+}
+
+impl TranslationSettings {
+    pub fn active(&self) -> bool {
+        self.enabled && !self.languages.is_empty()
+    }
+
+    pub fn target(&self) -> &str {
+        self.languages.first().map(String::as_str).unwrap_or("en")
     }
 }
 

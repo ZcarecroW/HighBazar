@@ -6,6 +6,7 @@ pub mod moderation;
 pub mod output;
 pub mod prompt;
 pub mod research;
+pub mod translate;
 pub mod usage;
 
 use std::sync::Arc;
@@ -23,6 +24,7 @@ pub const EVT_STATUS: &str = "hb:status";
 pub const EVT_PENDING: &str = "hb:pending";
 pub const EVT_MODLOG: &str = "hb:modlog";
 pub const EVT_EMOTES: &str = "hb:emotes";
+pub const EVT_TRANSLATION: &str = "hb:translation";
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]

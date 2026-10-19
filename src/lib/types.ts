@@ -52,6 +52,19 @@ export interface ChannelProfile {
   previewDelaySecs: number;
   aboutStream: string;
   dailyBudgetUsd: number;
+  translation: TranslationSettings;
+}
+
+export interface TranslationSettings {
+  enabled: boolean;
+  /** Languages the streamer understands (ISO 639-1); the first is the translation target. */
+  languages: string[];
+  noteOnDelete: boolean;
+}
+
+export interface ChatTranslation {
+  lang: string;
+  text: string;
 }
 
 export interface ContentMix {
@@ -321,6 +334,9 @@ export interface ModLogEntry {
   action: ModAction;
   status: string;
   error: string;
+  sourceLang?: string;
+  translation?: string;
+  meaning?: string;
 }
 
 export interface UsageStats {

@@ -61,6 +61,7 @@ The bot writes with **your streamer account** by default (marked with a configur
 - **Escalation** for repeat offenders, **exemptions** (mods, VIPs, subs, specific users), channel rules in plain language, strictness slider, confidence threshold.
 - **Modes**: off · watch & log · suggest actions (one click to apply) · act automatically. Full **moderation log with undo**.
 - Built-in profiles: **Balanced** (default – acts only on clear cases), Relaxed, Family Friendly, Suggest Only, Watch & Log.
+- **Translation of foreign-language chat**: set the languages you understand, and messages in any other language are translated right below them in the live feed. If such a message breaks the rules, moderation acts as usual and adds a **note with the translation and what is really meant** (slang, coded insults). Your mods see it as the timeout or ban reason on Twitch. Language detection runs locally, so only foreign messages cost AI tokens.
 
 ### 🧠 AI providers
 | Provider | Notes |

@@ -3,7 +3,8 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n";
 import { modReason } from "../i18n";
 import EmoteText from "../components/EmoteText.vue";
-import { Play, Square, FlaskConical, MessageSquarePlus, RefreshCw, Wifi, WifiOff, Gamepad2, Users, Clock, Coins, Send, Pencil, X, Trash2, TimerReset, Ban, ShieldAlert, Sparkles, Bot, Heart, Gift, Swords, Star, Brain, Smile, Activity, CircleAlert, Info, Bolt, Pin } from "../icons";
+import { Play, Square, FlaskConical, MessageSquarePlus, RefreshCw, Wifi, WifiOff, Gamepad2, Users, Clock, Coins, Send, Pencil, X, Trash2, TimerReset, Ban, ShieldAlert, Sparkles, Bot, Heart, Gift, Swords, Star, Brain, Smile, Activity, CircleAlert, Info, Bolt, Pin, Languages } from "../icons";
+import ModNote from "../components/ModNote.vue";
 import { useTwitch } from "../lib/twitch";
 import { useApp } from "../stores/app";
 import type { FeedItem, PendingMessage } from "../lib/types";
@@ -227,6 +228,10 @@ function modEntry(item: FeedItem) {
       <CircleAlert :size="16" class="text-amber-500" /> {{ t("dashboard.noAi") }}
       <button class="btn ml-auto" @click="app.view = 'channels'">{{ t("nav.channels") }}</button>
     </div>
+    <div v-if="channel?.translation?.enabled && !channel.translation.languages.length && !app.isRunning" class="flex items-center gap-2 rounded-xl border border-line bg-panel-2 px-4 py-2 text-sm">
+      <Languages :size="16" class="text-brand-500" /> {{ t("translation.dashboardHint") }}
+      <button class="btn ml-auto" @click="app.view = 'channels'">{{ t("nav.channels") }}</button>
+    </div>
 
     <!-- Body -->
     <div class="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_340px] 2xl:grid-cols-[minmax(0,1fr)_400px]">
@@ -276,6 +281,10 @@ function modEntry(item: FeedItem) {
               <span v-if="item.meta?.firstMsg" class="chip ml-1 bg-emerald-500/15 text-emerald-600">{{ t("dashboard.newChatter") }}</span>
               <span v-if="item.meta?.shared" class="chip ml-1 bg-sky-500/15 text-sky-600 dark:text-sky-300">{{ t("dashboard.sharedChat") }}</span>
               <span v-if="item.meta?.bits" class="chip ml-1 bg-purple-500/15 text-purple-600">{{ item.meta.bits }} bits</span>
+              <div v-if="app.translations.get(item.messageId)" class="mt-0.5 flex items-start gap-1 text-xs text-muted">
+                <Languages :size="12" class="mt-px shrink-0 text-brand-500" />
+                <span><span class="font-medium">{{ app.translations.get(item.messageId)!.lang }}:</span> <EmoteText :text="app.translations.get(item.messageId)!.text" :emotes="item.meta?.emotes" /></span>
+              </div>
               <span v-if="app.isRunning && item.userId" class="absolute top-0.5 right-1 hidden gap-0.5 rounded-md border border-line bg-panel p-0.5 shadow-sm group-hover:flex">
                 <button v-if="canPin(item)" class="rounded p-1 text-muted hover:text-brand-500" :title="t('dashboard.pin')" @click="pin(item)"><Pin :size="13" /></button>
                 <button class="rounded p-1 text-muted hover:text-fg" :title="t('dashboard.deleteMsg')" @click="manual(item, 'delete')"><Trash2 :size="13" /></button>
@@ -305,6 +314,7 @@ function modEntry(item: FeedItem) {
                 <span class="text-muted">{{ t(`moderation.categories.${modEntry(item).category}`) }}</span>
                 <span v-if="modEntry(item).reason" class="text-muted"> — {{ modReason(modEntry(item).reason) }}</span>
                 <div class="mt-0.5 truncate text-xs text-muted italic">“{{ modEntry(item).text }}”</div>
+                <ModNote :entry="modEntry(item)" :note-on-delete="channel?.translation?.noteOnDelete ?? true" />
                 <div v-if="modEntry(item).status === 'suggested' || ['executed'].includes(modEntry(item).status)" class="mt-1 flex gap-1">
                   <template v-if="modEntry(item).status === 'suggested'">
                     <button class="btn py-0.5 text-xs" @click="app.control('modApply', { id: modEntry(item).id })">{{ t("common.apply") }}</button>

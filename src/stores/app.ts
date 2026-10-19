@@ -8,6 +8,7 @@ import type {
   Bootstrap,
   BotStatus,
   ChannelProfile,
+  ChatTranslation,
   CompanionProfile,
   Config,
   FeedItem,
@@ -47,6 +48,8 @@ export const useApp = defineStore("app", () => {
   const modEntries = ref<Map<string, ModLogEntry>>(new Map());
   /** Emote name → image URL of the channel the bot loaded (Twitch, BTTV, FFZ, 7TV). */
   const emoteUrls = shallowRef<Record<string, string>>({});
+  // Translations of chat messages, by message id (shown under the message in the feed).
+  const translations = shallowRef<Map<string, ChatTranslation>>(new Map());
   const toasts = ref<Toast[]>([]);
   const saving = ref(false);
 
@@ -207,6 +210,7 @@ export const useApp = defineStore("app", () => {
     if (!ch) return;
     await saveNow();
     feed.value = [];
+    translations.value = new Map();
     pending.value = [];
     try {
       await api.botStart(ch.id, sandbox);
@@ -247,6 +251,12 @@ export const useApp = defineStore("app", () => {
     });
     await onEvent<PendingMessage[]>("hb:pending", (p) => (pending.value = p));
     await onEvent<Record<string, string>>("hb:emotes", (p) => (emoteUrls.value = p));
+    await onEvent<ChatTranslation & { messageId: string }>("hb:translation", (p) => {
+      const m = new Map(translations.value);
+      m.set(p.messageId, { lang: p.lang, text: p.text });
+      if (m.size > 600) m.delete(m.keys().next().value!);
+      translations.value = m;
+    });
     await onEvent<ModLogEntry>("hb:modlog", (p) => {
       const m = new Map(modEntries.value);
       m.set(p.id, p);
@@ -274,6 +284,7 @@ export const useApp = defineStore("app", () => {
     pending,
     modEntries,
     emoteUrls,
+    translations,
     toasts,
     saving,
     settings,

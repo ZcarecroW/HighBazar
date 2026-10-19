@@ -9,6 +9,7 @@ use serde_json::Value;
 
 use crate::config::{ModAction, ModerationProfile};
 use crate::twitch::eventsub::ChatMessage;
+use super::translate::Translation;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase", default)]
@@ -31,6 +32,11 @@ pub struct ModLogEntry {
     /// "logged" | "suggested" | "executed" | "simulated" | "failed" | "dismissed" | "undone"
     pub status: String,
     pub error: String,
+    /// Set when the message was translated: source language, translation and
+    /// what it really means (shown in the app, sent to the mods with the action).
+    pub source_lang: String,
+    pub translation: String,
+    pub meaning: String,
 }
 
 #[derive(Debug, Clone)]
@@ -42,6 +48,7 @@ pub struct Finding {
     pub source: String,
     /// Set for local rules, which carry their own action.
     pub action: Option<ModAction>,
+    pub translation: Option<Translation>,
 }
 
 pub fn is_exempt(p: &ModerationProfile, m: &ChatMessage) -> bool {
@@ -152,6 +159,7 @@ impl RuleState {
             reason,
             source: format!("rule:{name}"),
             action: Some(action.clone()),
+            translation: None,
         };
 
         // Repeat detection keeps its history even if no rule fires.
@@ -281,6 +289,7 @@ pub fn parse_ai_findings(text: &str, count: usize) -> Vec<(usize, Finding)> {
                     reason: r.reason.chars().take(200).collect(),
                     source: "ai".into(),
                     action: None,
+                    translation: None,
                 },
             )
         })
@@ -430,7 +439,7 @@ mod tests {
     #[test]
     fn escalation_raises_action() {
         let p = ModerationProfile::default();
-        let f = Finding { category: "harassment".into(), verdict: "violation".into(), confidence: 0.9, reason: String::new(), source: "ai".into(), action: None };
+        let f = Finding { category: "harassment".into(), verdict: "violation".into(), confidence: 0.9, reason: String::new(), source: "ai".into(), action: None, translation: None };
         assert_eq!(decide(&p, &f, 0).unwrap(), ModAction::new("timeout", 600));
         assert_eq!(decide(&p, &f, 1).unwrap(), ModAction::new("timeout", 1800));
         assert_eq!(decide(&p, &f, 5).unwrap(), ModAction::new("ban", 0));

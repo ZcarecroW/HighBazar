@@ -16,8 +16,9 @@ use tokio::sync::{mpsc, watch};
 use super::context::{ChatContext, Line, SeenChatters};
 use super::moderation::{self, Finding, ModLogEntry, RuleState};
 use super::research::{self, Knowledge};
+use super::translate::{self, Foreign, Translation};
 use super::{
-    BotStatus, Control, EVT_FEED, EVT_MODLOG, EVT_PENDING, EVT_STATUS, FeedItem, ManualAction, PendingMessage,
+    BotStatus, Control, EVT_FEED, EVT_MODLOG, EVT_PENDING, EVT_STATUS, EVT_TRANSLATION, FeedItem, ManualAction, PendingMessage,
     SimMessage, output, prompt,
 };
 use crate::ai::{self, AiRequest};
@@ -84,6 +85,12 @@ struct Outgoing {
     reason: String,
 }
 
+/// A message for AI moderation; foreign ones are translated in the same call.
+struct ModJob {
+    m: ChatMessage,
+    lang: Foreign,
+}
+
 pub struct Session {
     app: AppHandle,
     st: Arc<AppState>,
@@ -123,8 +130,10 @@ pub struct Session {
     mod_rate_warned: Mutex<i64>,
     out_tx: mpsc::UnboundedSender<Outgoing>,
     out_rx: Mutex<Option<mpsc::UnboundedReceiver<Outgoing>>>,
-    mod_tx: mpsc::UnboundedSender<ChatMessage>,
-    mod_rx: Mutex<Option<mpsc::UnboundedReceiver<ChatMessage>>>,
+    mod_tx: mpsc::UnboundedSender<ModJob>,
+    mod_rx: Mutex<Option<mpsc::UnboundedReceiver<ModJob>>>,
+    tr_tx: mpsc::UnboundedSender<ChatMessage>,
+    tr_rx: Mutex<Option<mpsc::UnboundedReceiver<ChatMessage>>>,
 }
 
 impl Session {
@@ -169,6 +178,7 @@ impl Session {
         }
         let (out_tx, out_rx) = mpsc::unbounded_channel();
         let (mod_tx, mod_rx) = mpsc::unbounded_channel();
+        let (tr_tx, tr_rx) = mpsc::unbounded_channel();
         Ok(Arc::new(Self {
             app,
             st,
@@ -208,6 +218,8 @@ impl Session {
             out_rx: Mutex::new(Some(out_rx)),
             mod_tx,
             mod_rx: Mutex::new(Some(mod_rx)),
+            tr_tx,
+            tr_rx: Mutex::new(Some(tr_rx)),
         }))
     }
 
@@ -583,7 +595,18 @@ impl Session {
             return;
         }
 
+        // --- Language ---------------------------------------------------
+        // The streamer's own messages are never translated.
+        let lang = if p.ch.translation.active() && !m.is_broadcaster {
+            let detector = translate::Detector::new(&p.ch.translation.languages);
+            let emotes = self.emotes.read();
+            detector.assess(&m.text, |w| m.emotes.iter().any(|e| e == w) || emotes.contains(w))
+        } else {
+            Foreign::No
+        };
+
         // --- Moderation -------------------------------------------------
+        let mut sent_to_ai = false;
         if !foreign && p.ch.moderation_enabled && p.modp.mode != "off" && !moderation::is_exempt(&p.modp, &m) {
             let local = self.rules.lock().check(&p.modp, &m, m.emote_count);
             if let Some(f) = local {
@@ -591,9 +614,16 @@ impl Session {
                 if acted {
                     return;
                 }
-            } else if p.modp.ai_check == "all" || (p.modp.ai_check == "suspicious" && moderation::is_suspicious(&m.text)) {
-                let _ = self.mod_tx.send(m.clone());
+            } else if p.modp.ai_check == "all"
+                // The suspicious-word list only knows German and English, so
+                // foreign messages always get the AI check.
+                || (p.modp.ai_check == "suspicious" && (lang != Foreign::No || moderation::is_suspicious(&m.text)))
+            {
+                sent_to_ai = p.mod_ai.is_some() && self.mod_tx.send(ModJob { m: m.clone(), lang }).is_ok();
             }
+        }
+        if !sent_to_ai && lang == Foreign::Yes {
+            let _ = self.tr_tx.send(m.clone());
         }
 
         if m.is_broadcaster && !self.via_bot && !p.ch.companion_enabled {
@@ -1091,6 +1121,9 @@ impl Session {
             action: action.clone(),
             status: String::new(),
             error: String::new(),
+            source_lang: f.translation.as_ref().map(|t| t.lang.clone()).unwrap_or_default(),
+            translation: f.translation.as_ref().map(|t| t.text.clone()).unwrap_or_default(),
+            meaning: f.translation.as_ref().map(|t| t.meaning.clone()).unwrap_or_default(),
         };
         let auto = p.modp.mode == "auto" && punitive;
         entry.status = match p.modp.mode.as_str() {
@@ -1157,6 +1190,19 @@ impl Session {
 
     async fn execute_mod(self: &Arc<Self>, mut entry: ModLogEntry, template: &str, announce: bool) {
         let reason = template.replace("{reason}", if entry.reason.is_empty() { &entry.category } else { &entry.reason });
+        // Translated messages: the translation goes to the mods as the reason of a
+        // timeout/ban (Twitch shows it to mods, the broadcaster and the user only).
+        // Warnings are shown to the viewer prominently, so they keep the short reason.
+        let tr = self.profiles().ch.translation;
+        let noted = if entry.translation.is_empty() {
+            reason.clone()
+        } else {
+            let t = Translation { lang: entry.source_lang.clone(), text: entry.translation.clone(), meaning: entry.meaning.clone() };
+            format!("{reason} · {}", translate::mod_note(&t, tr.target() == "de"))
+        };
+        // A plain delete has no reason field; a 1-second timeout removes the message
+        // the same way and carries the note.
+        let purge = entry.action.kind == "delete" && !entry.translation.is_empty() && tr.note_on_delete;
         let res = if self.sandbox || !self.has_twitch() {
             entry.status = "simulated".into();
             Ok(())
@@ -1164,13 +1210,14 @@ impl Session {
             let helix = self.st.helix();
             let b = self.broadcaster_id.as_str();
             let r = match entry.action.kind.as_str() {
+                "delete" if purge => helix.ban(b, b, &entry.user_id, Some(1), &noted).await,
                 "delete" => helix.delete_message(b, b, &entry.message_id).await,
                 "warn" => {
                     let _ = helix.delete_message(b, b, &entry.message_id).await;
                     helix.warn(b, b, &entry.user_id, &reason).await
                 }
-                "timeout" => helix.ban(b, b, &entry.user_id, Some(entry.action.duration_secs.max(1)), &reason).await,
-                "ban" => helix.ban(b, b, &entry.user_id, None, &reason).await,
+                "timeout" => helix.ban(b, b, &entry.user_id, Some(entry.action.duration_secs.max(1)), &noted).await,
+                "ban" => helix.ban(b, b, &entry.user_id, None, &noted).await,
                 _ => Ok(()),
             };
             entry.status = if r.is_ok() { "executed".into() } else { "failed".into() };
@@ -1227,7 +1274,12 @@ impl Session {
         Ok(())
     }
 
-    async fn moderation_worker(self: Arc<Self>, mut rx: mpsc::UnboundedReceiver<ChatMessage>, mut shutdown: watch::Receiver<bool>) {
+    /// Shows a translation under the chat message in the feed.
+    fn publish_translation(&self, m: &ChatMessage, t: &Translation) {
+        let _ = self.app.emit(EVT_TRANSLATION, json!({ "messageId": m.id, "lang": t.lang, "text": t.text }));
+    }
+
+    async fn moderation_worker(self: Arc<Self>, mut rx: mpsc::UnboundedReceiver<ModJob>, mut shutdown: watch::Receiver<bool>) {
         let mut calls: VecDeque<i64> = VecDeque::new();
         loop {
             let first = tokio::select! {
@@ -1243,9 +1295,22 @@ impl Session {
                     _ => break,
                 }
             }
+            // Messages this worker can't judge right now still get translated.
+            let hand_over = |batch: &[ModJob]| {
+                for j in batch.iter().filter(|j| j.lang == Foreign::Yes) {
+                    let _ = self.tr_tx.send(j.m.clone());
+                }
+            };
             let p = self.profiles();
-            let Some(ai_profile) = p.mod_ai.clone() else { continue };
-            if !p.ch.moderation_enabled || p.modp.mode == "off" || p.modp.ai_check == "off" || !self.budget_ok(&p) {
+            let Some(ai_profile) = p.mod_ai.clone() else {
+                hand_over(&batch);
+                continue;
+            };
+            if !p.ch.moderation_enabled || p.modp.mode == "off" || p.modp.ai_check == "off" {
+                hand_over(&batch);
+                continue;
+            }
+            if !self.budget_ok(&p) {
                 continue;
             }
             let now = now_ms();
@@ -1253,11 +1318,14 @@ impl Session {
                 calls.pop_front();
             }
             if calls.len() as u32 >= p.modp.max_ai_calls_per_min.max(1) {
-                let mut warned = self.mod_rate_warned.lock();
-                if now - *warned > 300_000 {
-                    *warned = now;
-                    self.keyed("system", "modRateLimit", json!({}), "AI moderation is at its per-minute limit; some messages were only checked by local rules.".into());
+                {
+                    let mut warned = self.mod_rate_warned.lock();
+                    if now - *warned > 300_000 {
+                        *warned = now;
+                        self.keyed("system", "modRateLimit", json!({}), "AI moderation is at its per-minute limit; some messages were only checked by local rules.".into());
+                    }
                 }
+                hand_over(&batch);
                 continue;
             }
             calls.push_back(now);
@@ -1267,10 +1335,16 @@ impl Session {
                 let l = prompt::language_name(&s.language);
                 if l.is_empty() { "English".to_string() } else { l.to_string() }
             };
-            let system = prompt::moderation_system(p.modp.strictness, &p.modp.channel_rules, &lang);
+            let mut system = prompt::moderation_system(p.modp.strictness, &p.modp.channel_rules, &lang);
+            let tr = &p.ch.translation;
+            let translating = tr.active() && batch.iter().any(|j| j.lang != Foreign::No);
+            if translating {
+                let target = prompt::language_name(tr.target());
+                system.push_str(&translate::moderation_section(&translate::names(&tr.languages), target));
+            }
             let user = {
                 let ctx = self.ctx.lock();
-                let first_ts = batch[0].ts;
+                let first_ts = batch[0].m.ts;
                 let context: Vec<String> = ctx
                     .lines
                     .iter()
@@ -1291,20 +1365,84 @@ impl Session {
                     u.push('\n');
                 }
                 u.push_str("\nMessages to judge:\n");
-                for (i, m) in batch.iter().enumerate() {
-                    u.push_str(&format!("[{i}] {}: {}\n", m.display_name, m.text.chars().take(400).collect::<String>()));
+                for (i, j) in batch.iter().enumerate() {
+                    let mark = if translating && j.lang != Foreign::No { " (translate)" } else { "" };
+                    u.push_str(&format!("[{i}]{mark} {}: {}\n", j.m.display_name, j.m.text.chars().take(400).collect::<String>()));
                 }
                 u
             };
             let req = AiRequest { system, user, max_tokens: None, web_search: false };
             match self.ai_call(&ai_profile, req).await {
                 Ok(text) => {
-                    for (i, f) in moderation::parse_ai_findings(&text, batch.len()) {
+                    let mut translations: HashMap<usize, Translation> = if translating {
+                        translate::parse(&text, batch.len())
+                            .into_iter()
+                            .filter(|(i, _)| batch[*i].lang != Foreign::No)
+                            .map(|(i, t)| (i, translate::without_name(t, &batch[i].m.display_name)))
+                            .collect()
+                    } else {
+                        HashMap::new()
+                    };
+                    for (i, t) in &translations {
+                        self.publish_translation(&batch[*i].m, t);
+                    }
+                    for (i, mut f) in moderation::parse_ai_findings(&text, batch.len()) {
+                        f.translation = translations.remove(&i);
                         let p = self.profiles();
-                        self.handle_finding(&p, &batch[i], f);
+                        self.handle_finding(&p, &batch[i].m, f);
                     }
                 }
                 Err(e) => self.error(format!("AI moderation failed: {e}")),
+            }
+        }
+    }
+
+    /// Translates foreign messages that don't go through AI moderation
+    /// (moderation off, exempt users, shared chat, rate limit).
+    async fn translation_worker(self: Arc<Self>, mut rx: mpsc::UnboundedReceiver<ChatMessage>, mut shutdown: watch::Receiver<bool>) {
+        const MAX_CALLS_PER_MIN: usize = 10;
+        let mut calls: VecDeque<i64> = VecDeque::new();
+        loop {
+            let first = tokio::select! {
+                m = rx.recv() => m,
+                _ = shutdown.changed() => return,
+            };
+            let Some(first) = first else { return };
+            let mut batch = vec![first];
+            let deadline = tokio::time::Instant::now() + Duration::from_millis(2000);
+            while batch.len() < 10 {
+                match tokio::time::timeout_at(deadline, rx.recv()).await {
+                    Ok(Some(m)) => batch.push(m),
+                    _ => break,
+                }
+            }
+            let p = self.profiles();
+            let tr = &p.ch.translation;
+            let Some(ai_profile) = p.mod_ai.clone() else { continue };
+            if !tr.active() || !self.budget_ok(&p) {
+                continue;
+            }
+            let now = now_ms();
+            while calls.front().is_some_and(|t| now - t > 60_000) {
+                calls.pop_front();
+            }
+            if calls.len() >= MAX_CALLS_PER_MIN {
+                continue;
+            }
+            calls.push_back(now);
+            let system = translate::translation_system(&translate::names(&tr.languages), prompt::language_name(tr.target()));
+            let mut user = String::from("Messages:\n");
+            for (i, m) in batch.iter().enumerate() {
+                user.push_str(&format!("[{i}] {}: {}\n", m.display_name, m.text.chars().take(400).collect::<String>()));
+            }
+            let req = AiRequest { system, user, max_tokens: None, web_search: false };
+            match self.ai_call(&ai_profile, req).await {
+                Ok(text) => {
+                    for (i, t) in translate::parse(&text, batch.len()) {
+                        self.publish_translation(&batch[i], &translate::without_name(t, &batch[i].display_name));
+                    }
+                }
+                Err(e) => log::warn!("translation failed: {e}"),
             }
         }
     }
@@ -1640,6 +1778,7 @@ impl Session {
             action: ModAction::new(&a.kind, a.duration_secs),
             status: "pending".into(),
             error: String::new(),
+            ..Default::default()
         };
         let p = self.profiles();
         self.execute_mod(entry, &p.modp.reason_template, false).await;
@@ -1683,6 +1822,9 @@ pub async fn run(session: Arc<Session>, mut ctrl: mpsc::UnboundedReceiver<Contro
     }
     if let Some(rx) = s.mod_rx.lock().take() {
         tokio::spawn(s.clone().moderation_worker(rx, shutdown.clone()));
+    }
+    if let Some(rx) = s.tr_rx.lock().take() {
+        tokio::spawn(s.clone().translation_worker(rx, shutdown.clone()));
     }
     s.emit_status();
 

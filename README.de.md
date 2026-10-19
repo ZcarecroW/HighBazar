@@ -54,6 +54,7 @@ mit einem **eigenen Bot-Account**, wenn du einen verbindest.
 - **Eskalation** bei Wiederholungstätern, **Ausnahmen** (Mods, VIPs, Subs, bestimmte Nutzer), Kanalregeln in normaler Sprache, Strenge-Regler, Mindestsicherheit.
 - **Modi**: aus · beobachten · Aktionen vorschlagen (ein Klick zum Ausführen) · automatisch. **Moderationsprotokoll mit Rückgängig**.
 - Vorlagen: **Ausgewogen** (Standard – greift nur bei eindeutigen Fällen), Locker, Familienfreundlich, Nur Vorschläge, Nur beobachten.
+- **Übersetzung fremdsprachiger Nachrichten**: Lege fest, welche Sprachen du verstehst – Nachrichten in anderen Sprachen erscheinen im Live-Feed mit Übersetzung darunter. Verstößt so eine Nachricht gegen die Regeln, reagiert die Moderation wie gewohnt und hängt einen **Vermerk mit Übersetzung und Bedeutung** an (Slang, versteckte Beleidigungen). Deine Mods sehen ihn auf Twitch als Grund des Timeouts oder Banns. Die Spracherkennung läuft lokal, KI-Kosten entstehen nur für fremdsprachige Nachrichten.
 
 ### 🧠 KI-Anbieter
 Anthropic Claude · OpenAI · Google Gemini · OpenRouter · Mistral · Groq · xAI · DeepSeek · Perplexity · Together AI ·

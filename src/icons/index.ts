@@ -60,6 +60,7 @@ export const Incognito = icon("Incognito");
 export const Info = icon("Info");
 export const Key = icon("Key");
 export const LayoutDashboard = icon("LayoutDashboard");
+export const Languages = icon("Languages");
 export const Layers = icon("Layers");
 export const Loader2 = icon("Loader2");
 export const Lock = icon("Lock");

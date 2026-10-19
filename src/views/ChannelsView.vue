@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { CircleCheck, LogOut, TriangleAlert, Radio, Users, Bolt, Layers, Send } from "../icons";
+import { CircleCheck, LogOut, TriangleAlert, Radio, Users, Bolt, Layers, Send, Languages } from "../icons";
 import { useApp } from "../stores/app";
 import { api, errorText, newId } from "../lib/api";
 import { pname } from "../i18n";
@@ -11,6 +11,7 @@ import TwitchLogin from "../components/TwitchLogin.vue";
 import UiToggle from "../components/ui/UiToggle.vue";
 import UiField from "../components/ui/UiField.vue";
 import UiNumber from "../components/ui/UiNumber.vue";
+import LanguagePicker from "../components/LanguagePicker.vue";
 
 const app = useApp();
 const { t } = useI18n();
@@ -200,6 +201,22 @@ const bot = computed(() => app.account(ch.value?.botAccountId));
                 </option>
               </select>
             </UiField>
+          </div>
+        </section>
+
+        <!-- Languages & translation -->
+        <section v-if="ch.translation" class="card-pad">
+          <h2 class="section-title flex items-center gap-2"><Languages :size="17" class="text-brand-500" /> {{ t("translation.title") }}</h2>
+          <p class="mb-4 max-w-3xl text-sm text-muted">{{ t("translation.intro") }}</p>
+          <UiField :label="t('translation.languages')" :hint="t('translation.languagesHint')">
+            <LanguagePicker v-model="ch.translation.languages" />
+          </UiField>
+          <div v-if="ch.translation.enabled && !ch.translation.languages.length" class="mt-3 flex items-center gap-2 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-sm">
+            <TriangleAlert :size="15" class="shrink-0 text-amber-500" /> {{ t("translation.notSetUp") }}
+          </div>
+          <div class="mt-5 grid gap-4 md:grid-cols-2">
+            <UiToggle v-model="ch.translation.enabled" :label="t('translation.enabled')" :hint="t('translation.enabledHint')" />
+            <UiToggle v-model="ch.translation.noteOnDelete" :disabled="!ch.translation.enabled" :label="t('translation.noteOnDelete')" :hint="t('translation.noteOnDeleteHint')" />
           </div>
         </section>
 
