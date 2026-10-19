@@ -5,7 +5,7 @@
     "language": "auto",
     "checkUpdatesOnStart": true,
     "wizardCompleted": false,
-    "activeChannelId": "5925b4888ec3",
+    "activeChannelId": "a9c5f113250d",
     "startBotOnLaunch": false,
     "twitchClientId": "",
     "feedLimit": 400
@@ -13,7 +13,7 @@
   "accounts": [],
   "channels": [
     {
-      "id": "5925b4888ec3",
+      "id": "a9c5f113250d",
       "name": "My channel",
       "streamerAccountId": null,
       "botAccountId": null,
@@ -847,8 +847,8 @@
           "category": "selfHarm",
           "enabled": true,
           "clearAction": {
-            "kind": "delete",
-            "durationSecs": 0
+            "kind": "timeout",
+            "durationSecs": 600
           },
           "borderlineAction": {
             "kind": "log",
@@ -925,6 +925,11 @@
       "rules": {
         "blockedTerms": [],
         "blockedTermsAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "scamPhrasesEnabled": true,
+        "scamPhrasesAction": {
           "kind": "delete",
           "durationSecs": 0
         },
@@ -1037,7 +1042,7 @@
           "category": "selfHarm",
           "enabled": true,
           "clearAction": {
-            "kind": "log",
+            "kind": "delete",
             "durationSecs": 0
           },
           "borderlineAction": {
@@ -1111,6 +1116,11 @@
       "rules": {
         "blockedTerms": [],
         "blockedTermsAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "scamPhrasesEnabled": true,
+        "scamPhrasesAction": {
           "kind": "delete",
           "durationSecs": 0
         },
@@ -1223,8 +1233,8 @@
           "category": "selfHarm",
           "enabled": true,
           "clearAction": {
-            "kind": "delete",
-            "durationSecs": 0
+            "kind": "timeout",
+            "durationSecs": 600
           },
           "borderlineAction": {
             "kind": "delete",
@@ -1303,6 +1313,11 @@
         "blockedTermsAction": {
           "kind": "delete",
           "durationSecs": 0
+        },
+        "scamPhrasesEnabled": true,
+        "scamPhrasesAction": {
+          "kind": "timeout",
+          "durationSecs": 600
         },
         "links": "block",
         "allowedDomains": [
@@ -1413,8 +1428,8 @@
           "category": "selfHarm",
           "enabled": true,
           "clearAction": {
-            "kind": "delete",
-            "durationSecs": 0
+            "kind": "timeout",
+            "durationSecs": 600
           },
           "borderlineAction": {
             "kind": "log",
@@ -1491,6 +1506,11 @@
       "rules": {
         "blockedTerms": [],
         "blockedTermsAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "scamPhrasesEnabled": true,
+        "scamPhrasesAction": {
           "kind": "delete",
           "durationSecs": 0
         },
@@ -1603,8 +1623,8 @@
           "category": "selfHarm",
           "enabled": true,
           "clearAction": {
-            "kind": "delete",
-            "durationSecs": 0
+            "kind": "timeout",
+            "durationSecs": 600
           },
           "borderlineAction": {
             "kind": "log",
@@ -1681,6 +1701,11 @@
       "rules": {
         "blockedTerms": [],
         "blockedTermsAction": {
+          "kind": "delete",
+          "durationSecs": 0
+        },
+        "scamPhrasesEnabled": true,
+        "scamPhrasesAction": {
           "kind": "delete",
           "durationSecs": 0
         },

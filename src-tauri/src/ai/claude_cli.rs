@@ -41,7 +41,44 @@ pub fn detect(custom: &str) -> Option<PathBuf> {
         candidates.push(PathBuf::from("/usr/local/bin/claude"));
         candidates.push(PathBuf::from("/opt/homebrew/bin/claude"));
     }
-    candidates.into_iter().find(|c| c.is_file())
+    candidates.into_iter().find(|c| c.is_file()).or_else(|| desktop_bundled(&home, names[0]))
+}
+
+/// The Claude desktop app ships its own CLI under
+/// `<config>/Claude/claude-code/<version>/<build>/claude(.exe)`; picks the newest.
+/// On Windows the Store/MSIX build keeps it in its package folder.
+fn desktop_bundled(home: &std::path::Path, exe: &str) -> Option<PathBuf> {
+    let mut roots = Vec::new();
+    if cfg!(windows) {
+        if let Some(appdata) = std::env::var_os("APPDATA") {
+            roots.push(PathBuf::from(appdata).join("Claude"));
+        }
+        if let Some(local) = std::env::var_os("LOCALAPPDATA") {
+            let packages = PathBuf::from(local).join("Packages");
+            for pkg in std::fs::read_dir(packages).into_iter().flatten().flatten() {
+                if pkg.file_name().to_string_lossy().starts_with("Claude_") {
+                    roots.push(pkg.path().join("LocalCache").join("Roaming").join("Claude"));
+                }
+            }
+        }
+    } else if cfg!(target_os = "macos") {
+        roots.push(home.join("Library").join("Application Support").join("Claude"));
+    } else {
+        roots.push(home.join(".config").join("Claude"));
+    }
+    let mut found: Vec<(std::time::SystemTime, PathBuf)> = Vec::new();
+    for root in roots {
+        for version in std::fs::read_dir(root.join("claude-code")).into_iter().flatten().flatten() {
+            for build in std::fs::read_dir(version.path()).into_iter().flatten().flatten() {
+                let candidate = build.path().join(exe);
+                if let Ok(meta) = candidate.metadata()
+                    && meta.is_file() {
+                        found.push((meta.modified().unwrap_or(std::time::UNIX_EPOCH), candidate));
+                    }
+            }
+        }
+    }
+    found.into_iter().max_by_key(|(t, _)| *t).map(|(_, p)| p)
 }
 
 pub async fn complete(p: &AiProfile, req: &AiRequest) -> AppResult<AiResponse> {
@@ -101,7 +138,16 @@ pub async fn complete(p: &AiProfile, req: &AiRequest) -> AppResult<AiResponse> {
                 if err.trim().is_empty() { stdout.chars().take(300).collect::<String>() } else { err.chars().take(300).collect() }
             ))
         })?;
-        parse(&v)
+        parse(&v).map_err(|e| {
+            if e.to_string().to_lowercase().contains("not logged in") {
+                AppError::msg(format!(
+                    "Claude Code CLI is not logged in. Open a terminal, run \"{}\" and type /login once.",
+                    exe.display()
+                ))
+            } else {
+                e
+            }
+        })
     }
     .await;
     let _ = tokio::fs::remove_file(&prompt_file).await;

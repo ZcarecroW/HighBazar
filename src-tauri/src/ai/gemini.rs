@@ -64,13 +64,12 @@ pub fn parse_interaction(v: &Value) -> AiResponse {
         }
     }
     // Older response schema used "outputs".
-    if text.is_empty() {
-        if let Some(outputs) = v["outputs"].as_array() {
+    if text.is_empty()
+        && let Some(outputs) = v["outputs"].as_array() {
             for o in outputs.iter().filter(|o| o["type"] == "text") {
                 text.push_str(o["text"].as_str().unwrap_or_default());
             }
         }
-    }
     let u = &v["usage"];
     AiResponse {
         text,

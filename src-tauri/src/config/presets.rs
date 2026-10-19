@@ -153,7 +153,7 @@ pub fn moderation_presets() -> Vec<ModerationProfile> {
                 set_cat(p, "harassment", ModAction::new("delete", 0), ModAction::new("none", 0));
                 set_cat(p, "sexual", ModAction::new("delete", 0), ModAction::new("none", 0));
                 set_cat(p, "spam", ModAction::new("log", 0), ModAction::new("none", 0));
-                set_cat(p, "selfHarm", ModAction::new("log", 0), ModAction::new("none", 0));
+                set_cat(p, "selfHarm", ModAction::new("delete", 0), ModAction::new("none", 0));
                 p.rules.repeat_enabled = false;
                 p.escalation.steps = vec![ModAction::new("timeout", 3600), ModAction::new("timeout", 86_400)];
             },
@@ -171,6 +171,7 @@ pub fn moderation_presets() -> Vec<ModerationProfile> {
                     }
                 }
                 set_cat(p, "sexual", ModAction::new("timeout", 1800), ModAction::new("delete", 0));
+                p.rules.scam_phrases_action = ModAction::new("timeout", 600);
                 p.rules.caps_enabled = true;
                 p.rules.links = "block".into();
                 p.rules.emote_spam_enabled = true;

@@ -13,7 +13,7 @@ import UiNumber from "../components/ui/UiNumber.vue";
 import UiTags from "../components/ui/UiTags.vue";
 
 const app = useApp();
-const { t, tm } = useI18n();
+const { t, tm, locale } = useI18n();
 const cfg = computed(() => app.config!);
 
 const selectedId = ref(app.activeChannel?.companionProfileId ?? cfg.value.companionProfiles[0]!.id);
@@ -50,7 +50,7 @@ const mixKeys = ["chatReaction", "gameFact", "gameTip", "trivia", "joke", "quest
 const languages = ["en", "de", "es", "fr", "it", "pt", "nl", "pl", "tr", "ru", "uk", "sv", "da", "no", "fi", "cs", "hu", "ro", "el", "ja", "ko", "zh", "ar", "hi", "th", "vi", "id"];
 const langName = (code: string) => {
   try {
-    return new Intl.DisplayNames([navigator.language], { type: "language" }).of(code) ?? code;
+    return new Intl.DisplayNames([locale.value], { type: "language" }).of(code) ?? code;
   } catch {
     return code;
   }
@@ -129,7 +129,7 @@ const emoteLevels = computed(() => tm("companion.emoteLevels") as unknown as str
               <UiSlider v-model="p.energy" :label="t('companion.energy')" :disabled="ro" />
               <UiSlider v-model="p.snark" :label="t('companion.snark')" :disabled="ro" />
             </div>
-            <UiSlider v-model="p.maxLength" :label="t('companion.maxLength')" :min="60" :max="480" :step="10" :suffix="' chars'" :disabled="ro" />
+            <UiSlider v-model="p.maxLength" :label="t('companion.maxLength')" :min="60" :max="480" :step="10" :suffix="' ' + t('common.chars')" :disabled="ro" />
             <UiField :label="t('companion.customInstructions')" :hint="t('companion.customInstructionsHint')">
               <textarea v-model="p.customInstructions" rows="3" class="input" />
             </UiField>

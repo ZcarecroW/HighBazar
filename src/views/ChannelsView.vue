@@ -188,7 +188,7 @@ const bot = computed(() => app.account(ch.value?.botAccountId));
               <select v-model="ch.aiProfileId" class="input">
                 <option value="">— {{ t("common.none") }} —</option>
                 <option v-for="p in cfg.aiProfiles" :key="p.id" :value="p.id">
-                  {{ p.name }}{{ app.hasKey(p) ? "" : " ⚠" }}
+                  {{ pname(p) }}{{ app.hasKey(p) ? "" : " ⚠" }}
                 </option>
               </select>
             </UiField>
@@ -196,7 +196,7 @@ const bot = computed(() => app.account(ch.value?.botAccountId));
               <select v-model="ch.moderationAiProfileId" class="input">
                 <option value="">{{ t("channels.sameAsMain") }}</option>
                 <option v-for="p in cfg.aiProfiles" :key="p.id" :value="p.id">
-                  {{ p.name }}{{ app.hasKey(p) ? "" : " ⚠" }}
+                  {{ pname(p) }}{{ app.hasKey(p) ? "" : " ⚠" }}
                 </option>
               </select>
             </UiField>

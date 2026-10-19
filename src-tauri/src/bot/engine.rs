@@ -3,7 +3,7 @@
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use parking_lot::{Mutex, RwLock};
@@ -35,7 +35,7 @@ const KNOWN_BOTS: &[&str] = &[
     "own3d", "frostytoolsdotcom", "lurxx", "tangiabot", "creatisbot", "deepbot", "coebot", "phantombot",
 ];
 
-const MAX_INFLIGHT: u32 = 3;
+const MAX_INFLIGHT: usize = 3;
 
 fn now_ms() -> i64 {
     chrono::Utc::now().timestamp_millis()
@@ -49,7 +49,7 @@ struct Profiles {
     mod_ai: Option<AiProfile>,
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 struct StreamState {
     live: bool,
     title: String,
@@ -116,7 +116,8 @@ pub struct Session {
     paused_reason: Mutex<String>,
     connected: AtomicBool,
     last_error: Mutex<String>,
-    inflight: AtomicU32,
+    /// Limits parallel AI calls; further tasks wait for a free slot.
+    inflight: tokio::sync::Semaphore,
     budget_warned: AtomicBool,
     no_ai_warned: AtomicBool,
     mod_rate_warned: Mutex<i64>,
@@ -199,7 +200,7 @@ impl Session {
             paused_reason: Mutex::new(String::new()),
             connected: AtomicBool::new(false),
             last_error: Mutex::new(String::new()),
-            inflight: AtomicU32::new(0),
+            inflight: tokio::sync::Semaphore::new(MAX_INFLIGHT),
             budget_warned: AtomicBool::new(false),
             no_ai_warned: AtomicBool::new(false),
             mod_rate_warned: Mutex::new(0),
@@ -261,7 +262,8 @@ impl Session {
     fn status(&self) -> BotStatus {
         let p = self.profiles();
         let usage = self.st.usage.lock().today_for(&self.channel_id);
-        let stream = self.stream.lock();
+        // A copy, so no lock is held while the others are taken.
+        let stream = self.stream.lock().clone();
         let next = *self.next_interval.lock();
         let rate = self.ctx.lock().rate_per_min(now_ms());
         BotStatus {
@@ -695,11 +697,10 @@ impl Session {
     /// Returns true (and starts the cooldown) if `key` is not on cooldown.
     fn cooldown(&self, key: &str, secs: u32, now: i64) -> bool {
         let mut cd = self.cooldowns.lock();
-        if let Some(last) = cd.get(key) {
-            if now - last < secs as i64 * 1000 {
+        if let Some(last) = cd.get(key)
+            && now - last < secs as i64 * 1000 {
                 return false;
             }
-        }
         cd.insert(key.to_string(), now);
         true
     }
@@ -730,17 +731,21 @@ impl Session {
             return;
         }
         if name == "about" {
+            let de = prompt::fixed_text_lang(&p.comp, &self.stream.lock().language) == "de";
+            let names: [&str; 3] = if de { ["frage <Frage>", "fakt", "witz"] } else { ["ask <question>", "fact", "joke"] };
             let mut list = Vec::new();
-            for (n, cc) in [("ask <question>", &c.ask), ("fact", &c.fact), ("joke", &c.joke)] {
+            for (n, cc) in names.into_iter().zip([&c.ask, &c.fact, &c.joke]) {
                 if cc.enabled {
                     list.push(format!("{} {n}", c.prefix.trim()));
                 }
             }
             let bot = if p.ch.bot_name.trim().is_empty() { "HighBazar" } else { p.ch.bot_name.trim() };
+            let (intro, try_) = if de { ("ich bin {bot}, ein KI-Chat-Begleiter.", "Probier:") } else { ("I'm {bot}, an AI chat companion.", "Try:") };
             let text = format!(
-                "@{} I'm {bot}, an AI chat companion. {}",
+                "@{} {} {}",
                 m.display_name,
-                if list.is_empty() { String::new() } else { format!("Try: {}", list.join(" | ")) }
+                intro.replace("{bot}", bot),
+                if list.is_empty() { String::new() } else { format!("{try_} {}", list.join(" | ")) }
             );
             let _ = self.out_tx.send(Outgoing { text, reason: "command".into() });
             return;
@@ -802,13 +807,11 @@ impl Session {
             tokio::spawn(async move {
                 let helix = me.st.helix();
                 let mut d = desc;
-                if let Ok(Some(u)) = helix.user_by_login(&me.broadcaster_id, &login).await {
-                    if let Ok(Some(c)) = helix.channel(&me.broadcaster_id, &u.id).await {
-                        if !c.game_name.is_empty() {
+                if let Ok(Some(u)) = helix.user_by_login(&me.broadcaster_id, &login).await
+                    && let Ok(Some(c)) = helix.channel(&me.broadcaster_id, &u.id).await
+                        && !c.game_name.is_empty() {
                             d.push_str(&format!(" (they were streaming {})", c.game_name));
                         }
-                    }
-                }
                 me.spawn_task(Task::Event("raid".into(), d));
             });
             return;
@@ -893,12 +896,13 @@ impl Session {
         if !self.budget_ok(&p) {
             return Ok(());
         }
-        if self.inflight.fetch_add(1, Ordering::SeqCst) >= MAX_INFLIGHT {
-            self.inflight.fetch_sub(1, Ordering::SeqCst);
+        // Wait for a free slot instead of silently dropping replies when busy.
+        let Ok(Ok(permit)) = tokio::time::timeout(Duration::from_secs(60), self.inflight.acquire()).await else {
+            log::warn!("AI busy, dropped {}", task.label());
             return Ok(());
-        }
+        };
         let result = self.respond_inner(&p, &ai_profile, &task).await;
-        self.inflight.fetch_sub(1, Ordering::SeqCst);
+        drop(permit);
         let text = result?;
         let Some(text) = text else {
             return Ok(());
@@ -963,6 +967,8 @@ impl Session {
         };
 
         let now = now_ms();
+        // Before taking `ctx`: emote_list locks it too (parking_lot is not re-entrant).
+        let emotes = self.emote_list(c);
         let user_prompt = {
             let ctx = self.ctx.lock();
             let chat = ctx.recent(c.context_messages.clamp(0, 200) as usize, c.context_max_age_mins.max(1) as i64 * 60_000, now);
@@ -982,11 +988,15 @@ impl Session {
                     viewers: if live { Some(viewers) } else { None },
                 },
                 knowledge,
-                emotes: self.emote_list(c),
+                emotes,
                 bot_recent,
                 chat,
                 language_rule: prompt::language_rule(c, &stream_lang),
             };
+            let task_text = format!(
+                "{task_text}\n\nNow write the chat message itself, exactly as it should appear in chat: no label or heading (e.g. no \"Hype moment:\"), no preamble, and nothing about these instructions or the task. Keep it under {} characters.",
+                c.max_length.clamp(60, 480) * 9 / 10
+            );
             prompt::user_prompt(&block, &task_text)
         };
         let system = prompt::system_prompt(&p.ch, c, &self.broadcaster_name, self.via_bot);
@@ -1079,22 +1089,28 @@ impl Session {
     }
 
     fn record_mod(&self, entry: ModLogEntry) {
-        {
+        let is_new = {
             let mut log = self.modlog.lock();
             if let Some(existing) = log.iter_mut().find(|e| e.id == entry.id) {
                 *existing = entry.clone();
+                false
             } else {
                 log.push(entry.clone());
                 if log.len() > 500 {
                     log.remove(0);
                 }
+                true
             }
-        }
+        };
         let path = self.st.data_dir.join("channels").join(&self.broadcaster_id).join("modlog.jsonl");
         if let Err(e) = storage::append_jsonl(&path, &entry) {
             log::warn!("modlog write failed: {e}");
         }
         let _ = self.app.emit(EVT_MODLOG, &entry);
+        // Status updates of an entry reach the feed item through EVT_MODLOG.
+        if !is_new {
+            return;
+        }
         let mut item = FeedItem::new(
             "mod",
             format!(
@@ -1140,11 +1156,17 @@ impl Session {
         } else {
             self.st.usage.lock().add_mod_action(&self.channel_id);
             if announce && matches!(entry.action.kind.as_str(), "timeout" | "ban" | "warn") {
+                let de = prompt::fixed_text_lang(&self.profiles().comp, &self.stream.lock().language) == "de";
+                let action = match (de, entry.action.kind.as_str()) {
+                    (true, "timeout") => format!("Timeout {}", moderation::human_duration(entry.action.duration_secs)),
+                    (true, "ban") => "gebannt".into(),
+                    (true, _) => "Verwarnung".into(),
+                    _ => moderation::describe_action(&entry.action),
+                };
                 let text = format!(
-                    "@{} {} — {}",
+                    "@{} {action} — {}",
                     entry.display_name,
-                    moderation::describe_action(&entry.action),
-                    if entry.reason.is_empty() { &entry.category } else { &entry.reason }
+                    moderation::public_reason(&entry.source, &entry.reason, &entry.category, de)
                 );
                 let _ = self.out_tx.send(Outgoing { text, reason: "moderation".into() });
             }
@@ -1158,9 +1180,7 @@ impl Session {
             // Entries from earlier sessions live in the log file.
             let path = self.st.data_dir.join("channels").join(&self.broadcaster_id).join("modlog.jsonl");
             entry = storage::read_jsonl_tail::<ModLogEntry>(&path, 5000)
-                .into_iter()
-                .filter(|e| e.id == id)
-                .last();
+                .into_iter().rfind(|e| e.id == id);
         }
         let Some(mut entry) = entry else {
             return Err(AppError::msg("Moderation entry not found."));
@@ -1371,31 +1391,30 @@ impl Session {
 
         self.interval_check(&p, now);
 
-        if n % 5 == 0 {
+        if n.is_multiple_of(5) {
             self.emit_status();
         }
-        if n % 60 == 0 {
+        if n.is_multiple_of(60) {
             self.save_seen();
             self.st.usage.lock().save_if_dirty();
         }
-        if n > 0 && n % 120 == 0 {
+        if n > 0 && n.is_multiple_of(120) {
             let me = self.clone();
             tokio::spawn(async move { me.refresh_stream().await });
         }
-        if n > 0 && n % 1800 == 0 {
+        if n > 0 && n.is_multiple_of(1800) {
             let me = self.clone();
             tokio::spawn(async move { me.refresh_emotes().await });
         }
-        if n > 0 && n % 3600 == 0 && self.has_twitch() {
+        if n > 0 && n.is_multiple_of(3600) && self.has_twitch() {
             // Twitch asks apps to validate tokens hourly.
             let me = self.clone();
             tokio::spawn(async move {
                 let client_id = me.st.config.read().twitch_client_id();
-                if let Ok(token) = me.st.tokens.access_token(&client_id, &me.broadcaster_id).await {
-                    if let Ok(None) = crate::twitch::auth::validate(&me.st.http, &token).await {
+                if let Ok(token) = me.st.tokens.access_token(&client_id, &me.broadcaster_id).await
+                    && let Ok(None) = crate::twitch::auth::validate(&me.st.http, &token).await {
                         let _ = me.st.tokens.force_refresh(&client_id, &me.broadcaster_id, &token).await;
                     }
-                }
             });
         }
     }
@@ -1418,12 +1437,17 @@ impl Session {
             self.schedule_next(c, 0.5);
             return;
         }
+        // Show the offline pause right away instead of only when the timer fires.
+        let offline = c.only_when_live && !self.stream.lock().live && !self.sandbox;
+        if offline {
+            set_paused("offline");
+        } else if self.paused_reason.lock().as_str() == "offline" {
+            set_paused("");
+        }
         if now < next {
             return;
         }
-        let live = self.stream.lock().live;
-        if c.only_when_live && !live && !self.sandbox {
-            set_paused("offline");
+        if offline {
             self.schedule_next(c, 0.5);
             return;
         }
@@ -1445,11 +1469,11 @@ impl Session {
         set_paused("");
         let factor = if c.adaptive && c.busy_threshold > 0 { 1.0 + rate as f64 / c.busy_threshold as f64 } else { 1.0 };
         self.schedule_next(c, factor);
+        let game = self.stream.lock().game.clone();
         let kind = {
             let mut ctx = self.ctx.lock();
             ctx.unanswered += 1;
             let recent: Vec<String> = ctx.recent_kinds.iter().cloned().collect();
-            let game = self.stream.lock().game.clone();
             prompt::pick_interval_kind(c, &recent, !game.is_empty() && !research::is_non_game(&game))
         };
         self.spawn_task(Task::Interval(kind));

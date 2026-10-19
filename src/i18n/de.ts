@@ -2,6 +2,7 @@ import type en from "./en";
 
 const de: typeof en = {
   common: {
+    chars: "Zeichen",
     save: "Speichern",
     cancel: "Abbrechen",
     close: "Schließen",
@@ -338,6 +339,8 @@ const de: typeof en = {
     addStep: "Stufe hinzufügen",
     blockedTerms: "Gesperrte Begriffe",
     blockedTermsHint: "Ein Begriff pro Eintrag, * als Platzhalter. Leetspeak (h4ss) wird erkannt.",
+    scamPhrases: "Bekannte Spam-Phrasen",
+    scamPhrasesHint: "Eingebaute Liste typischer Viewer-Bot- und Gutschein-Spams („cheap viewers“, „free followers“, „free nitro“ …). Funktioniert ohne KI.",
     links: "Links",
     linkModes: { allow: "Erlauben", block: "Blockieren (außer erlaubte Domains)" },
     allowedDomains: "Erlaubte Domains",
@@ -374,6 +377,8 @@ const de: typeof en = {
         pending: "läuft",
       },
       notRunning: "Starte den Bot, um Aktionen auszuführen oder rückgängig zu machen.",
+      verdicts: { violation: "Verstoß", borderline: "Grenzfall" },
+      sources: { ai: "KI", manual: "Manuell", rule: "Regel" },
     },
   },
   ai: {
@@ -457,6 +462,20 @@ const de: typeof en = {
     issues: "Problem melden",
   },
   presets: {
+    "builtin-ai-claude-opus": { name: "Claude Opus 5.5", description: "Anthropics Spitzenmodell. Beste Qualität und bester Humor; teurer." },
+    "builtin-ai-claude-sonnet": { name: "Claude Sonnet 5.5", description: "Sehr gute Qualität zu moderatem Preis." },
+    "builtin-ai-claude-haiku": { name: "Claude Haiku 5.5", description: "Schnell und sehr günstig. Empfohlen für Moderation und volle Chats." },
+    "builtin-ai-openai-sol": { name: "OpenAI GPT-6.1 Sol", description: "OpenAIs ausgewogenes Modell (Responses API)." },
+    "builtin-ai-openai-luna": { name: "OpenAI GPT-6 Luna", description: "OpenAIs schnelles, günstiges Modell." },
+    "builtin-ai-gemini-flash": { name: "Gemini 3.8 Flash", description: "Googles empfohlenes Allzweckmodell mit Google-Suche." },
+    "builtin-ai-gemini-lite": { name: "Gemini 3.5 Flash-Lite", description: "Googles günstigstes Modell für viele Anfragen." },
+    "builtin-ai-openrouter-auto": { name: "OpenRouter Auto", description: "OpenRouter wählt das Modell. Ein Schlüssel für Hunderte Modelle." },
+    "builtin-ai-mistral-small": { name: "Mistral Small", description: "Effizientes Modell von Mistral (Anbieter aus der EU)." },
+    "builtin-ai-deepseek": { name: "DeepSeek Chat", description: "Günstiges Modell von DeepSeek." },
+    "builtin-ai-perplexity-sonar": { name: "Perplexity Sonar", description: "Antwortet mit eingebauter Live-Websuche." },
+    "builtin-ai-ollama": { name: "Ollama (lokal)", description: "Läuft kostenlos auf deinem eigenen PC. Wähle in einer Kopie dieses Profils ein installiertes Modell." },
+    "builtin-ai-lmstudio": { name: "LM Studio (lokal)", description: "Nutzt das gerade in LM Studio geladene Modell." },
+    "builtin-ai-claude-cli": { name: "Claude Code CLI (Abo)", description: "Nutzt dein lokal installiertes und angemeldetes Claude Code CLI (auch das aus der Claude-Desktop-App). Ob automatisierte Bot-Nutzung von den Bedingungen deines Abos gedeckt ist, liegt in deiner Verantwortung." },
     "builtin-companion-balanced": { name: "Ausgewogener Begleiter", description: "Freundlicher, witziger Allrounder. Reagiert auf den Chat, teilt Spiel-Fakten, stellt Fragen. Passt zu den meisten Streams." },
     "builtin-companion-booster": { name: "Kleiner-Stream-Booster", description: "Meldet sich etwas öfter und stellt viele Fragen, damit Lurker mitchatten. Ideal für Streams mit wenigen Zuschauern." },
     "builtin-companion-cozy": { name: "Gemütlich & entspannt", description: "Ruhig, warm und gelassen. Weniger Nachrichten, sanfter Humor. Toll für Cozy Games, Kunst und Just Chatting." },
@@ -499,6 +518,16 @@ const de: typeof en = {
     installing: "Installiert…",
     upToDate: "Du hast die neueste Version.",
     error: "Update-Prüfung fehlgeschlagen: {e}",
+  },
+  ruleReasons: {
+    repeat: "{n}× dieselbe Nachricht innerhalb einer Minute",
+    link: "Link nicht erlaubt ({url})",
+    blockedTerm: "gesperrter Begriff „{term}“",
+    scam: "bekannte Spam-Phrase „{term}“",
+    caps: "zu viele Großbuchstaben",
+    emotes: "{n} Emotes",
+    length: "Nachricht zu lang",
+    manual: "manuelle Aktion",
   },
   wizard: {
     title: "Willkommen bei HighBazar",

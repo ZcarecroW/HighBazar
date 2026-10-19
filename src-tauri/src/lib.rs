@@ -65,8 +65,8 @@ pub fn run() {
             };
             app.manage(state.clone());
 
-            if autostart {
-                if let Some(channel) = channel {
+            if autostart
+                && let Some(channel) = channel {
                     let handle = app.handle().clone();
                     tauri::async_runtime::spawn(async move {
                         tokio::time::sleep(std::time::Duration::from_secs(2)).await;
@@ -75,7 +75,6 @@ pub fn run() {
                         }
                     });
                 }
-            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

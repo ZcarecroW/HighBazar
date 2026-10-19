@@ -123,11 +123,10 @@ pub async fn research(
         tips: strings(&v["tips"]),
         sources: Vec::new(),
     };
-    if let Some((_, url)) = wiki {
-        if !url.is_empty() {
+    if let Some((_, url)) = wiki
+        && !url.is_empty() {
             k.sources.push(url);
         }
-    }
     if k.facts.is_empty() {
         return Err("research returned no facts".into());
     }

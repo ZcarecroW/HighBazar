@@ -79,11 +79,10 @@ pub fn parse(v: &Value) -> AppResult<AiResponse> {
             .join(""),
         _ => String::new(),
     };
-    if text.is_empty() {
-        if let Some(r) = msg["refusal"].as_str() {
+    if text.is_empty()
+        && let Some(r) = msg["refusal"].as_str() {
             return Err(AppError::msg(format!("The model refused: {r}")));
         }
-    }
     // Some reasoning models wrap their thoughts in <think> tags.
     let text = strip_think(&text);
     let u = &v["usage"];

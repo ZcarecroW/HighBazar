@@ -77,11 +77,10 @@ impl Config {
         for p in self.moderation_profiles.iter_mut() {
             // Make sure every known category exists exactly once.
             for cat in CATEGORIES {
-                if !p.categories.iter().any(|r| r.category == *cat) {
-                    if let Some(def) = default_categories().into_iter().find(|r| r.category == *cat) {
+                if !p.categories.iter().any(|r| r.category == *cat)
+                    && let Some(def) = default_categories().into_iter().find(|r| r.category == *cat) {
                         p.categories.push(def);
                     }
-                }
             }
         }
 
@@ -105,16 +104,14 @@ impl Config {
             if !c.moderation_ai_profile_id.is_empty() && !ai_ids.contains(&c.moderation_ai_profile_id) {
                 c.moderation_ai_profile_id.clear();
             }
-            if let Some(id) = &c.streamer_account_id {
-                if !account_ids.contains(id) {
+            if let Some(id) = &c.streamer_account_id
+                && !account_ids.contains(id) {
                     c.streamer_account_id = None;
                 }
-            }
-            if let Some(id) = &c.bot_account_id {
-                if !account_ids.contains(id) {
+            if let Some(id) = &c.bot_account_id
+                && !account_ids.contains(id) {
                     c.bot_account_id = None;
                 }
-            }
         }
         if self.channels.is_empty() {
             self.channels.push(ChannelProfile {

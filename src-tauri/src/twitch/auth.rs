@@ -20,8 +20,8 @@ pub const STREAMER_SCOPES: &[&str] = &[
 
 pub const BOT_SCOPES: &[&str] = &["user:write:chat"];
 
+/// Twitch's answer to `POST /oauth2/device` (snake_case on the wire).
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct DeviceCode {
     pub device_code: String,
     pub user_code: String,
@@ -102,7 +102,7 @@ pub async fn start_device_flow(http: &reqwest::Client, client_id: &str, scopes: 
     if !resp.status().is_success() {
         return Err(twitch_error(resp).await);
     }
-    Ok(resp.json::<DeviceCode>().await.map_err(|e| AppError::msg(format!("Unexpected device code response: {e}")))?)
+    resp.json::<DeviceCode>().await.map_err(|e| AppError::msg(format!("Unexpected device code response: {e}")))
 }
 
 pub async fn poll_device_token(
@@ -256,5 +256,26 @@ impl TokenManager {
                 "Twitch session expired ({e}). Please reconnect the account in Channels."
             ))),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_twitch_device_code_response() {
+        let body = r#"{"device_code":"abc","expires_in":1800,"interval":5,"user_code":"QBQLNSHC","verification_uri":"https://www.twitch.tv/activate?device-code=QBQLNSHC"}"#;
+        let dc: DeviceCode = serde_json::from_str(body).unwrap();
+        assert_eq!(dc.user_code, "QBQLNSHC");
+        assert_eq!(dc.interval, 5);
+    }
+
+    #[test]
+    fn parses_token_response() {
+        let body = r#"{"access_token":"a","expires_in":14400,"refresh_token":"r","scope":["user:read:chat"],"token_type":"bearer"}"#;
+        let t = token_from(serde_json::from_str(body).unwrap(), None);
+        assert_eq!(t.refresh_token, "r");
+        assert_eq!(t.scopes, vec!["user:read:chat"]);
     }
 }

@@ -3,7 +3,7 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { Plus, Trash2, RefreshCw } from "@lucide/vue";
 import { useApp } from "../stores/app";
-import { pdesc, pname } from "../i18n";
+import { modReason, pdesc, pname } from "../i18n";
 import { api, errorText } from "../lib/api";
 import type { ModLogEntry, ModerationProfile } from "../lib/types";
 import ProfileList from "../components/ProfileList.vue";
@@ -17,7 +17,7 @@ import UiTags from "../components/ui/UiTags.vue";
 import UiSegmented from "../components/ui/UiSegmented.vue";
 
 const app = useApp();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const cfg = computed(() => app.config!);
 
 const tab = ref<"profile" | "log">("profile");
@@ -84,7 +84,12 @@ const merged = computed(() => {
   return list;
 });
 function fmt(ts: number) {
-  return new Date(ts).toLocaleString([], { dateStyle: "short", timeStyle: "short" });
+  return new Date(ts).toLocaleString(locale.value, { dateStyle: "short", timeStyle: "short" });
+}
+
+function sourceLabel(source: string) {
+  if (source === "ai" || source === "manual") return t(`moderation.log.sources.${source}`);
+  return t("moderation.log.sources.rule");
 }
 </script>
 
@@ -211,6 +216,14 @@ function fmt(ts: number) {
               <UiField :label="t('moderation.action')"><ActionPicker v-model="p.rules.blockedTermsAction" :disabled="ro" /></UiField>
             </div>
             <hr class="border-line" />
+            <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+              <div>
+                <UiToggle v-model="p.rules.scamPhrasesEnabled" :label="t('moderation.scamPhrases')" :disabled="ro" />
+                <p class="mt-1 text-xs text-muted">{{ t("moderation.scamPhrasesHint") }}</p>
+              </div>
+              <UiField :label="t('moderation.action')"><ActionPicker v-model="p.rules.scamPhrasesAction" :disabled="ro || !p.rules.scamPhrasesEnabled" /></UiField>
+            </div>
+            <hr class="border-line" />
             <div class="grid gap-4 md:grid-cols-3">
               <UiField :label="t('moderation.links')">
                 <select v-model="p.rules.links" class="input">
@@ -292,13 +305,13 @@ function fmt(ts: number) {
               <td class="px-4 py-2.5 text-xs whitespace-nowrap text-muted">{{ fmt(e.ts) }}</td>
               <td class="px-2 py-2.5">
                 <div class="font-semibold">{{ e.displayName }}</div>
-                <div class="text-xs text-muted">{{ e.source }}</div>
+                <div class="text-xs text-muted">{{ sourceLabel(e.source) }}</div>
               </td>
               <td class="w-full px-2 py-2.5">
                 <div class="break-words italic">“{{ e.text }}”</div>
                 <div class="mt-0.5 text-xs text-muted">
-                  {{ t(`moderation.categories.${e.category}`) }} · {{ e.verdict }}<template v-if="e.source === 'ai'"> · {{ Math.round(e.confidence * 100) }}%</template>
-                  <template v-if="e.reason"> — {{ e.reason }}</template>
+                  {{ t(`moderation.categories.${e.category}`) }} · {{ t(`moderation.log.verdicts.${e.verdict}`) }}<template v-if="e.source === 'ai'"> · {{ Math.round(e.confidence * 100) }}%</template>
+                  <template v-if="e.reason"> — {{ modReason(e.reason) }}</template>
                 </div>
                 <div v-if="e.error" class="text-xs text-red-500">{{ e.error }}</div>
               </td>

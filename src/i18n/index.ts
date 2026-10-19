@@ -35,6 +35,26 @@ export function pname(p: Named): string {
   return p.builtin && i18n.global.te(k, "en") ? i18n.global.t(k) : p.name;
 }
 
+// Reasons produced by the instant rules in the backend (English) → localized.
+const ruleReasons: [RegExp, string, string[]][] = [
+  [/^same message (\d+)× within a minute$/, "repeat", ["n"]],
+  [/^link not allowed \((.*)\)$/s, "link", ["url"]],
+  [/^blocked term "(.*)"$/s, "blockedTerm", ["term"]],
+  [/^known spam phrase "(.*)"$/s, "scam", ["term"]],
+  [/^excessive caps$/, "caps", []],
+  [/^(\d+) emotes$/, "emotes", ["n"]],
+  [/^message too long$/, "length", []],
+  [/^manual action$/, "manual", []],
+];
+
+export function modReason(reason: string): string {
+  for (const [re, key, names] of ruleReasons) {
+    const m = reason.match(re);
+    if (m) return i18n.global.t(`ruleReasons.${key}`, Object.fromEntries(names.map((n, i) => [n, m[i + 1]])));
+  }
+  return reason;
+}
+
 export function pdesc(p: Named): string {
   const k = `presets.${p.id}.description`;
   return p.builtin && i18n.global.te(k, "en") ? i18n.global.t(k) : (p.description ?? "");

@@ -18,9 +18,7 @@ fn supports_dynamic_search(model: &str) -> bool {
 
 /// Server-side refusal fallbacks are offered on these models.
 fn supports_fallbacks(model: &str) -> bool {
-    ["claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5", "claude-fable-5-1"]
-        .iter()
-        .any(|m| model == *m)
+    ["claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5", "claude-fable-5-1"].contains(&model)
 }
 
 /// Current models reject sampling parameters; only send them to old ones.
@@ -40,11 +38,10 @@ fn body(p: &AiProfile, req: &AiRequest, with_fallbacks: bool) -> Value {
     if !p.reasoning.is_empty() {
         b["output_config"] = json!({ "effort": p.reasoning });
     }
-    if let Some(t) = p.temperature {
-        if supports_temperature(&p.model) {
+    if let Some(t) = p.temperature
+        && supports_temperature(&p.model) {
             b["temperature"] = json!(t);
         }
-    }
     if req.web_search {
         let kind = if supports_dynamic_search(&p.model) { "web_search_20260209" } else { "web_search_20250305" };
         b["tools"] = json!([{ "type": kind, "name": "web_search", "max_uses": 3 }]);
@@ -72,14 +69,12 @@ pub async fn complete(http: &reqwest::Client, p: &AiProfile, key: &str, req: &Ai
         if !resp.status().is_success() {
             let err = error_from("anthropic", resp).await;
             // Older deployments / proxies may not know the fallback beta.
-            if use_fallbacks {
-                if let AppError::Ai { status: 400, message, .. } = &err {
-                    if message.to_lowercase().contains("fallback") || message.to_lowercase().contains("beta") {
+            if use_fallbacks
+                && let AppError::Ai { status: 400, message, .. } = &err
+                    && (message.to_lowercase().contains("fallback") || message.to_lowercase().contains("beta")) {
                         use_fallbacks = false;
                         continue;
                     }
-                }
-            }
             return Err(err);
         }
         let v: Value = resp.json().await?;

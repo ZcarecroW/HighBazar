@@ -78,6 +78,8 @@ export const useApp = defineStore("app", () => {
   async function load() {
     try {
       applyBootstrap(await api.bootstrap());
+      // The bot outlives a reload of the window.
+      running.value = await api.botRunning().catch(() => null);
       ready.value = true;
       if (!config.value!.settings.wizardCompleted) wizardOpen.value = true;
       if (import.meta.env.DEV) {
@@ -238,6 +240,7 @@ export const useApp = defineStore("app", () => {
     await onEvent<BotStatus>("hb:status", (p) => {
       status.value = p.running ? p : null;
       if (!p.running) running.value = null;
+      else if (!running.value) running.value = { channelId: p.channelId, sandbox: p.sandbox };
     });
     await onEvent<PendingMessage[]>("hb:pending", (p) => (pending.value = p));
     await onEvent<ModLogEntry>("hb:modlog", (p) => {

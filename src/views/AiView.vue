@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import { pdesc, pname } from "../i18n";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { CircleCheck, CircleAlert, ExternalLink, Loader2, Plus, Send, Trash2, TriangleAlert, Download, Search } from "@lucide/vue";
 import { useApp } from "../stores/app";
@@ -15,7 +16,7 @@ import UiSegmented from "../components/ui/UiSegmented.vue";
 import ApiKeyInput from "../components/ApiKeyInput.vue";
 
 const app = useApp();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const cfg = computed(() => app.config!);
 
 const tab = ref<"profiles" | "keys" | "usage">("profiles");
@@ -165,14 +166,14 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
 
         <fieldset :disabled="ro" class="card-pad min-w-0 space-y-5">
           <div class="grid gap-5 md:grid-cols-2">
-            <UiField :label="t('common.name')"><input v-model="p.name" class="input" /></UiField>
+            <UiField :label="t('common.name')"><input v-if="!ro" v-model="p.name" class="input" /><input v-else :value="pname(p)" class="input" /></UiField>
             <UiField :label="t('ai.provider')">
               <select v-model="p.provider" class="input">
                 <option v-for="pr in app.providers" :key="pr.id" :value="pr.id">{{ pr.name }}</option>
               </select>
             </UiField>
           </div>
-          <UiField :label="t('common.description')"><input v-model="p.description" class="input" /></UiField>
+          <UiField :label="t('common.description')"><input v-if="!ro" v-model="p.description" class="input" /><input v-else :value="pdesc(p)" class="input" /></UiField>
           <p v-if="usedBy.length" class="text-xs text-muted">{{ t("ai.usedBy") }}: {{ usedBy.join(", ") }}</p>
 
           <div v-if="p.provider === 'claudeCli'" class="flex gap-2 rounded-xl border border-amber-400/40 bg-amber-400/10 p-3 text-sm">
@@ -323,7 +324,7 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
             <td class="px-4 py-2">{{ r.date }}</td>
             <td class="px-2 py-2">{{ channelName(r.ch) }}</td>
             <td class="px-2 py-2 text-right">{{ r.calls }}</td>
-            <td class="px-2 py-2 text-right">{{ (r.inputTokens + r.outputTokens).toLocaleString() }}</td>
+            <td class="px-2 py-2 text-right">{{ (r.inputTokens + r.outputTokens).toLocaleString(locale) }}</td>
             <td class="px-2 py-2 text-right">{{ r.messagesSent }}</td>
             <td class="px-2 py-2 text-right">{{ r.modActions }}</td>
             <td class="px-4 py-2 text-right font-semibold">${{ r.costUsd.toFixed(3) }}</td>

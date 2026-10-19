@@ -178,6 +178,8 @@ export interface ModerationProfile {
   rules: {
     blockedTerms: string[];
     blockedTermsAction: ModAction;
+    scamPhrasesEnabled: boolean;
+    scamPhrasesAction: ModAction;
     links: "allow" | "block";
     allowedDomains: string[];
     linksAction: ModAction;

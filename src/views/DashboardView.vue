@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import { modReason } from "../i18n";
 import {
   Play,
   Square,
@@ -297,7 +298,7 @@ function modEntry(item: FeedItem) {
                   · {{ t(`moderation.log.status.${modEntry(item).status}`) }}
                 </span>
                 <span class="text-muted">{{ t(`moderation.categories.${modEntry(item).category}`) }}</span>
-                <span v-if="modEntry(item).reason" class="text-muted"> — {{ modEntry(item).reason }}</span>
+                <span v-if="modEntry(item).reason" class="text-muted"> — {{ modReason(modEntry(item).reason) }}</span>
                 <div class="mt-0.5 truncate text-xs text-muted italic">“{{ modEntry(item).text }}”</div>
                 <div v-if="modEntry(item).status === 'suggested' || ['executed'].includes(modEntry(item).status)" class="mt-1 flex gap-1">
                   <template v-if="modEntry(item).status === 'suggested'">

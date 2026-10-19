@@ -605,7 +605,8 @@ pub fn default_categories() -> Vec<CategoryRule> {
         rule("harassment", ModAction::new("timeout", 600), ModAction::new("log", 0)),
         rule("threat", ModAction::new("timeout", 3600), ModAction::new("log", 0)),
         rule("sexual", ModAction::new("timeout", 600), ModAction::new("log", 0)),
-        rule("selfHarm", ModAction::new("delete", 0), ModAction::new("log", 0)),
+        // Category = telling others to hurt themselves ("kys"), not people in distress.
+        rule("selfHarm", ModAction::new("timeout", 600), ModAction::new("log", 0)),
         rule("spam", ModAction::new("delete", 0), ModAction::new("log", 0)),
         rule("scam", ModAction::new("ban", 0), ModAction::new("delete", 0)),
         rule("doxxing", ModAction::new("timeout", 3600), ModAction::new("delete", 0)),
@@ -643,6 +644,9 @@ pub struct LocalRules {
     /// common character substitutions.
     pub blocked_terms: Vec<String>,
     pub blocked_terms_action: ModAction,
+    /// Built-in list of typical viewer-bot / phishing spam phrases.
+    pub scam_phrases_enabled: bool,
+    pub scam_phrases_action: ModAction,
     /// "allow" | "block" (non-exempt users)
     pub links: String,
     pub allowed_domains: Vec<String>,
@@ -667,6 +671,8 @@ impl Default for LocalRules {
         Self {
             blocked_terms: Vec::new(),
             blocked_terms_action: ModAction::new("delete", 0),
+            scam_phrases_enabled: true,
+            scam_phrases_action: ModAction::new("delete", 0),
             links: "allow".into(),
             allowed_domains: vec![
                 "twitch.tv".into(),

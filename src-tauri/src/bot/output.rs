@@ -56,6 +56,16 @@ pub fn truncate_words(s: &str, max_chars: usize) -> String {
         return s.to_string();
     }
     let cut: String = s.chars().take(max_chars.saturating_sub(1)).collect();
+    // Prefer ending after a complete sentence over a cut-off one.
+    let sentence_end = cut
+        .char_indices()
+        .filter(|(i, ch)| matches!(ch, '.' | '!' | '?') && cut[i + ch.len_utf8()..].starts_with(' '))
+        .map(|(i, ch)| i + ch.len_utf8())
+        .next_back();
+    if let Some(end) = sentence_end
+        && cut[..end].chars().count() > max_chars / 2 {
+            return cut[..end].to_string();
+        }
     let trimmed = match cut.rfind(' ') {
         Some(i) if i > max_chars / 2 => cut[..i].to_string(),
         _ => cut,
@@ -103,6 +113,8 @@ mod tests {
     fn truncates_on_word_boundary() {
         let t = truncate_words("one two three four five six", 15);
         assert!(t.ends_with('…') && t.chars().count() <= 15);
+        let t = truncate_words("Great run so far! Who is ready for the next boss fight tonight", 30);
+        assert_eq!(t, "Great run so far!");
     }
 
     #[test]

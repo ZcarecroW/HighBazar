@@ -4,6 +4,27 @@ All notable changes to HighBazar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- Twitch login failed with "Unexpected device code response" (the device-code answer was parsed in the wrong field case).
+- The bot froze on its first AI message (a lock was taken twice while building the prompt); removed a second lock-order risk in the status update.
+- Moderation actions appeared twice in the live feed.
+- After reloading the window the dashboard showed the bot as stopped while it was still running.
+- Busy moments no longer drop AI replies silently; tasks wait for a free slot.
+- Announcements of automatic moderation actions no longer repeat a blocked term in chat.
+- "Next message" countdown now shows the offline pause right away.
+
+### Added
+- Built-in "known spam phrases" rule (viewer-bot and gift-card spam such as "cheap viewers", "free followers", "free nitro") that works without AI; on by default.
+- The Claude Code CLI bridge also finds the CLI bundled with the Claude desktop app and explains how to log it in.
+
+### Changed
+- Fixed bot texts (the `!hb` help and moderation announcements) use the stream language (German or English).
+- AI messages are asked for the message only (no labels like "Hype moment:") and within the length limit; over-long answers are cut after a full sentence.
+- "kys" and similar (self-harm category) now get a 10-minute timeout in the Balanced preset instead of only a deletion.
+- Moderation log and feed: rule reasons, verdicts, sources, dates and built-in AI profile names are localized.
+
 ## [1.0.0] – 2026-10-18
 
 First public release.

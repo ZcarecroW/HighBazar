@@ -228,11 +228,10 @@ async fn session(
             }
             "notification" => {
                 let kind = frame.metadata.subscription_type.unwrap_or_default();
-                if let Some(ev) = parse_event(&kind, &frame.payload["event"]) {
-                    if tx.send(ev).await.is_err() {
+                if let Some(ev) = parse_event(&kind, &frame.payload["event"])
+                    && tx.send(ev).await.is_err() {
                         return SessionEnd::Shutdown;
                     }
-                }
             }
             _ => {}
         }

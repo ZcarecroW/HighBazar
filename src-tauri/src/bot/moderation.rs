@@ -177,14 +177,17 @@ impl RuleState {
                 return Some(found("blockedTerm", "blockedTerm", format!("blocked term \"{term}\""), &r.blocked_terms_action));
             }
         }
-        if r.links == "block" {
-            if let Some(cap) = self.url_re.captures(&m.text) {
+        if r.scam_phrases_enabled
+            && let Some(phrase) = SCAM_PHRASES.iter().find(|s| folded.contains(*s)) {
+                return Some(found("scam", "scam", format!("known spam phrase \"{phrase}\""), &r.scam_phrases_action));
+            }
+        if r.links == "block"
+            && let Some(cap) = self.url_re.captures(&m.text) {
                 let url = cap.get(1).map(|x| x.as_str()).unwrap_or_default();
                 if !Self::domain_allowed(url, &r.allowed_domains) {
                     return Some(found("links", "spam", format!("link not allowed ({url})"), &r.links_action));
                 }
             }
-        }
         if r.repeat_enabled && r.repeat_count > 1 && repeats >= r.repeat_count {
             return Some(found("repeat", "spam", format!("same message {repeats}× within a minute"), &r.repeat_action));
         }
@@ -206,6 +209,15 @@ impl RuleState {
         None
     }
 }
+
+/// Phrases of the viewer-bot and gift-card spam that hits almost every
+/// channel (matched against the folded text, so case and leetspeak don't matter).
+const SCAM_PHRASES: &[&str] = &[
+    "cheap viewers", "cheap followers", "best viewers", "buy viewers", "buy followers", "free followers",
+    "free viewers", "primes and viewers", "primes, viewers", "wanna become famous", "want to become famous",
+    "streamboo", "dogehype", "bigfollows", "free nitro", "nitro for free", "steam gift card for free",
+    "zuschauer kaufen", "follower kaufen", "günstige zuschauer", "gunstige zuschauer",
+];
 
 /// Cheap pre-filter for the "suspicious only" AI mode.
 pub fn is_suspicious(text: &str) -> bool {
@@ -321,6 +333,31 @@ pub fn describe_action(a: &ModAction) -> String {
     }
 }
 
+/// Reason for a chat announcement. Rule reasons are replaced by a short
+/// generic text so a blocked term or a spam link is never repeated in chat.
+pub fn public_reason(source: &str, reason: &str, category: &str, de: bool) -> String {
+    let rule = source.strip_prefix("rule:");
+    let text = match (rule, de) {
+        (Some("repeat"), false) => "repeated messages",
+        (Some("repeat"), true) => "wiederholte Nachrichten",
+        (Some("links"), false) => "links are not allowed",
+        (Some("links"), true) => "Links sind nicht erlaubt",
+        (Some("caps"), false) => "too many caps",
+        (Some("caps"), true) => "zu viele Großbuchstaben",
+        (Some("emoteSpam"), false) => "emote spam",
+        (Some("emoteSpam"), true) => "Emote-Spam",
+        (Some("length"), false) => "message too long",
+        (Some("length"), true) => "Nachricht zu lang",
+        (Some("blockedTerm"), false) => "blocked term",
+        (Some("blockedTerm"), true) => "gesperrter Begriff",
+        (Some(_), false) => "spam",
+        (Some(_), true) => "Spam",
+        (None, _) if !reason.is_empty() => return reason.to_string(),
+        (None, _) => return category.to_string(),
+    };
+    text.to_string()
+}
+
 pub fn human_duration(secs: u32) -> String {
     match secs {
         0..=59 => format!("{secs}s"),
@@ -356,6 +393,17 @@ mod tests {
         let mut s = RuleState::default();
         assert!(s.check(&p, &msg("look clips.twitch.tv/abc"), 0).is_none());
         assert!(s.check(&p, &msg("free stuff at scam-site.xyz/win"), 0).is_some());
+    }
+
+    #[test]
+    fn scam_phrases_without_ai() {
+        let p = ModerationProfile::default();
+        let mut s = RuleState::default();
+        let f = s.check(&p, &msg("Cheap VIEWERS on streamboo .com"), 0).unwrap();
+        assert_eq!(f.source, "rule:scam");
+        assert!(s.check(&p, &msg("FR33 F0LL0WERS here"), 0).is_some());
+        assert!(s.check(&p, &msg("we have 12 viewers and a free evening"), 0).is_none());
+        assert_eq!(public_reason("rule:blockedTerm", "blocked term \"x\"", "blockedTerm", true), "gesperrter Begriff");
     }
 
     #[test]

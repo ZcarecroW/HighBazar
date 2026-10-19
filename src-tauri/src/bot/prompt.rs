@@ -60,6 +60,16 @@ pub struct StreamFacts<'a> {
     pub viewers: Option<u64>,
 }
 
+/// "de" or "en" for the few fixed texts the bot posts without AI.
+pub fn fixed_text_lang(c: &CompanionProfile, stream_lang: &str) -> &'static str {
+    let code = if c.language.mode == "fixed" || stream_lang.trim().is_empty() {
+        c.language.fixed.as_str()
+    } else {
+        stream_lang
+    };
+    if code.trim().to_lowercase().starts_with("de") { "de" } else { "en" }
+}
+
 /// Effective language instruction for the current situation.
 pub fn language_rule(c: &CompanionProfile, stream_lang: &str) -> String {
     let fallback = language_name(&c.language.fixed);
