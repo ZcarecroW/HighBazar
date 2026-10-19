@@ -99,6 +99,20 @@ pub fn run() {
             commands::twitch_api,
             commands::open_data_dir,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running HighBazar");
+        .build(tauri::generate_context!())
+        .expect("error while building HighBazar")
+        .run(|app, event| {
+            // Stop the bot cleanly on exit so usage numbers and the list of known
+            // chatters are written to disk instead of being lost.
+            if let tauri::RunEvent::Exit = event
+                && let Some(state) = app.try_state::<Arc<AppState>>()
+            {
+                let state = state.inner().clone();
+                let handle = app.clone();
+                tauri::async_runtime::block_on(async move {
+                    state.bot.stop(&handle).await;
+                    state.usage.lock().save_if_dirty();
+                });
+            }
+        });
 }

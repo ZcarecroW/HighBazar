@@ -81,8 +81,8 @@ You can use a **different, cheaper model for moderation**.
 ### 🎛️ Stream & channel manager
 Change your stream right from HighBazar, in three levels (default: *Simple*):
 - **Simple** — title, category (search with box art), language and tags.
-- **Advanced** — plus content classification labels and branded content, chat settings (emote-only, followers-only, slow mode, subs-only, unique chat, chat delay), announcements, shoutouts, raids, clips and stream markers.
-- **Expert** — everything Twitch allows: polls and predictions, channel point rewards, mods, VIPs and bans, Twitch AutoMod levels, shield mode and blocked terms, ads (run / snooze), stream schedule, channel description and chat color, follower/sub numbers.
+- **Advanced** — plus content classification labels and branded content, chat settings (emote-only, followers-only, slow mode, subs-only, unique chat, chat delay), announcements, shoutouts, raids, clips (with title and length), stream markers and pinned chat messages.
+- **Expert** — everything Twitch allows: polls (with channel points voting) and predictions, channel point rewards with limits, mods, VIPs, bans and unban requests, suspicious-user monitoring, Twitch AutoMod levels, shield mode and blocked terms, ads (run / snooze), stream schedule, stream delay (partners), channel description and chat color, follower/sub numbers and the Hype Train.
 
 HighBazar only asks Twitch for the permissions of the level you pick; switching to a higher level asks you to approve the extra ones once.
 

@@ -133,6 +133,7 @@ export interface CompanionProfile {
     gift: boolean;
     raid: boolean;
     cheer: boolean;
+    watchStreak: boolean;
     minCheerBits: number;
     followBatchSecs: number;
   };

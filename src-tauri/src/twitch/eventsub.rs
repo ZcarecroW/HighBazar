@@ -37,6 +37,8 @@ pub struct ChatMessage {
     pub twitch_emotes: Vec<(String, String)>,
     pub bits: u32,
     pub mentions: Vec<String>,
+    /// Set in a shared chat session when the message comes from another channel.
+    pub source_broadcaster_id: Option<String>,
     /// Unix millis.
     pub ts: i64,
 }
@@ -81,6 +83,8 @@ pub struct ChatNotification {
     pub gift_count: u32,
     pub recipient: String,
     pub raid_viewers: u64,
+    pub streak: u32,
+    pub bits_tier: u32,
 }
 
 #[derive(Debug, Clone)]
@@ -305,6 +309,17 @@ pub fn parse_event(kind: &str, e: &Value) -> Option<TwitchEvent> {
                     n.user_name = s(&e["raid"]["user_name"]);
                     n.raid_viewers = e["raid"]["viewer_count"].as_u64().unwrap_or(0);
                 }
+                "watch_streak" => {
+                    n.streak = e["watch_streak"]["streak_count"].as_u64().unwrap_or(0) as u32;
+                }
+                "bits_badge_tier" => {
+                    n.bits_tier = e["bits_badge_tier"]["tier"].as_u64().unwrap_or(0) as u32;
+                }
+                "gift_paid_upgrade" | "prime_paid_upgrade" => {
+                    n.tier = s(&e[notice.as_str()]["sub_tier"]);
+                }
+                // Shared chat: events of the other channels are not ours to celebrate.
+                t if t.starts_with("shared_chat_") => return None,
                 _ => {}
             }
             Some(TwitchEvent::Notification(n))
@@ -333,6 +348,7 @@ pub fn parse_chat(e: &Value) -> ChatMessage {
     let mut emotes = Vec::new();
     let mut twitch_emotes = Vec::new();
     let mut mentions = Vec::new();
+    let mut gifs = 0;
     if let Some(frags) = e["message"]["fragments"].as_array() {
         for f in frags {
             match f["type"].as_str() {
@@ -341,6 +357,7 @@ pub fn parse_chat(e: &Value) -> ChatMessage {
                     twitch_emotes.push((s(&f["text"]), s(&f["emote"]["id"])));
                 }
                 Some("mention") => mentions.push(s(&f["mention"]["user_login"])),
+                Some("gif") => gifs += 1,
                 _ => {}
             }
         }
@@ -351,7 +368,11 @@ pub fn parse_chat(e: &Value) -> ChatMessage {
         user_id: s(&e["chatter_user_id"]),
         login: s(&e["chatter_user_login"]),
         display_name: s(&e["chatter_user_name"]),
-        text: s(&e["message"]["text"]),
+        text: {
+            // GIF fragments (2026) carry no readable text; keep a marker for the feed and the AI.
+            let t = s(&e["message"]["text"]);
+            if gifs > 0 && !t.contains("[GIF]") { format!("{t} [GIF]").trim().to_string() } else { t }
+        },
         color: s(&e["color"]),
         is_broadcaster: has("broadcaster"),
         is_mod: has("moderator") || has("lead_moderator"),
@@ -366,6 +387,7 @@ pub fn parse_chat(e: &Value) -> ChatMessage {
         twitch_emotes,
         bits: e["cheer"]["bits"].as_u64().unwrap_or(0) as u32,
         mentions,
+        source_broadcaster_id: e["source_broadcaster_user_id"].as_str().filter(|x| !x.is_empty()).map(str::to_string),
         ts: chrono::Utc::now().timestamp_millis(),
     }
 }
@@ -420,5 +442,33 @@ mod tests {
     fn skips_community_gift_parts() {
         let e = json!({ "notice_type": "sub_gift", "sub_gift": { "community_gift_id": "abc", "sub_tier": "1000" } });
         assert!(parse_event("channel.chat.notification", &e).is_none());
+    }
+
+    #[test]
+    fn gif_and_shared_chat_messages() {
+        let e = json!({
+            "message_id": "m1", "chatter_user_id": "9", "chatter_user_login": "x", "chatter_user_name": "X",
+            "source_broadcaster_user_id": "777",
+            "message": { "text": "look", "fragments": [
+                {"type": "text", "text": "look"},
+                {"type": "gif", "text": "", "gif": {"id": "g1", "url": "https://example.invalid/g.gif"}}
+            ]}
+        });
+        let m = parse_chat(&e);
+        assert_eq!(m.text, "look [GIF]");
+        assert_eq!(m.source_broadcaster_id.as_deref(), Some("777"));
+        let plain = parse_chat(&json!({ "message": { "text": "hi" }, "source_broadcaster_user_id": null }));
+        assert!(plain.source_broadcaster_id.is_none());
+    }
+
+    #[test]
+    fn new_notice_types() {
+        let e = json!({ "notice_type": "watch_streak", "chatter_user_name": "Fan", "watch_streak": { "streak_count": 7, "channel_points_awarded": 450 } });
+        match parse_event("channel.chat.notification", &e) {
+            Some(TwitchEvent::Notification(n)) => assert_eq!(n.streak, 7),
+            other => panic!("unexpected {other:?}"),
+        }
+        let shared = json!({ "notice_type": "shared_chat_sub", "chatter_user_name": "Other" });
+        assert!(parse_event("channel.chat.notification", &shared).is_none());
     }
 }

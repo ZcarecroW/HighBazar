@@ -174,8 +174,7 @@ mod tests {
 
     #[test]
     fn rate_and_unanswered() {
-        let mut c = ChatContext::default();
-        c.unanswered = 3;
+        let mut c = ChatContext { unanswered: 3, ..Default::default() };
         c.push_human(line(0, "a"), &[]);
         c.push_human(line(30_000, "b"), &["Kappa".into()]);
         assert_eq!(c.unanswered, 0);

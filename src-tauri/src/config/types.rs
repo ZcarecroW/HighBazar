@@ -370,6 +370,8 @@ pub struct EventSettings {
     pub gift: bool,
     pub raid: bool,
     pub cheer: bool,
+    /// Viewers sharing a watch streak ("5 streams in a row").
+    pub watch_streak: bool,
     pub min_cheer_bits: u32,
     /// Collect follows for this many seconds and thank them together.
     pub follow_batch_secs: u32,
@@ -384,6 +386,7 @@ impl Default for EventSettings {
             gift: true,
             raid: true,
             cheer: true,
+            watch_streak: true,
             min_cheer_bits: 100,
             follow_batch_secs: 30,
         }

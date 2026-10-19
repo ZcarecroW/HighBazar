@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import { BarChart3, Plus, RefreshCw, Trophy, X, Lock, Survey } from "../../icons";
 import { useTwitch } from "../../lib/twitch";
 import UiNumber from "../ui/UiNumber.vue";
+import UiToggle from "../ui/UiToggle.vue";
 
 const { t } = useI18n();
 const { id, tw } = useTwitch();
@@ -37,6 +38,8 @@ const openPred = computed(() => preds.value.find((p) => p.status === "ACTIVE" ||
 const pollTitle = ref("");
 const pollChoices = ref(["", ""]);
 const pollDuration = ref(120);
+const pollPoints = ref(false);
+const pollPointsPerVote = ref(100);
 const predTitle = ref("");
 const predOutcomes = ref(["", ""]);
 const predWindow = ref(120);
@@ -65,6 +68,8 @@ const createPoll = () =>
       title: pollTitle.value.trim(),
       choices: pollChoices.value.filter((c) => c.trim()).map((c) => ({ title: c.trim() })),
       duration: pollDuration.value,
+      channel_points_voting_enabled: pollPoints.value,
+      channel_points_per_vote: pollPoints.value ? pollPointsPerVote.value : undefined,
     }).then((r) => {
       if (r) {
         pollTitle.value = "";
@@ -131,6 +136,10 @@ onMounted(load);
           <div class="flex flex-wrap items-end gap-3">
             <button v-if="pollChoices.length < 5" class="btn-ghost text-xs" @click="pollChoices.push('')"><Plus :size="13" /> {{ t("stream.polls.addChoice") }}</button>
             <UiNumber v-model="pollDuration" :label="t('stream.polls.duration')" :min="15" :max="1800" :suffix="t('stream.seconds')" class="ml-auto" />
+          </div>
+          <div class="flex flex-wrap items-end gap-3">
+            <UiToggle v-model="pollPoints" :label="t('stream.polls.pointsVoting')" :hint="t('stream.polls.pointsVotingHint')" class="flex-1" />
+            <UiNumber v-if="pollPoints" v-model="pollPointsPerVote" :min="1" :max="1000000" :suffix="t('stream.polls.pointsPerVote')" />
           </div>
           <button class="btn-primary" :disabled="!validPoll || busy" @click="createPoll">{{ t("stream.polls.start") }}</button>
         </template>

@@ -3,7 +3,8 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n";
 import { modReason } from "../i18n";
 import EmoteText from "../components/EmoteText.vue";
-import { Play, Square, FlaskConical, MessageSquarePlus, RefreshCw, Wifi, WifiOff, Gamepad2, Users, Clock, Coins, Send, Pencil, X, Trash2, TimerReset, Ban, ShieldAlert, Sparkles, Bot, Heart, Gift, Swords, Star, Brain, Smile, Activity, CircleAlert, Info, Bolt } from "../icons";
+import { Play, Square, FlaskConical, MessageSquarePlus, RefreshCw, Wifi, WifiOff, Gamepad2, Users, Clock, Coins, Send, Pencil, X, Trash2, TimerReset, Ban, ShieldAlert, Sparkles, Bot, Heart, Gift, Swords, Star, Brain, Smile, Activity, CircleAlert, Info, Bolt, Pin } from "../icons";
+import { useTwitch } from "../lib/twitch";
 import { useApp } from "../stores/app";
 import type { FeedItem, PendingMessage } from "../lib/types";
 import UiToggle from "../components/ui/UiToggle.vue";
@@ -51,8 +52,37 @@ function time(ts: number) {
 function msg(item: FeedItem) {
   return item.meta?.key ? t(`feed.${item.meta.key}`, item.meta.params ?? {}) : item.text;
 }
+// Twitch name colors are picked by viewers and can be unreadable (e.g. #0000FF on dark):
+// lift or lower their lightness depending on the current background, like Twitch does.
+const isDark = ref(document.documentElement.classList.contains("dark"));
+const themeObserver = new MutationObserver(() => (isDark.value = document.documentElement.classList.contains("dark")));
+onMounted(() => themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] }));
+onBeforeUnmount(() => themeObserver.disconnect());
+function luminance(hex: string) {
+  const m = hex.match(/^#?([0-9a-f]{6})$/i);
+  if (!m) return null;
+  const n = parseInt(m[1]!, 16);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+    const c = v / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * ch[0]! + 0.7152 * ch[1]! + 0.0722 * ch[2]!;
+}
 function nameColor(item: FeedItem) {
-  return item.color || "#9146ff";
+  const c = item.color || "";
+  const l = luminance(c);
+  if (l === null) return isDark.value ? "oklch(0.8 calc(var(--c) * 0.8) var(--h))" : "oklch(0.5 calc(var(--c) * 0.95) var(--h))";
+  if (isDark.value && l < 0.18) return `color-mix(in oklab, ${c} ${Math.round(45 + l * 200)}%, white)`;
+  if (!isDark.value && l > 0.45) return `color-mix(in oklab, ${c} 55%, black)`;
+  return c;
+}
+
+// ------------------------------------------------------------ pin a chat message
+const { tw, id: accountId } = useTwitch();
+const canPin = (item: FeedItem) => !!item.messageId && !app.running?.sandbox && !item.messageId.startsWith("sim-");
+async function pin(item: FeedItem) {
+  const r = await tw("PUT", "/chat/pins", { broadcaster_id: accountId.value, moderator_id: accountId.value, message_id: item.messageId });
+  if (r !== null) app.toast(t("dashboard.pinned"), "success");
 }
 
 const badgeLabel: Record<string, string> = {
@@ -83,6 +113,8 @@ const budgetPct = computed(() => {
 });
 
 const canStart = computed(() => !!channel.value);
+// Going live needs a connected streamer account; test mode works without one.
+const canStartLive = computed(() => !!channel.value?.streamerAccountId && !!app.account(channel.value.streamerAccountId));
 const hasAi = computed(() => !!channel.value?.aiProfileId);
 
 // ------------------------------------------------------------ pending
@@ -178,7 +210,7 @@ function modEntry(item: FeedItem) {
       <div class="ml-auto flex flex-wrap items-center gap-2">
         <template v-if="!app.isRunning">
           <button class="btn" :disabled="!canStart" @click="app.startBot(true)"><FlaskConical :size="16" /> {{ t("dashboard.startTest") }}</button>
-          <button class="btn-primary" :disabled="!canStart" @click="app.startBot(false)"><Play :size="16" /> {{ t("dashboard.start") }}</button>
+          <button class="btn-primary" :disabled="!canStartLive" :title="canStartLive ? undefined : t('dashboard.needAccount')" @click="app.startBot(false)"><Play :size="16" /> {{ t("dashboard.start") }}</button>
         </template>
         <template v-else>
           <button class="btn" :title="t('dashboard.refreshInfo')" @click="app.control('refresh')"><RefreshCw :size="16" /></button>
@@ -242,8 +274,10 @@ function modEntry(item: FeedItem) {
               <span class="font-semibold" :style="{ color: nameColor(item) }">{{ item.user }}</span><span class="text-muted">: </span>
               <span><EmoteText :text="item.text" :emotes="item.meta?.emotes" /></span>
               <span v-if="item.meta?.firstMsg" class="chip ml-1 bg-emerald-500/15 text-emerald-600">{{ t("dashboard.newChatter") }}</span>
+              <span v-if="item.meta?.shared" class="chip ml-1 bg-sky-500/15 text-sky-600 dark:text-sky-300">{{ t("dashboard.sharedChat") }}</span>
               <span v-if="item.meta?.bits" class="chip ml-1 bg-purple-500/15 text-purple-600">{{ item.meta.bits }} bits</span>
               <span v-if="app.isRunning && item.userId" class="absolute top-0.5 right-1 hidden gap-0.5 rounded-md border border-line bg-panel p-0.5 shadow-sm group-hover:flex">
+                <button v-if="canPin(item)" class="rounded p-1 text-muted hover:text-brand-500" :title="t('dashboard.pin')" @click="pin(item)"><Pin :size="13" /></button>
                 <button class="rounded p-1 text-muted hover:text-fg" :title="t('dashboard.deleteMsg')" @click="manual(item, 'delete')"><Trash2 :size="13" /></button>
                 <button class="rounded p-1 text-muted hover:text-amber-500" :title="t('dashboard.timeout10')" @click="manual(item, 'timeout', 600)"><TimerReset :size="13" /></button>
                 <button class="rounded p-1 text-muted hover:text-red-500" :title="t('dashboard.ban')" @click="manual(item, 'ban')"><Ban :size="13" /></button>

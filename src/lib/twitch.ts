@@ -32,6 +32,9 @@ export const LEVEL_SCOPES: Record<ChannelLevel, string[]> = {
     "channel:read:editors",
     "user:edit",
     "user:manage:chat_color",
+    "moderator:manage:unban_requests",
+    "moderator:manage:suspicious_users",
+    "channel:read:hype_train",
   ],
 };
 
@@ -64,9 +67,20 @@ export function useTwitch() {
     try {
       return await api.twitchApi<T>(id.value, method, path, q, body);
     } catch (e) {
-      if (!quiet) app.toast(t("stream.apiError", { e: errorText(e) }), "error", 7000);
+      if (!quiet) app.toast(explain(errorText(e)), "error", 8000);
       return null;
     }
+  }
+
+  /** Turns "Twitch API error 403: …" into a localized hint plus Twitch's own message. */
+  function explain(raw: string): string {
+    const m = raw.match(/Twitch API error (\d{3}): ([\s\S]*)/);
+    if (!m) return t("stream.apiError", { e: raw });
+    const status = m[1]!;
+    const msg = m[2]!.trim();
+    const known = ["400", "401", "403", "404", "409", "422", "425", "429"];
+    const hint = known.includes(status) ? t(`stream.errors.${status}`) : "";
+    return hint ? `${hint} (Twitch: ${msg})` : t("stream.apiError", { e: `${status} ${msg}` });
   }
 
   async function userByLogin(login: string) {

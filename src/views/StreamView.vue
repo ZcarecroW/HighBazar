@@ -9,6 +9,7 @@ import UiField from "../components/ui/UiField.vue";
 import UiSegmented from "../components/ui/UiSegmented.vue";
 import UiTags from "../components/ui/UiTags.vue";
 import UiToggle from "../components/ui/UiToggle.vue";
+import UiNumber from "../components/ui/UiNumber.vue";
 import ChatSettingsPanel from "../components/stream/ChatSettingsPanel.vue";
 import ActionsPanel from "../components/stream/ActionsPanel.vue";
 import PollsPanel from "../components/stream/PollsPanel.vue";
@@ -54,6 +55,8 @@ const language = ref("de");
 const tags = ref<string[]>([]);
 const ccls = ref<string[]>([]);
 const branded = ref(false);
+const delay = ref(0);
+const partner = ref(false);
 const cclList = ref<Ccl[]>([]);
 const original = ref("");
 
@@ -66,16 +69,18 @@ function langName(code: string) {
     return code;
   }
 }
-const snapshot = () => JSON.stringify([title.value, category.value?.id, language.value, tags.value, ccls.value, branded.value]);
+const snapshot = () => JSON.stringify([title.value, category.value?.id, language.value, tags.value, ccls.value, branded.value, delay.value]);
 const dirty = computed(() => original.value !== "" && snapshot() !== original.value);
 
 async function load() {
   if (!id.value) return;
   loading.value = true;
-  const [ch, st] = await Promise.all([
+  const [ch, st, us] = await Promise.all([
     tw<{ data: any[] }>("GET", "/channels", { broadcaster_id: id.value }),
     tw<{ data: any[] }>("GET", "/streams", { user_id: id.value }),
+    tw<{ data: { broadcaster_type: string }[] }>("GET", "/users", { id: id.value }, undefined, true),
   ]);
+  partner.value = us?.data?.[0]?.broadcaster_type === "partner";
   const c = ch?.data?.[0];
   if (c) {
     title.value = c.title ?? "";
@@ -84,6 +89,7 @@ async function load() {
     tags.value = [...(c.tags ?? [])];
     ccls.value = [...(c.content_classification_labels ?? [])];
     branded.value = !!c.is_branded_content;
+    delay.value = c.delay ?? 0;
     original.value = snapshot();
   }
   live.value = st?.data?.[0] ?? null;
@@ -130,6 +136,7 @@ async function save() {
   if (level.value !== "simple") {
     body.content_classification_labels = cclList.value.map((c) => ({ id: c.id, is_enabled: ccls.value.includes(c.id) }));
     body.is_branded_content = branded.value;
+    if (partner.value) body.delay = delay.value;
   }
   const r = await tw("PATCH", "/channels", { broadcaster_id: id.value }, body);
   saving.value = false;
@@ -231,10 +238,11 @@ onMounted(load);
             </div>
           </div>
           <UiToggle v-model="branded" :label="t('stream.branded')" :hint="t('stream.brandedHint')" />
+          <UiNumber v-if="partner" v-model="delay" :label="t('stream.streamDelay')" :hint="t('stream.streamDelayHint')" :min="0" :max="900" :suffix="t('stream.seconds')" />
         </template>
 
         <div class="flex items-center gap-3">
-          <button class="btn-primary" :disabled="saving || !dirty || !!tagError" @click="save">
+          <button class="btn-primary" :disabled="saving || !dirty || !!tagError || !title.trim()" @click="save">
             <Loader2 v-if="saving" :size="15" class="animate-spin" />
             <Save v-else :size="15" />
             {{ t("common.save") }}
@@ -243,14 +251,15 @@ onMounted(load);
         </div>
       </section>
 
-      <template v-if="can('advanced')">
+      <!-- keyed by account: panels reload when the active channel changes -->
+      <div v-if="can('advanced')" :key="'adv-' + id" class="space-y-5">
         <div class="grid gap-5 lg:grid-cols-2">
           <ChatSettingsPanel />
           <ActionsPanel :live="!!live" />
         </div>
-      </template>
+      </div>
 
-      <template v-if="can('expert')">
+      <div v-if="can('expert')" :key="'exp-' + id" class="space-y-5">
         <PollsPanel />
         <div class="grid gap-5 lg:grid-cols-2">
           <CommunityPanel />
@@ -261,7 +270,7 @@ onMounted(load);
           <AdsSchedulePanel :live="!!live" />
           <ProfilePanel />
         </div>
-      </template>
+      </div>
     </template>
   </div>
 </template>

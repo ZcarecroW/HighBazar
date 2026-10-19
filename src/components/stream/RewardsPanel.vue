@@ -24,7 +24,8 @@ interface Reward {
 const rewards = ref<Reward[]>([]);
 const manageable = ref(new Set<string>());
 const error = ref("");
-const draft = ref({ title: "", cost: 500, prompt: "", input: false, cooldown: 0, color: "#7C3AED" });
+const blank = () => ({ title: "", cost: 500, prompt: "", input: false, cooldown: 0, color: "#7C3AED", maxPerStream: 0, maxPerUser: 0, skipQueue: false });
+const draft = ref(blank());
 const busy = ref(false);
 
 async function load() {
@@ -51,11 +52,16 @@ async function create() {
     background_color: d.color,
     is_global_cooldown_enabled: d.cooldown > 0,
     global_cooldown_seconds: d.cooldown > 0 ? d.cooldown : undefined,
+    is_max_per_stream_enabled: d.maxPerStream > 0,
+    max_per_stream: d.maxPerStream > 0 ? d.maxPerStream : undefined,
+    is_max_per_user_per_stream_enabled: d.maxPerUser > 0,
+    max_per_user_per_stream: d.maxPerUser > 0 ? d.maxPerUser : undefined,
+    should_redemptions_skip_request_queue: d.skipQueue,
   });
   busy.value = false;
   if (r !== null) {
     app.toast(t("stream.rewards.created"), "success");
-    draft.value = { title: "", cost: 500, prompt: "", input: false, cooldown: 0, color: "#7C3AED" };
+    draft.value = blank();
     await load();
   }
 }
@@ -92,9 +98,14 @@ onMounted(load);
         <UiNumber v-model="draft.cooldown" :label="t('stream.rewards.cooldown')" :min="0" :max="604800" :suffix="t('stream.seconds')" />
         <label><span class="label">{{ t("stream.rewards.color") }}</span><input v-model="draft.color" type="color" class="h-9 w-12 rounded border border-line bg-panel-2" /></label>
       </div>
+      <div class="flex flex-wrap items-end gap-4">
+        <UiNumber v-model="draft.maxPerStream" :label="t('stream.rewards.maxPerStream')" :hint="t('stream.rewards.zeroNoLimit')" :min="0" :max="100000" />
+        <UiNumber v-model="draft.maxPerUser" :label="t('stream.rewards.maxPerUser')" :hint="t('stream.rewards.zeroNoLimit')" :min="0" :max="100000" />
+      </div>
       <div class="flex flex-wrap items-center gap-4">
         <UiToggle v-model="draft.input" :label="t('stream.rewards.input')" />
-        <button class="btn-primary ml-auto" :disabled="!draft.title.trim() || busy" @click="create"><Plus :size="15" /> {{ t("stream.rewards.create") }}</button>
+        <UiToggle v-model="draft.skipQueue" :label="t('stream.rewards.skipQueue')" />
+        <button class="btn-primary ml-auto" :disabled="!draft.title.trim() || (draft.input && !draft.prompt.trim()) || busy" @click="create"><Plus :size="15" /> {{ t("stream.rewards.create") }}</button>
       </div>
 
       <ul class="divide-y divide-line rounded-lg border border-line">

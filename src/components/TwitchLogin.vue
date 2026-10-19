@@ -28,6 +28,16 @@ async function start() {
     unlisten = await onEvent<LoginEvent>("hb:login", async (payload) => {
       if (!flow.value || payload.loginId !== flow.value.loginId) return;
       if (payload.status === "done" && payload.account) {
+        // The backend linked the account to the active channel; mirror that locally so
+        // saving the (otherwise older) local config doesn't undo the link.
+        const ch = app.activeChannel;
+        if (ch) {
+          if (props.kind === "bot") ch.botAccountId = payload.account.id;
+          else {
+            ch.streamerAccountId = payload.account.id;
+            if (!ch.name || ch.name === "My channel") ch.name = payload.account.displayName;
+          }
+        }
         await app.saveNow();
         await app.refresh();
         app.toast(t("channels.loginDone", { name: payload.account.displayName }), "success");

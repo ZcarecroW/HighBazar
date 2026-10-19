@@ -65,8 +65,8 @@ Moderation kannst du ein **günstigeres Modell** wählen.
 ### 🎛️ Stream & Kanal verwalten
 Ändere deinen Stream direkt in HighBazar, in drei Stufen (Standard: *Einfach*):
 - **Einfach** – Titel, Kategorie (Suche mit Cover), Sprache und Tags.
-- **Erweitert** – zusätzlich Inhaltskennzeichnungen und Markeninhalte, Chat-Einstellungen (Nur Emotes, Nur Follower, langsamer Modus, Nur Abos, einzigartiger Chat, Chat-Verzögerung), Ankündigungen, Shoutouts, Raids, Clips und Stream-Marker.
-- **Experte** – alles, was Twitch erlaubt: Umfragen und Vorhersagen, Kanalpunkte-Belohnungen, Mods, VIPs und Sperren, Twitch-AutoMod, Schild-Modus und gesperrte Begriffe, Werbung (starten/verschieben), Zeitplan, Kanalbeschreibung und Chat-Farbe, Follower- und Abo-Zahlen.
+- **Erweitert** – zusätzlich Inhaltskennzeichnungen und Markeninhalte, Chat-Einstellungen (Nur Emotes, Nur Follower, langsamer Modus, Nur Abos, einzigartiger Chat, Chat-Verzögerung), Ankündigungen, Shoutouts, Raids, Clips (mit Titel und Länge), Stream-Marker und angepinnte Chat-Nachrichten.
+- **Experte** – alles, was Twitch erlaubt: Umfragen (mit Kanalpunkte-Stimmen) und Vorhersagen, Kanalpunkte-Belohnungen mit Limits, Mods, VIPs, Sperren und Entbannungs-Anträge, Überwachung verdächtiger Accounts, Twitch-AutoMod, Schild-Modus und gesperrte Begriffe, Werbung (starten/verschieben), Zeitplan, Stream-Verzögerung (Partner), Kanalbeschreibung und Chat-Farbe, Follower- und Abo-Zahlen sowie der Hype-Train.
 
 HighBazar fragt bei Twitch nur die Berechtigungen der gewählten Stufe an; beim Wechsel auf eine höhere Stufe bestätigst du die zusätzlichen einmal.
 

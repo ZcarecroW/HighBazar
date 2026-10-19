@@ -34,7 +34,8 @@ pub fn sanitize(raw: &str, bot_name: &str, prefix: &str, max_len: usize) -> Opti
     // Remove a leading "Name:" or the prefix if the model added it.
     for lead in [prefix.trim(), &format!("{bot_name}:"), &format!("[{bot_name}]"), &format!("{bot_name} :")] {
         if !lead.is_empty() && s.to_lowercase().starts_with(&lead.to_lowercase()) {
-            s = s[lead.len()..].trim_start_matches([':', ' ', '-']).trim().to_string();
+            let skip = lead.chars().count();
+            s = s.chars().skip(skip).collect::<String>().trim_start_matches([':', ' ', '-']).trim().to_string();
         }
     }
     // Never post links; never send chat commands.
@@ -104,6 +105,8 @@ mod tests {
         assert_eq!(sanitize("\"Hello chat!\"", "HighBazar", "[HighBazar]", 200).unwrap(), "Hello chat!");
         assert_eq!(sanitize("HighBazar: yo\nwhat's up", "HighBazar", "[HighBazar]", 200).unwrap(), "yo what's up");
         assert_eq!(sanitize("[HighBazar] hi", "HighBazar", "[HighBazar]", 200).unwrap(), "hi");
+        // Lowercasing changes the byte length of "İ" – must not panic or cut wrongly.
+        assert_eq!(sanitize("[İBot] merhaba", "İBot", "[İBot]", 200).unwrap(), "merhaba");
         assert_eq!(sanitize("/ban someone", "HighBazar", "", 200).unwrap(), "ban someone");
         assert!(sanitize("[SKIP]", "HighBazar", "", 200).is_none());
         assert!(sanitize("visit https://evil.example now", "HighBazar", "", 200).is_none());

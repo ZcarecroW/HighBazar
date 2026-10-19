@@ -47,6 +47,9 @@ pub const CHANNEL_EXPERT_SCOPES: &[&str] = &[
     "channel:read:editors",
     "user:edit",
     "user:manage:chat_color",
+    "moderator:manage:unban_requests",
+    "moderator:manage:suspicious_users",
+    "channel:read:hype_train",
 ];
 
 /// Scopes for a streamer login with the channel manager at `level`
@@ -295,9 +298,12 @@ impl TokenManager {
                 self.store(user_id, &fresh)?;
                 Ok(fresh.access_token)
             }
-            Err(e) => Err(AppError::msg(format!(
+            // Twitch rejected the refresh token (revoked, password change, 30 days unused).
+            Err(e @ AppError::Twitch { .. }) => Err(AppError::msg(format!(
                 "Twitch session expired ({e}). Please reconnect the account in Channels."
             ))),
+            // Network trouble: the session itself may still be fine.
+            Err(e) => Err(AppError::msg(format!("Twitch is not reachable right now ({e})."))),
         }
     }
 }

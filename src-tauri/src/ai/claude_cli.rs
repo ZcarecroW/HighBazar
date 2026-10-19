@@ -90,30 +90,49 @@ pub async fn complete(p: &AiProfile, req: &AiRequest) -> AppResult<AiResponse> {
     let prompt_file = std::env::temp_dir().join(format!("highbazar-system-{}.txt", uuid::Uuid::new_v4().simple()));
     tokio::fs::write(&prompt_file, &req.system).await?;
 
+    // --safe-mode keeps the user's own Claude Code setup (CLAUDE.md, skills, plugins,
+    // hooks, MCP servers, memory) out of the bot's requests; older CLIs lack it.
+    let mut result = run(&exe, p, req, &prompt_file, true).await;
+    if let Err(e) = &result {
+        let m = e.to_string().to_lowercase();
+        if m.contains("unknown option") || m.contains("safe-mode") {
+            result = run(&exe, p, req, &prompt_file, false).await;
+        }
+    }
+    let _ = tokio::fs::remove_file(&prompt_file).await;
+    result
+}
+
+async fn run(exe: &std::path::Path, p: &AiProfile, req: &AiRequest, prompt_file: &std::path::Path, safe_mode: bool) -> AppResult<AiResponse> {
     let is_cmd = exe.extension().is_some_and(|e| e.eq_ignore_ascii_case("cmd"));
     let mut cmd = if is_cmd {
         let mut c = Command::new("cmd");
-        c.arg("/C").arg(&exe);
+        c.arg("/C").arg(exe);
         c
     } else {
-        Command::new(&exe)
+        Command::new(exe)
     };
     cmd.arg("-p")
         .arg("--output-format")
         .arg("json")
         .arg("--system-prompt-file")
-        .arg(&prompt_file)
+        .arg(prompt_file)
         .arg("--tools")
         .arg("")
         .arg("--no-session-persistence")
         .arg("--max-turns")
         .arg("1");
+    if safe_mode {
+        cmd.arg("--safe-mode");
+    }
     if !p.model.trim().is_empty() {
         cmd.arg("--model").arg(p.model.trim());
     }
     if !p.reasoning.trim().is_empty() {
         cmd.arg("--effort").arg(p.reasoning.trim());
     }
+    // A neutral working directory: no project CLAUDE.md or settings get picked up.
+    cmd.current_dir(std::env::temp_dir());
     cmd.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).kill_on_drop(true);
     #[cfg(windows)]
     {
@@ -121,39 +140,33 @@ pub async fn complete(p: &AiProfile, req: &AiRequest) -> AppResult<AiResponse> {
         cmd.creation_flags(CREATE_NO_WINDOW);
     }
 
-    let result = async {
-        let mut child = cmd.spawn().map_err(|e| AppError::msg(format!("Could not start Claude Code CLI: {e}")))?;
-        if let Some(mut stdin) = child.stdin.take() {
-            stdin.write_all(req.user.as_bytes()).await?;
-            drop(stdin);
-        }
-        let out = tokio::time::timeout(timeout(p), child.wait_with_output())
-            .await
-            .map_err(|_| AppError::msg("Claude Code CLI timed out"))??;
-        let stdout = String::from_utf8_lossy(&out.stdout);
-        let v: Value = serde_json::from_str(stdout.trim()).map_err(|_| {
-            let err = String::from_utf8_lossy(&out.stderr);
-            AppError::msg(format!(
-                "Claude Code CLI failed: {}",
-                if err.trim().is_empty() { stdout.chars().take(300).collect::<String>() } else { err.chars().take(300).collect() }
-            ))
-        })?;
-        parse(&v).map_err(|e| {
-            if e.to_string().to_lowercase().contains("not logged in") {
-                AppError::msg(format!(
-                    "Claude Code CLI is not logged in. Open a terminal, run \"{}\" and type /login once.",
-                    exe.display()
-                ))
-            } else {
-                e
-            }
-        })
+    let mut child = cmd.spawn().map_err(|e| AppError::msg(format!("Could not start Claude Code CLI: {e}")))?;
+    if let Some(mut stdin) = child.stdin.take() {
+        stdin.write_all(req.user.as_bytes()).await?;
+        drop(stdin);
     }
-    .await;
-    let _ = tokio::fs::remove_file(&prompt_file).await;
-    result
+    let out = tokio::time::timeout(timeout(p), child.wait_with_output())
+        .await
+        .map_err(|_| AppError::msg("Claude Code CLI timed out"))??;
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let v: Value = serde_json::from_str(stdout.trim()).map_err(|_| {
+        let err = String::from_utf8_lossy(&out.stderr);
+        AppError::msg(format!(
+            "Claude Code CLI failed: {}",
+            if err.trim().is_empty() { stdout.chars().take(300).collect::<String>() } else { err.chars().take(300).collect() }
+        ))
+    })?;
+    parse(&v).map_err(|e| {
+        if e.to_string().to_lowercase().contains("not logged in") {
+            AppError::msg(format!(
+                "Claude Code CLI is not logged in. Open a terminal, run \"{}\" and type /login once.",
+                exe.display()
+            ))
+        } else {
+            e
+        }
+    })
 }
-
 pub fn parse(v: &Value) -> AppResult<AiResponse> {
     if v["is_error"].as_bool().unwrap_or(false) {
         return Err(AppError::msg(format!(

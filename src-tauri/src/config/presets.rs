@@ -196,6 +196,7 @@ pub fn moderation_presets() -> Vec<ModerationProfile> {
     ]
 }
 
+#[allow(clippy::too_many_arguments)] // one call per preset reads best as a flat list
 fn ai(
     id: &str,
     name: &str,

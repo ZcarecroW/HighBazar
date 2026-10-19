@@ -269,6 +269,7 @@ const emoteLevels = computed(() => tm("companion.emoteLevels") as unknown as str
                 <UiToggle v-model="p.events.gift" :label="t('companion.eventGift')" :disabled="ro" />
                 <UiToggle v-model="p.events.raid" :label="t('companion.eventRaid')" :disabled="ro" />
                 <UiToggle v-model="p.events.cheer" :label="t('companion.eventCheer')" :disabled="ro" />
+                <UiToggle v-model="p.events.watchStreak" :label="t('companion.eventWatchStreak')" :disabled="ro" />
               </div>
               <div class="grid gap-5 md:grid-cols-2">
                 <UiNumber v-model="p.events.minCheerBits" :label="t('companion.minBits')" :min="1" :max="100000" :disabled="ro" />

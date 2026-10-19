@@ -6,7 +6,7 @@
     "language": "auto",
     "checkUpdatesOnStart": true,
     "wizardCompleted": false,
-    "activeChannelId": "352843c44c3e",
+    "activeChannelId": "b7d9856f191c",
     "startBotOnLaunch": false,
     "twitchClientId": "",
     "feedLimit": 400,
@@ -16,7 +16,7 @@
   "accounts": [],
   "channels": [
     {
-      "id": "352843c44c3e",
+      "id": "b7d9856f191c",
       "name": "My channel",
       "streamerAccountId": null,
       "botAccountId": null,
@@ -104,6 +104,7 @@
         "gift": true,
         "raid": true,
         "cheer": true,
+        "watchStreak": true,
         "minCheerBits": 100,
         "followBatchSecs": 30
       },
@@ -210,6 +211,7 @@
         "gift": true,
         "raid": true,
         "cheer": true,
+        "watchStreak": true,
         "minCheerBits": 100,
         "followBatchSecs": 30
       },
@@ -316,6 +318,7 @@
         "gift": true,
         "raid": true,
         "cheer": true,
+        "watchStreak": true,
         "minCheerBits": 100,
         "followBatchSecs": 30
       },
@@ -422,6 +425,7 @@
         "gift": true,
         "raid": true,
         "cheer": true,
+        "watchStreak": true,
         "minCheerBits": 100,
         "followBatchSecs": 30
       },
@@ -528,6 +532,7 @@
         "gift": true,
         "raid": true,
         "cheer": true,
+        "watchStreak": true,
         "minCheerBits": 100,
         "followBatchSecs": 30
       },
@@ -634,6 +639,7 @@
         "gift": true,
         "raid": true,
         "cheer": true,
+        "watchStreak": true,
         "minCheerBits": 100,
         "followBatchSecs": 30
       },
@@ -740,6 +746,7 @@
         "gift": true,
         "raid": true,
         "cheer": true,
+        "watchStreak": true,
         "minCheerBits": 100,
         "followBatchSecs": 30
       },

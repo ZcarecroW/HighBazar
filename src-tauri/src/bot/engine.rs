@@ -574,7 +574,9 @@ impl Session {
             .iter()
             .map(|(name, id)| (name.clone(), json!(emotes::twitch_emote_url(id))))
             .collect();
-        item.meta = json!({ "bits": m.bits, "firstMsg": m.message_type == "user_intro", "emotes": emote_urls });
+        // Shared chat: messages from the other channels are shown but not moderated or welcomed.
+        let foreign = m.source_broadcaster_id.as_deref().is_some_and(|s| s != self.broadcaster_id);
+        item.meta = json!({ "bits": m.bits, "firstMsg": m.message_type == "user_intro" && !foreign, "emotes": emote_urls, "shared": foreign });
         self.feed(item);
 
         if other_bot {
@@ -582,7 +584,7 @@ impl Session {
         }
 
         // --- Moderation -------------------------------------------------
-        if p.ch.moderation_enabled && p.modp.mode != "off" && !moderation::is_exempt(&p.modp, &m) {
+        if !foreign && p.ch.moderation_enabled && p.modp.mode != "off" && !moderation::is_exempt(&p.modp, &m) {
             let local = self.rules.lock().check(&p.modp, &m, m.emote_count);
             if let Some(f) = local {
                 let acted = self.handle_finding(&p, &m, f);
@@ -620,7 +622,9 @@ impl Session {
             let prefix = c.commands.prefix.trim().to_lowercase();
             let lower = m.text.trim().to_lowercase();
             if lower == prefix || lower.starts_with(&format!("{prefix} ")) {
-                let rest = m.text.trim()[prefix.len()..].trim().to_string();
+                // Skip by characters: lowercasing can change byte lengths (e.g. "İ").
+                let skip = c.commands.prefix.trim().chars().count();
+                let rest = m.text.trim().chars().skip(skip).collect::<String>().trim().to_string();
                 self.on_command(&p, &m, rest);
                 return;
             }
@@ -628,6 +632,7 @@ impl Session {
 
         // --- Mentions -------------------------------------------------------
         let is_new = !m.is_broadcaster
+            && !foreign
             && (m.message_type == "user_intro"
                 || match c.welcome.scope.as_str() {
                     "firstThisStream" => first_stream,
@@ -787,6 +792,11 @@ impl Session {
             "sub_gift" => (e.gift, format!("{who} gifted a sub{tier} to {}", n.recipient)),
             "community_sub_gift" => (e.gift, format!("{who} gifted {} subs{tier} to the community", n.gift_count)),
             "raid" => (e.raid, format!("{who} is raiding the channel with {} viewers", n.raid_viewers)),
+            "gift_paid_upgrade" | "prime_paid_upgrade" => (e.sub, format!("{who} upgraded their gifted or Prime sub to a paid sub{tier}")),
+            "pay_it_forward" => (e.gift, format!("{who} paid a gifted sub forward")),
+            "watch_streak" if n.streak > 0 => (e.watch_streak, format!("{who} has watched {} streams in a row (watch streak)", n.streak)),
+            "bits_badge_tier" if n.bits_tier > 0 => (e.cheer, format!("{who} unlocked the {} Bits badge", n.bits_tier)),
+            "charity_donation" => (false, format!("{who} donated to the charity campaign")),
             _ => return,
         };
         self.keyed(
@@ -794,10 +804,17 @@ impl Session {
             match n.notice_type.as_str() {
                 "community_sub_gift" => "communityGift",
                 "sub_gift" => "gift",
+                "gift_paid_upgrade" | "prime_paid_upgrade" => "upgrade",
+                "pay_it_forward" => "payForward",
+                "watch_streak" => "watchStreak",
+                "bits_badge_tier" => "bitsBadge",
+                "charity_donation" => "charity",
                 other => other,
             },
             json!({
                 "user": who,
+                "streak": n.streak,
+                "bitsTier": n.bits_tier,
                 "tier": tier.trim().trim_matches(['(', ')']),
                 "months": n.months,
                 "count": n.gift_count,

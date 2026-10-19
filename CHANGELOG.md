@@ -4,6 +4,36 @@ All notable changes to HighBazar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+Quality & maintenance pass: every integration was checked against the current Twitch, BetterTTV, FrankerFaceZ, 7TV and AI provider documentation and tested with Claude Code on a live channel.
+
+### Added
+- Channel manager catches up with Twitch's API as of October 2026:
+  - **Pinned chat messages**: pin any chat message from the live feed, see and unpin the current pin (Advanced).
+  - **Clips** with an optional title and a length of 5–60 seconds.
+  - **Unban requests**: review, approve or deny with a reply (Expert).
+  - **Suspicious users**: put accounts under monitoring or restrict them (Expert).
+  - **Hype Train** status and record (Expert), **stream delay** for partners, **channel points voting** in polls, **per-stream / per-viewer limits** and "skip queue" for rewards.
+- Reactions to **watch streaks**, paid sub upgrades and pay-it-forward gifts; feed entries for Bits badge tiers and charity donations.
+- Long lists (mods, VIPs, banned users) load completely instead of the first 100, banned users can be filtered.
+
+### Fixed
+- Connecting a Twitch account in the app could leave it unlinked from the channel (the older local config was saved over the backend's link).
+- Commands and bot names with characters whose lowercase form is longer (e.g. "İ") could crash the bot.
+- **Shared Chat**: messages and events from the other channels of a shared chat session are no longer moderated, welcomed or thanked; they are marked in the feed.
+- Chat messages with GIFs (new Twitch fragment type) keep a "[GIF]" marker instead of losing that part.
+- The bot is stopped cleanly when the app closes, so usage numbers and known chatters are saved.
+- Panels on the Stream page now reload when you switch to another channel; saving an empty title is blocked; a reward that requires viewer input needs a description.
+- "Start bot" (live) is disabled until a streamer account is connected; test mode still works.
+
+### Changed
+- Twitch errors are shown with a short explanation in the app's language (missing permission, partner/affiliate only, rate limit …) plus Twitch's original message.
+- Network trouble while refreshing the Twitch login no longer claims the session expired.
+- Unreadable Twitch name colors (e.g. pure blue on dark backgrounds) are lightened or darkened automatically.
+- Claude Code CLI bridge runs with `--safe-mode` in a neutral folder: the user's own Claude Code setup (MCP servers, skills, CLAUDE.md) no longer inflates each request (≈2k instead of up to ≈40k input tokens per message).
+- Expert level asks for three more Twitch permissions (unban requests, suspicious users, Hype Train).
+
 ## [1.2.0] – 2026-10-19
 
 Tested with Claude Code (update download, contrast of all themes in both modes, icons in every view and the setup wizard). Windows build.
