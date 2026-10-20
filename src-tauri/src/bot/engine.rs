@@ -125,6 +125,8 @@ pub struct Session {
     last_error: Mutex<String>,
     /// Limits parallel AI calls; further tasks wait for a free slot.
     inflight: tokio::sync::Semaphore,
+    /// Times (ms) of the streamer's own messages from the chat input, for a spam guard.
+    own_sends: Mutex<VecDeque<i64>>,
     budget_warned: AtomicBool,
     no_ai_warned: AtomicBool,
     mod_rate_warned: Mutex<i64>,
@@ -211,6 +213,7 @@ impl Session {
             connected: AtomicBool::new(false),
             last_error: Mutex::new(String::new()),
             inflight: tokio::sync::Semaphore::new(MAX_INFLIGHT),
+            own_sends: Mutex::new(VecDeque::new()),
             budget_warned: AtomicBool::new(false),
             no_ai_warned: AtomicBool::new(false),
             mod_rate_warned: Mutex::new(0),
@@ -406,7 +409,25 @@ impl Session {
         let cat = emotes::fetch(&self.st.helix(), &self.broadcaster_id).await;
         let n = cat.total();
         let urls = Arc::new(cat.urls.clone());
+        self.st.chat.set_emotes(cat.infos.clone());
         *self.emotes.write() = cat;
+        // Emotes of channels the streamer is subscribed to (needs user:read:emotes).
+        match self.st.helix().user_emotes(&self.broadcaster_id).await {
+            Ok(list) => {
+                let subs: Vec<crate::chat::EmoteInfo> = list
+                    .into_iter()
+                    .map(|e| crate::chat::EmoteInfo {
+                        url: emotes::twitch_emote_url(&e.id),
+                        name: e.name,
+                        provider: "twitch",
+                        scope: crate::chat::Scope::Sub,
+                    })
+                    .collect();
+                log::info!("{} emotes available to the streamer", subs.len());
+                self.st.chat.add_emotes(subs);
+            }
+            Err(e) => log::info!("streamer emotes unavailable: {e}"),
+        }
         *self.st.emote_urls.write() = urls.clone();
         let _ = self.app.emit(super::EVT_EMOTES, &*urls);
         self.st.overlay.emotes(&urls);
@@ -587,6 +608,8 @@ impl Session {
                 ctx.count_text_emotes(&m.text, |w| {
                     !m.emotes.iter().any(|e| e == w) && emotes.contains(w)
                 });
+                let used = m.text.split_whitespace().filter(|w| emotes.contains(w)).map(str::to_string);
+                self.st.chat.observe(&m.display_name, &m.login, used);
             }
         }
         let mut item = FeedItem::new("chat", m.text.clone());
@@ -1722,6 +1745,10 @@ impl Session {
                 self.emit_pending();
             }
             Control::Simulate(sim) => self.simulate(sim),
+            Control::Send(text, done) => {
+                let r = self.send_own(text).await;
+                let _ = done.send(r);
+            }
             Control::SimulateEvent(kind, user) => {
                 let user = if user.trim().is_empty() { "TestViewer".to_string() } else { user };
                 match kind.as_str() {
@@ -1793,6 +1820,41 @@ impl Session {
         self.on_chat(m);
     }
 
+    /// Sends what the streamer typed, as the streamer. In test mode it only
+    /// shows up in the feed.
+    async fn send_own(self: &Arc<Self>, text: String) -> AppResult<()> {
+        let text = text.split_whitespace().collect::<Vec<_>>().join(" ");
+        if text.is_empty() {
+            return Ok(());
+        }
+        if text.chars().count() > output::TWITCH_MAX {
+            return Err(AppError::msg(format!("Too long: Twitch allows {} characters.", output::TWITCH_MAX)));
+        }
+        let now = now_ms();
+        {
+            // Twitch allows a broadcaster 100 messages per 30 s; this guards against a stuck key.
+            let mut q = self.own_sends.lock();
+            while q.front().is_some_and(|t| now - t > 30_000) {
+                q.pop_front();
+            }
+            if q.len() >= 20 {
+                return Err(AppError::msg("Slow down a little – too many messages in 30 seconds."));
+            }
+            q.push_back(now);
+        }
+        if self.sandbox || !self.has_twitch() {
+            self.simulate(SimMessage { user: self.broadcaster_name.clone(), text: text.clone(), role: "broadcaster".into(), bits: 0 });
+        } else {
+            let r = self.st.helix().send_chat(&self.broadcaster_id, &self.broadcaster_id, &text, None).await?;
+            if !r.is_sent {
+                let why = r.drop_reason.map(|d| format!("{} ({})", d.message, d.code)).unwrap_or_default();
+                return Err(AppError::msg(format!("Twitch did not send the message: {why}")));
+            }
+        }
+        self.st.chat.record_sent(&text);
+        Ok(())
+    }
+
     async fn manual(self: &Arc<Self>, a: ManualAction) {
         let entry = ModLogEntry {
             id: new_id(),
@@ -1820,6 +1882,7 @@ impl Session {
 pub async fn run(session: Arc<Session>, mut ctrl: mpsc::UnboundedReceiver<Control>, mut shutdown: watch::Receiver<bool>) {
     let s = session;
     s.st.overlay.clear();
+    s.st.chat.clear();
     if s.sandbox {
         s.keyed("system", "startedTest", json!({}), "Bot started in test mode — nothing is sent to Twitch.".into());
     } else {

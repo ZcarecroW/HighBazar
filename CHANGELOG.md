@@ -7,6 +7,9 @@ All notable changes to HighBazar are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Write in chat yourself** – under the live feed (Settings → *Chat & size*, on by default) and optionally in the overlay page (Settings → *Steam overlay* → *Chat input in the overlay*, off by default): Shift+Tab into the Steam overlay, type, Enter, back to the game. Messages go out as the streamer; in test mode they only appear in the feed. A spam guard stops more than 20 messages in 30 seconds.
+- **Smart suggestions while typing** (same in app and overlay, ranked in the Rust core in well under a millisecond): `:` suggests emotes of every provider – Twitch (including those of your subscriptions), BetterTTV, FrankerFaceZ, 7TV – and all Unicode emojis with English and German names and keywords; `:7 pog`, `:b`, `:f`, `:t`, `:e` limit the search to 7TV, BTTV, FFZ, Twitch or emojis. Favorites come first, then what you use yourself, what chat uses right now and the channel's own emotes; `@` suggests people from chat; **Tab** completes the current word (Tab again for the next match); ↑ brings back your last messages. An emote picker with a tab per provider sits next to the input; right-click (or the star in the suggestions) pins favorites. The emoji data (emojibase, MIT) is only loaded on the first `:`.
+- **New web search sources**: **You.com** – current results without a key or sign-up (about 100 searches a day), now the default with Wikipedia as a fallback; **Exa** (accurate, with excerpts; monthly free credit) and **Serper** (Google results including direct answers). Results now carry their date so the model can tell old from new.
 - **Web search for chat questions** (Companion → *Research & web search*, on by default): when chat asks the bot about patches, release dates, tournaments and the like, it looks it up on the web before answering; small talk is answered right away. The model decides when a search is needed.
 - **Web search for every AI provider.** Providers with their own search use it (Claude, OpenAI, Gemini, OpenRouter's new web search tool, Perplexity, xAI Grok via its Responses API, Groq Compound). For all others – Ollama, LM Studio, DeepSeek, Mistral, Together, custom servers – HighBazar searches itself and passes the results to the model as untrusted reference material. Sources (AI → *Web search*): Wikipedia (free, no key), Ollama web search, Tavily, Brave Search or your own SearXNG instance, with a test search. The number of web searches is shown in the usage table and in the AI test ("Test with web search").
 - **Claude Code CLI with web search**: only the web search tool is allowed (plus reading pages during game research); everything else stays switched off.
@@ -16,7 +19,8 @@ All notable changes to HighBazar are documented here. The format follows
 ### Changed
 - Web search is now on by default in all built-in AI profiles (it used to be off for providers without their own search).
 - Answers written with web search are cleaned for chat: source lists, markdown links and citation marks are removed instead of the whole message being dropped.
-- The channel manager's *Advanced* level additionally asks Twitch for `user:read:follows` (live channels you follow as raid suggestions) – reconnect your account once to use it.
+- The fuzzy search is up to four times faster on long lists (its cache no longer empties itself with thousands of entries; typo matching skips words that cannot match), and search fields listen for outside clicks only while they are open.
+- The channel manager asks Twitch additionally for `user:read:emotes` (all levels: emotes of your subscriptions in the chat suggestions) and, on the *Advanced* level, for `user:read:follows` (live channels you follow as raid suggestions) – reconnect your account once to use it.
 
 ## [1.5.0] – 2026-10-20
 

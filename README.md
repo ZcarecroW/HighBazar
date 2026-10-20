@@ -79,8 +79,9 @@ The bot writes with **your streamer account** by default (marked with a configur
 
 **Web search for every provider.** Claude, OpenAI, Gemini, Grok, OpenRouter, Perplexity, Groq Compound and both CLIs use
 their own web search. For everything else – Ollama, LM Studio, DeepSeek, Mistral, Together, custom servers – HighBazar
-searches itself and hands the results to the model: with **Wikipedia** (free, no key), the **Ollama web search**,
-**Tavily**, **Brave Search** or your own **SearXNG** (AI → *Web search*).
+searches itself and hands the results to the model: with **You.com** (free, no key – the default, with Wikipedia
+as a fallback), **Wikipedia**, **Exa**, **Serper** (Google results), **Tavily**, **Brave Search**, the **Ollama web
+search** or your own **SearXNG** (AI → *Web search*).
 
 Every provider is configured through **AI profiles** (model, reasoning effort, max tokens, temperature, timeout,
 prices, extra headers…). Pick the model from a searchable list loaded from the provider (or type any name), test the connection, see tokens and costs.
@@ -109,6 +110,7 @@ Bazaar, Midnight, Ocean, Aurora, Forest, Gold, Sunset, Crimson, Sakura and Cyber
 - **Games come first**: HighBazar runs with lower process priority, so your game always gets the CPU first.
 
 ### ✨ And also
+- **Chat yourself** – in the app and, if you like, right in the Steam/OBS overlay (Shift+Tab, type, Enter, back to the game). Type `:` for emotes of **every provider** (Twitch incl. your subscriptions, BTTV, FFZ, 7TV) and **emojis** with English and German keywords (`:herz`, `:fire`); `:7 pog` searches only 7TV (`:b` BTTV, `:f` FFZ, `:t` Twitch, `:e` emoji). Your favorites and what you use most come first, `@` suggests people from chat, **Tab** completes the current word, ↑ brings back your last message. An emote picker with a tab per provider is one click away; right-click pins a favorite.
 - **Fuzzy search everywhere**: **Ctrl+K** jumps to any page, setting, profile or action; raid and shoutout targets are suggested while you type – live channels you follow, people in chat and Twitch's channel search, with avatar, title, category and viewers; profiles, models, languages and the moderation log are searchable too. Typos, umlauts and abbreviations are forgiven ("minecarft", "jc" → Just Chatting).
 - **Setup wizard** on first start (skippable, can be reopened any time).
 - **Test mode + chat simulator** — try everything without sending anything to Twitch.
@@ -300,3 +302,5 @@ Issues and pull requests are welcome! Please describe what you changed and run t
 [MIT](LICENSE) © ZcarecroW. HighBazar is not affiliated with Twitch, Anthropic, OpenAI, Google or any other provider.
 
 Icons: [Nucleo](https://nucleoapp.com) — licensed to the author for use in HighBazar and **not** covered by the MIT license; they may not be extracted or reused as an icon set (src/icons/nucleo.ts).
+
+Emoji names and keywords: [emojibase](https://emojibase.dev) (MIT), based on Unicode CLDR data (src-tauri/data/emoji.tsv, rebuilt with `node scripts/emoji/build.mjs`).

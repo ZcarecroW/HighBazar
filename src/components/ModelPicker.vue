@@ -5,7 +5,7 @@ const cache = new Map<string, ModelInfo[]>();
 </script>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { Check, Loader2, RefreshCw, Search } from "../icons";
 import { useApp } from "../stores/app";
@@ -13,6 +13,7 @@ import { fuzzySearch, type Ranges } from "../lib/fuzzy";
 import FuzzyText from "./ui/FuzzyText.vue";
 import { api, errorText } from "../lib/api";
 import type { AiProfile } from "../lib/types";
+import { useCloseOutside } from "../lib/outside";
 
 // Searchable model dropdown: models are loaded from the provider
 // automatically; any other model name can still be typed in.
@@ -137,11 +138,7 @@ function onKey(e: KeyboardEvent) {
 }
 watch(filter, () => (active.value = 0));
 
-function outside(e: MouseEvent) {
-  if (open.value && root.value && !root.value.contains(e.target as Node)) open.value = false;
-}
-document.addEventListener("mousedown", outside);
-onBeforeUnmount(() => document.removeEventListener("mousedown", outside));
+useCloseOutside(root, open);
 </script>
 
 <template>

@@ -39,6 +39,7 @@ log = "0.4.34"
 url = "2.5.8"
 parking_lot = "0.12.5"
 whatlang = "0.18.0"
+nucleo-matcher = "0.3.1"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61.2", features = ["Win32_System_Threading", "Win32_Globalization"] }

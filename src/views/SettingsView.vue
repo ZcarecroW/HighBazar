@@ -107,6 +107,7 @@ function resetChatDisplay() {
         <UiSlider v-model="uiZoomPct" :label="t('settings.uiZoom')" :hint="t('settings.uiZoomHint')" :min="70" :max="160" :step="5" suffix=" %" />
         <UiSlider v-model="chatZoomPct" :label="t('settings.chatZoom')" :hint="t('settings.chatZoomHint')" :min="60" :max="250" :step="10" suffix=" %" />
       </div>
+      <UiToggle v-model="s.chatInput.enabled" :label="t('settings.chatInput')" :hint="t('settings.chatInputHint')" />
       <UiToggle v-model="s.chatScroll.smooth" :label="t('settings.smoothScroll')" :hint="t('settings.smoothScrollHint')" />
       <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div class="space-y-5" :class="!s.chatScroll.smooth && 'pointer-events-none opacity-50'">

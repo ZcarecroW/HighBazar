@@ -20,7 +20,16 @@ pub struct Hit {
 }
 
 /// Search sources: (id, needs a key).
-pub const SOURCES: &[(&str, bool)] = &[("wikipedia", false), ("ollama", true), ("tavily", true), ("brave", true), ("searxng", false)];
+pub const SOURCES: &[(&str, bool)] = &[
+    ("youcom", false),
+    ("wikipedia", false),
+    ("exa", true),
+    ("serper", true),
+    ("tavily", true),
+    ("brave", true),
+    ("ollama", true),
+    ("searxng", false),
+];
 
 /// Name of the stored key of a search source (shares the AI key store).
 pub fn key_ref(source: &str) -> String {
@@ -46,6 +55,62 @@ pub async fn search(
     }
     let key = key.unwrap_or_default();
     let hits = match cfg.source.as_str() {
+        "youcom" => {
+            // Free without a key (about 100 searches a day per IP); when the
+            // quota is used up or You.com is unreachable, Wikipedia steps in.
+            let r = send(http.get("https://api.you.com/v1/agents/search").query(&[("query", query), ("count", &n.to_string())])).await;
+            match r.map(|v| youcom(&v)) {
+                Ok(h) if !h.is_empty() => h,
+                Ok(_) => wikipedia(http, query, lang, n).await?,
+                Err(e) => {
+                    log::info!("You.com search unavailable ({e}), using Wikipedia");
+                    wikipedia(http, query, lang, n).await?
+                }
+            }
+        }
+        "exa" => {
+            let body = json!({ "query": query, "type": "auto", "numResults": n, "contents": { "highlights": { "maxCharacters": 600 } } });
+            let v = send(http.post("https://api.exa.ai/search").header("x-api-key", key).json(&body)).await?;
+            v["results"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .map(|r| Hit {
+                    title: clean(r["title"].as_str().unwrap_or_default()),
+                    url: r["url"].as_str().unwrap_or_default().to_string(),
+                    snippet: clean(&dated(
+                        &r["highlights"].as_array().map(|h| h.iter().filter_map(|x| x.as_str()).collect::<Vec<_>>().join(" … ")).unwrap_or_default(),
+                        r["publishedDate"].as_str(),
+                    )),
+                })
+                .filter(|h| !h.title.is_empty() || !h.snippet.is_empty())
+                .collect()
+        }
+        "serper" => {
+            let mut body = json!({ "q": query, "num": n });
+            if lang.len() == 2 {
+                body["hl"] = json!(lang);
+            }
+            let v = send(http.post("https://google.serper.dev/search").header("X-API-KEY", key).json(&body)).await?;
+            let mut hits = Vec::new();
+            // Google's direct answer first, it is often exactly the fact asked for.
+            if let Some(a) = v["answerBox"].as_object() {
+                let text = a.get("answer").or_else(|| a.get("snippet")).and_then(|x| x.as_str()).unwrap_or_default();
+                if !text.is_empty() {
+                    hits.push(Hit {
+                        title: clean(a.get("title").and_then(|x| x.as_str()).unwrap_or("Answer")),
+                        url: a.get("link").and_then(|x| x.as_str()).unwrap_or_default().to_string(),
+                        snippet: clean(text),
+                    });
+                }
+            }
+            hits.extend(v["organic"].as_array().into_iter().flatten().map(|r| Hit {
+                title: clean(r["title"].as_str().unwrap_or_default()),
+                url: r["link"].as_str().unwrap_or_default().to_string(),
+                snippet: clean(&dated(r["snippet"].as_str().unwrap_or_default(), r["date"].as_str())),
+            }));
+            hits
+        }
         "ollama" => {
             let v = send(http.post("https://ollama.com/api/web_search").bearer_auth(key).json(&json!({ "query": query, "max_results": n }))).await?;
             list(&v["results"], "title", "url", "content")
@@ -93,6 +158,39 @@ async fn send(rb: reqwest::RequestBuilder) -> AppResult<Value> {
         return Err(crate::ai::error_from("web search", resp).await);
     }
     Ok(resp.json().await?)
+}
+
+/// "Snippet" with its date in front, so the model can tell old from new.
+fn dated(snippet: &str, date: Option<&str>) -> String {
+    match date.map(str::trim).filter(|d| !d.is_empty()) {
+        Some(d) => format!("({}) {snippet}", d.get(..10).unwrap_or(d)),
+        None => snippet.to_string(),
+    }
+}
+
+fn youcom(v: &Value) -> Vec<Hit> {
+    let r = &v["results"];
+    r["web"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .chain(r["news"].as_array().into_iter().flatten())
+        .map(|x| {
+            let snippets = x["snippets"].as_array().map(|s| s.iter().filter_map(|y| y.as_str()).take(2).collect::<Vec<_>>().join(" … ")).unwrap_or_default();
+            let text = if snippets.is_empty() { x["description"].as_str().unwrap_or_default().to_string() } else { snippets };
+            Hit {
+                title: clean(x["title"].as_str().unwrap_or_default()),
+                url: x["url"].as_str().unwrap_or_default().to_string(),
+                snippet: clean(&dated(&text, x["page_age"].as_str())),
+            }
+        })
+        .filter(|h| !h.title.is_empty() || !h.snippet.is_empty())
+        // The same page can come as a web and a news result.
+        .filter({
+            let mut seen = std::collections::HashSet::new();
+            move |h| seen.insert(h.url.clone())
+        })
+        .collect()
 }
 
 fn list(v: &Value, title: &str, url: &str, snippet: &str) -> Vec<Hit> {
@@ -206,6 +304,26 @@ mod tests {
     fn parses_result_lists() {
         let v = json!([{ "title": "A", "url": "https://a", "content": "x" }, { "title": "", "url": "u", "content": "" }]);
         assert_eq!(list(&v, "title", "url", "content"), vec![Hit { title: "A".into(), url: "https://a".into(), snippet: "x".into() }]);
+    }
+
+    #[test]
+    fn reads_youcom_results() {
+        let v = json!({ "results": { "web": [
+            { "url": "https://a", "title": "Patch 1.03.2", "description": "Desc", "page_age": "2026-01-15T15:00:00", "snippets": [] },
+            { "url": "https://b", "title": "Wiki", "description": "D", "snippets": ["one", "two", "three"] }
+        ], "news": [{ "url": "https://a", "title": "Patch 1.03.2", "description": "again" }] } });
+        let h = youcom(&v);
+        assert_eq!(h[0].snippet, "(2026-01-15) Desc");
+        assert_eq!(h[1].snippet, "one … two");
+        assert_eq!(h.len(), 2, "duplicate URL removed");
+    }
+
+    #[ignore = "needs the internet"]
+    #[tokio::test]
+    async fn youcom_live() {
+        let cfg = WebSearchSettings::default();
+        let hits = search(&reqwest::Client::new(), &cfg, None, "Elden Ring Nightreign patch notes", "").await.unwrap();
+        assert!(!hits.is_empty());
     }
 
     #[test]

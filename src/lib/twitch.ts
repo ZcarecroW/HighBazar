@@ -6,7 +6,7 @@ import type { ChannelLevel } from "./types";
 
 // Mirrors the scope tiers in src-tauri/src/twitch/auth.rs.
 export const LEVEL_SCOPES: Record<ChannelLevel, string[]> = {
-  simple: ["channel:manage:broadcast"],
+  simple: ["channel:manage:broadcast", "user:read:emotes"],
   advanced: [
     "moderator:manage:chat_settings",
     "moderator:manage:announcements",

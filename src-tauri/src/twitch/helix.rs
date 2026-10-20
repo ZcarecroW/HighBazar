@@ -274,6 +274,28 @@ impl Helix {
         Ok(r.map(|d| d.data).unwrap_or_default())
     }
 
+    /// All Twitch emotes a user may use – including those of channels they are
+    /// subscribed to (needs `user:read:emotes`). Pages through the whole list.
+    pub async fn user_emotes(&self, user_id: &str) -> AppResult<Vec<Emote>> {
+        let mut out = Vec::new();
+        let mut after = String::new();
+        for _ in 0..20 {
+            let mut q = vec![("user_id", user_id)];
+            if !after.is_empty() {
+                q.push(("after", after.as_str()));
+            }
+            let v = self.request::<Value>(Method::GET, "/chat/emotes/user", user_id, &q, None).await?.unwrap_or(Value::Null);
+            out.extend(v["data"].as_array().into_iter().flatten().filter_map(|e| {
+                Some(Emote { id: e["id"].as_str()?.to_string(), name: e["name"].as_str()?.to_string() })
+            }));
+            match v["pagination"]["cursor"].as_str() {
+                Some(c) if !c.is_empty() => after = c.to_string(),
+                _ => break,
+            }
+        }
+        Ok(out)
+    }
+
     /// Generic Helix call for the channel manager (path must be allow-listed by the caller).
     pub async fn raw(
         &self,

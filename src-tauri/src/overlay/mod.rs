@@ -150,6 +150,7 @@ fn page_settings(s: &AppSettings) -> Value {
         "chatZoom": s.chat_zoom.clamp(0.6, 2.5),
         "chatScroll": s.chat_scroll,
         "language": s.language,
+        "chatInput": o.chat_input,
     })
 }
 
@@ -259,10 +260,18 @@ async fn accept_loop(listener: TcpListener, st: Arc<AppState>, port: u16, key: S
 }
 
 struct Request {
+    method: String,
     path: String,
     query: HashMap<String, String>,
     host: String,
+    /// Origin header of a POST (empty when the browser sent none).
+    origin: String,
+    content_type: String,
+    body: Vec<u8>,
 }
+
+/// Messages are short; anything bigger is not from the overlay page.
+const MAX_BODY: usize = 4096;
 
 async fn read_request(stream: &mut TcpStream) -> Option<Request> {
     let mut buf = Vec::with_capacity(1024);
@@ -283,21 +292,50 @@ async fn read_request(stream: &mut TcpStream) -> Option<Request> {
         }
     };
     tokio::time::timeout(Duration::from_secs(5), read).await.ok()??;
-    let text = String::from_utf8_lossy(&buf);
+    let head_end = buf.windows(4).position(|w| w == b"\r\n\r\n")? + 4;
+    let text = String::from_utf8_lossy(&buf[..head_end]).into_owned();
     let mut lines = text.split("\r\n");
     let mut first = lines.next()?.split(' ');
-    if first.next()? != "GET" {
+    let method = first.next()?.to_string();
+    if method != "GET" && method != "POST" {
         return None;
     }
     let target = first.next()?;
     let (path, qs) = target.split_once('?').unwrap_or((target, ""));
     let query = url::form_urlencoded::parse(qs.as_bytes()).into_owned().collect();
-    let host = lines
+    let headers: Vec<(String, String)> = lines
         .filter_map(|l| l.split_once(':'))
-        .find(|(k, _)| k.trim().eq_ignore_ascii_case("host"))
-        .map(|(_, v)| v.trim().to_lowercase())
-        .unwrap_or_default();
-    Some(Request { path: path.to_string(), query, host })
+        .map(|(k, v)| (k.trim().to_lowercase(), v.trim().to_string()))
+        .collect();
+    let header = |name: &str| headers.iter().find(|(k, _)| k == name).map(|(_, v)| v.clone()).unwrap_or_default();
+    let mut body = buf[head_end..].to_vec();
+    if method == "POST" {
+        let len: usize = header("content-length").parse().ok()?;
+        if len > MAX_BODY {
+            return None;
+        }
+        let rest = async {
+            while body.len() < len {
+                let n = stream.read(&mut chunk).await.ok()?;
+                if n == 0 {
+                    return None;
+                }
+                body.extend_from_slice(&chunk[..n]);
+            }
+            Some(())
+        };
+        tokio::time::timeout(Duration::from_secs(5), rest).await.ok()??;
+        body.truncate(len);
+    }
+    Some(Request {
+        method,
+        path: path.to_string(),
+        query,
+        host: header("host").to_lowercase(),
+        origin: header("origin").to_lowercase(),
+        content_type: header("content-type").to_lowercase(),
+        body,
+    })
 }
 
 async fn respond(stream: &mut TcpStream, status: &str, ctype: &str, body: &str) -> std::io::Result<()> {
@@ -319,12 +357,45 @@ async fn handle(mut stream: TcpStream, st: Arc<AppState>, port: u16, key: &str, 
     if req.host != format!("127.0.0.1:{port}") && req.host != format!("localhost:{port}") {
         return respond(&mut stream, "403 Forbidden", "text/plain", "Forbidden").await;
     }
-    // The page and the event stream need the key; the static script and style don't.
-    let needs_key = matches!(req.path.as_str(), "/" | "/events");
+    // The page, the event stream and the chat input need the key; the static script and style don't.
+    let needs_key = matches!(req.path.as_str(), "/" | "/events" | "/suggest" | "/send");
     if needs_key && req.query.get("k").map(String::as_str) != Some(key) {
         return respond(&mut stream, "403 Forbidden", "text/plain", "This overlay link is outdated. Copy the current one from HighBazar.").await;
     }
+    if req.method == "POST" && req.path != "/send" {
+        return respond(&mut stream, "405 Method Not Allowed", "text/plain", "Method not allowed").await;
+    }
     match req.path.as_str() {
+        "/suggest" | "/send" if !st.config.read().settings.overlay.chat_input => {
+            respond(&mut stream, "403 Forbidden", "application/json", r#"{"error":"The chat input of the overlay is switched off in HighBazar."}"#).await
+        }
+        "/suggest" => {
+            let q = req.query.get("q").map(String::as_str).unwrap_or("");
+            let mode = match req.query.get("m").map(String::as_str) {
+                Some("mention") => crate::chat::Mode::Mention,
+                Some("tab") => crate::chat::Mode::Tab,
+                Some("browse") => crate::chat::Mode::Browse,
+                _ => crate::chat::Mode::Colon,
+            };
+            let german = req.query.get("lang").is_some_and(|l| l.starts_with("de"));
+            let limit = if mode == crate::chat::Mode::Browse { 200 } else { 10 };
+            let list = crate::chat::suggest_for(&st, q, mode, german, limit);
+            respond(&mut stream, "200 OK", "application/json", &serde_json::to_string(&list).unwrap_or_default()).await
+        }
+        "/send" => {
+            // Only the overlay page itself: same origin and a JSON body, which a
+            // form on another website cannot send.
+            let own = [format!("http://127.0.0.1:{port}"), format!("http://localhost:{port}")];
+            if req.method != "POST" || !req.content_type.starts_with("application/json") || (!req.origin.is_empty() && !own.contains(&req.origin)) {
+                return respond(&mut stream, "403 Forbidden", "application/json", r#"{"error":"Forbidden"}"#).await;
+            }
+            let text = serde_json::from_slice::<Value>(&req.body).ok().and_then(|v| v["text"].as_str().map(str::to_string)).unwrap_or_default();
+            let body = match crate::chat::send(&st, text).await {
+                Ok(()) => json!({ "ok": true }),
+                Err(e) => json!({ "error": e.to_string() }),
+            };
+            respond(&mut stream, "200 OK", "application/json", &body.to_string()).await
+        }
         "/" => respond(&mut stream, "200 OK", "text/html; charset=utf-8", PAGE).await,
         "/overlay.js" => respond(&mut stream, "200 OK", "text/javascript; charset=utf-8", SCRIPT).await,
         "/overlay.css" => respond(&mut stream, "200 OK", "text/css; charset=utf-8", STYLE).await,

@@ -6,6 +6,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 use super::helix::Helix;
+use crate::chat::{EmoteInfo, Scope};
 use crate::config::EmoteSettings;
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -21,6 +22,10 @@ pub struct EmoteCatalog {
     /// All names, for fast lookups (every chat word is checked against it).
     #[serde(skip)]
     names: HashSet<String>,
+    /// Every emote with its provider and whether it belongs to the channel
+    /// (for the suggestions in the streamer's chat input).
+    #[serde(skip)]
+    pub infos: Vec<EmoteInfo>,
 }
 
 impl EmoteCatalog {
@@ -107,38 +112,48 @@ pub async fn fetch(helix: &Helix, broadcaster_id: &str) -> EmoteCatalog {
         get_json(http, &stv_c_url),
     );
 
-    let mut twitch: Vec<(String, String)> = Vec::new();
-    // Channel emotes first: they matter most for the community.
-    for e in tw_channel.unwrap_or_default().into_iter().chain(tw_global.unwrap_or_default()) {
-        twitch.push((e.name, twitch_emote_url(&e.id)));
-    }
+    // Channel emotes first: they matter most for the community. The number
+    // of channel entries per list tells channel and global emotes apart.
+    let mut twitch: Vec<(String, String)> = tw_channel.unwrap_or_default().into_iter().map(|e| (e.name, twitch_emote_url(&e.id))).collect();
+    let tw_n = twitch.len();
+    twitch.extend(tw_global.unwrap_or_default().into_iter().map(|e| (e.name, twitch_emote_url(&e.id))));
     let mut bttv = Vec::new();
     if let Some(c) = &bttv_c {
         bttv.extend(entries(c.get("channelEmotes"), "code", bttv_url));
         bttv.extend(entries(c.get("sharedEmotes"), "code", bttv_url));
     }
+    let bttv_n = bttv.len();
     bttv.extend(entries(bttv_g.as_ref(), "code", bttv_url));
     let mut ffz = entries(ffz_c.as_ref(), "code", ffz_url);
+    let ffz_n = ffz.len();
     ffz.extend(entries(ffz_g.as_ref(), "code", ffz_url));
     let mut stv = Vec::new();
     if let Some(c) = &stv_c {
         stv.extend(entries(c["emote_set"].get("emotes"), "name", seventv_url));
     }
+    let stv_n = stv.len();
     if let Some(g) = &stv_g {
         stv.extend(entries(g.get("emotes"), "name", seventv_url));
     }
 
     let mut cat = EmoteCatalog::default();
-    for (list, out) in [(twitch, &mut cat.twitch), (bttv, &mut cat.bttv), (ffz, &mut cat.ffz), (stv, &mut cat.seventv)] {
+    for (list, n_channel, provider, out) in [
+        (twitch, tw_n, "twitch", &mut cat.twitch),
+        (bttv, bttv_n, "bttv", &mut cat.bttv),
+        (ffz, ffz_n, "ffz", &mut cat.ffz),
+        (stv, stv_n, "7tv", &mut cat.seventv),
+    ] {
         let mut seen = HashSet::new();
-        for (name, url) in list {
+        for (i, (name, url)) in list.into_iter().enumerate() {
             if name.is_empty() || !seen.insert(name.clone()) {
                 continue;
             }
             // Channel emotes come first, so they win over globals with the same name.
             if !url.is_empty() {
-                cat.urls.entry(name.clone()).or_insert(url);
+                cat.urls.entry(name.clone()).or_insert(url.clone());
             }
+            let scope = if i < n_channel { Scope::Channel } else { Scope::Global };
+            cat.infos.push(EmoteInfo { name: name.clone(), provider, url, scope });
             out.push(name);
         }
     }

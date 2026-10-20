@@ -1,5 +1,6 @@
 mod ai;
 mod bot;
+mod chat;
 mod commands;
 mod config;
 mod error;
@@ -120,6 +121,8 @@ pub fn run() {
             commands::get_usage,
             commands::clear_research_cache,
             commands::get_emote_urls,
+            commands::chat_suggest,
+            commands::chat_send,
             commands::twitch_api,
             commands::open_data_dir,
             commands::get_recent_feed,

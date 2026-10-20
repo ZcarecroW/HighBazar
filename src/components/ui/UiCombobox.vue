@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { Check, Search } from "../../icons";
 import { fuzzySearch } from "../../lib/fuzzy";
 import FuzzyText from "./FuzzyText.vue";
+import { useCloseOutside } from "../../lib/outside";
 
 // A select with a fuzzy search field – for lists longer than a handful of entries.
 export interface ComboOption {
@@ -85,11 +86,7 @@ function onKey(e: KeyboardEvent) {
 }
 watch(filter, () => (active.value = 0));
 
-function outside(e: MouseEvent) {
-  if (open.value && root.value && !root.value.contains(e.target as Node)) open.value = false;
-}
-document.addEventListener("mousedown", outside);
-onBeforeUnmount(() => document.removeEventListener("mousedown", outside));
+useCloseOutside(root, open);
 </script>
 
 <template>

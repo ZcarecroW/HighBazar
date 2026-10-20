@@ -24,6 +24,7 @@ import type {
   WebSearchSettings,
   SearchHit,
 } from "./types";
+import type { Suggestion, SuggestMode } from "./chatInput";
 
 export const api = {
   bootstrap: () => invoke<Bootstrap>("get_bootstrap"),
@@ -34,6 +35,8 @@ export const api = {
   aiListModels: (profile: AiProfile) => invoke<ModelInfo[]>("ai_list_models", { profile }),
   detectClaudeCli: (path?: string) => invoke<string | null>("detect_claude_cli", { path }),
   codexCliStatus: (path?: string) => invoke<CliStatus>("codex_cli_status", { path }),
+  chatSuggest: (query: string, mode: SuggestMode, german: boolean, limit = 10) => invoke<Suggestion[]>("chat_suggest", { query, mode, german, limit }),
+  chatSend: (text: string) => invoke<void>("chat_send", { text }),
   webSearchTest: (settings: WebSearchSettings, query: string) => invoke<SearchHit[]>("web_search_test", { settings, query }),
   twitchLoginStart: (kind: "streamer" | "bot", level?: string) => invoke<LoginStart>("twitch_login_start", { kind, level }),
   twitchLoginCancel: (loginId: string) => invoke<void>("twitch_login_cancel", { loginId }),

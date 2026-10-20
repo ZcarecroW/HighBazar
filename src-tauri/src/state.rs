@@ -26,11 +26,14 @@ pub struct AppState {
     pub emote_urls: RwLock<Arc<std::collections::HashMap<String, String>>>,
     /// Live feed fan-out (Steam overlay page, reopened windows).
     pub overlay: crate::overlay::Hub,
+    /// Suggestions for the streamer's own chat input.
+    pub chat: crate::chat::ChatAssist,
     pub overlay_server: crate::overlay::Server,
 }
 
 impl AppState {
     pub fn new(config_dir: PathBuf, data_dir: PathBuf) -> Self {
+        let chat_dir = data_dir.clone();
         let http = reqwest::Client::builder()
             .user_agent(concat!("HighBazar/", env!("CARGO_PKG_VERSION")))
             .connect_timeout(Duration::from_secs(15))
@@ -54,6 +57,7 @@ impl AppState {
             logins: Default::default(),
             emote_urls: Default::default(),
             overlay: Default::default(),
+            chat: crate::chat::ChatAssist::new(&chat_dir),
             overlay_server: Default::default(),
         }
     }

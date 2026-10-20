@@ -21,7 +21,11 @@ pub const STREAMER_SCOPES: &[&str] = &[
 pub const BOT_SCOPES: &[&str] = &["user:write:chat"];
 
 /// Extra scopes of the channel manager, per level (each level adds to the previous).
-pub const CHANNEL_SIMPLE_SCOPES: &[&str] = &["channel:manage:broadcast"];
+pub const CHANNEL_SIMPLE_SCOPES: &[&str] = &[
+    "channel:manage:broadcast",
+    // Emotes of your subscriptions as suggestions in the chat input.
+    "user:read:emotes",
+];
 pub const CHANNEL_ADVANCED_SCOPES: &[&str] = &[
     "moderator:manage:chat_settings",
     "moderator:manage:announcements",

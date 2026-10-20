@@ -63,8 +63,9 @@ Anthropic Claude · OpenAI · Google Gemini · OpenRouter · Mistral · Groq · 
 (siehe [FAQ](#kann-ich-mein-claude-pro-abo-nutzen)) und die **Codex CLI** mit deinem ChatGPT-Abo (läuft ohne Befehle, Dateizugriff oder andere Werkzeuge).
 **Websuche bei jedem Anbieter:** Claude, OpenAI, Gemini, Grok, OpenRouter, Perplexity, Groq Compound und beide CLIs suchen
 selbst; für alle anderen – Ollama, LM Studio, DeepSeek, Mistral, Together, eigene Server – sucht HighBazar und gibt die
-Ergebnisse ans Modell weiter: mit **Wikipedia** (kostenlos, ohne Schlüssel), der **Ollama-Websuche**, **Tavily**,
-**Brave Search** oder deinem eigenen **SearXNG** (KI → *Websuche*). Alles über **KI-Profile** einstellbar (Modell, Denkaufwand,
+Ergebnisse ans Modell weiter: mit **You.com** (kostenlos, ohne Schlüssel – Standard, mit Wikipedia als Ausweich),
+**Wikipedia**, **Exa**, **Serper** (Google-Ergebnisse), **Tavily**, **Brave Search**, der **Ollama-Websuche** oder
+deinem eigenen **SearXNG** (KI → *Websuche*). Alles über **KI-Profile** einstellbar (Modell, Denkaufwand,
 Tokens, Temperatur, Timeout, Preise, Header …) – das Modell wählst du aus einer durchsuchbaren Liste des Anbieters (oder tippst einen beliebigen Namen), dazu Verbindungstest und Kostenanzeige. Für die
 Moderation kannst du ein **günstigeres Modell** wählen.
 
@@ -89,7 +90,7 @@ Bazaar, Mitternacht, Ozean, Polarlicht, Wald, Gold, Abendrot, Karmesin, Sakura u
 - **Spiele haben Vorrang**: HighBazar läuft mit niedrigerer Prozess-Priorität, damit dein Spiel die CPU immer zuerst bekommt.
 
 ### ✨ Außerdem
-**Fuzzy-Suche überall**: **Strg+K** springt zu jeder Seite, Einstellung, jedem Profil und jeder Aktion; Raid- und Shoutout-Ziele werden schon beim Tippen vorgeschlagen – Live-Kanäle, denen du folgst, Leute im Chat und die Twitch-Kanalsuche, mit Avatar, Titel, Kategorie und Zuschauern; Profile, Modelle, Sprachen und das Mod-Protokoll sind ebenfalls durchsuchbar, Tippfehler, Umlaute und Abkürzungen inklusive („minecarft“, „jc“ → Just Chatting) · Einrichtungsassistent (überspringbar, jederzeit wieder aufrufbar) · Testmodus mit Chat-Simulator · Live-Feed mit
+**Selbst chatten** – in der App und auf Wunsch direkt im Steam-/OBS-Overlay (Umschalt+Tab, tippen, Enter, zurück ins Spiel). `:` schlägt Emotes **aller Anbieter** vor (Twitch inkl. deiner Abos, BTTV, FFZ, 7TV) und **Emojis** mit deutschen und englischen Stichwörtern (`:herz`, `:fire`); `:7 pog` sucht nur in 7TV (`:b` BTTV, `:f` FFZ, `:t` Twitch, `:e` Emoji). Favoriten und was du am meisten nutzt stehen vorn, `@` schlägt Leute aus dem Chat vor, **Tab** vervollständigt das Wort, ↑ holt deine letzte Nachricht zurück; dazu ein Emote-Raster mit Reitern pro Anbieter (Rechtsklick = Favorit) · **Fuzzy-Suche überall**: **Strg+K** springt zu jeder Seite, Einstellung, jedem Profil und jeder Aktion; Raid- und Shoutout-Ziele werden schon beim Tippen vorgeschlagen – Live-Kanäle, denen du folgst, Leute im Chat und die Twitch-Kanalsuche, mit Avatar, Titel, Kategorie und Zuschauern; Profile, Modelle, Sprachen und das Mod-Protokoll sind ebenfalls durchsuchbar, Tippfehler, Umlaute und Abkürzungen inklusive („minecarft“, „jc“ → Just Chatting) · Einrichtungsassistent (überspringbar, jederzeit wieder aufrufbar) · Testmodus mit Chat-Simulator · Live-Feed mit
 Löschen/Timeout/Bann per Klick · Emotes von Twitch, BTTV, FFZ und 7TV als Bilder (abschaltbar) · neue Chatnachrichten **gleiten sanft ein** statt zu springen (Tempo und Kurve einstellbar, mit Vorschau) · Chat und Oberfläche **getrennt zoombar** (Strg + Mausrad, Strg + Plus/Minus) · Designs System/Dunkel/Hell · Deutsch & Englisch · für 1920×1080 optimiert und
 responsiv · automatische Updates über GitHub · schlanker Rust-Kern statt Electron.
 
@@ -172,3 +173,5 @@ npm run tauri dev
 [MIT](LICENSE) © ZcarecroW. HighBazar steht in keiner Verbindung zu Twitch, Anthropic, OpenAI, Google oder anderen Anbietern.
 
 Icons: [Nucleo](https://nucleoapp.com) – für HighBazar lizenziert und **nicht** Teil der MIT-Lizenz; sie dürfen nicht herausgelöst oder als Icon-Set weiterverwendet werden (src/icons/nucleo.ts).
+
+Emoji-Namen und -Stichwörter: [emojibase](https://emojibase.dev) (MIT), basierend auf Unicode-CLDR-Daten (src-tauri/data/emoji.tsv, neu erzeugt mit `node scripts/emoji/build.mjs`).

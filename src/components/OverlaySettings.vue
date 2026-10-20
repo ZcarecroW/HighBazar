@@ -101,6 +101,7 @@ const bgPct = computed({
         <UiToggle v-model="o.showEvents" :label="t('overlay.showEvents')" />
         <UiToggle v-model="o.showTranslations" :label="t('overlay.showTranslations')" />
       </div>
+      <UiToggle v-model="o.chatInput" :label="t('overlay.chatInput')" :hint="t('overlay.chatInputHint')" />
       <div class="grid gap-5 md:grid-cols-2">
         <UiSlider v-model="bgPct" :label="t('overlay.background')" :hint="t('overlay.backgroundHint')" :min="0" :max="100" :step="5" suffix=" %" />
         <UiSlider

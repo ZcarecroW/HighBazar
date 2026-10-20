@@ -140,6 +140,8 @@ pub enum Control {
     Undo(String),
     Manual(ManualAction),
     RefreshStream,
+    /// A message the streamer typed (app or overlay); the result goes back to the sender.
+    Send(String, tokio::sync::oneshot::Sender<AppResult<()>>),
 }
 
 struct Running {

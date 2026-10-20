@@ -82,7 +82,8 @@ function distance(a: string, b: string, max: number): number {
 }
 
 /** Scores one search term against one text; null = no match. */
-function scoreTerm(term: string, f: Folded, starts: boolean[]): { score: number; idx: number[] } | null {
+function scoreTerm(term: string, p: Prepared): { score: number; idx: number[] } | null {
+  const { f, starts } = p;
   const t = f.text;
   if (!term || !t) return null;
   // 1) Substring – best at the very start, then at a word start.
@@ -127,18 +128,22 @@ function scoreTerm(term: string, f: Folded, starts: boolean[]): { score: number;
   // 3) A small typo in a word ("minecarft", "fortnte").
   if (term.length >= 4) {
     const max = term.length >= 8 ? 2 : 1;
-    const re = /[\p{L}\p{N}]+/gu;
-    for (const m of t.matchAll(re)) {
-      const word = m[0];
+    for (const [at, end] of words(p)) {
+      const wl = end - at;
       // The whole word (one letter more or less), or its start while still typing.
-      const lens = Math.abs(word.length - term.length) <= max ? [word.length] : [];
-      if (word.length > term.length) lens.push(term.length);
-      for (const len of lens) {
-        if (len < 3) continue;
+      const whole = Math.abs(wl - term.length) <= max;
+      if (!whole && wl <= term.length) continue;
+      // Cheap check first: enough of the term's letters must occur in the word.
+      let shared = 0;
+      for (let q = 0; q < term.length; q++) if (t.indexOf(term[q]!, at) !== -1 && t.indexOf(term[q]!, at) < end) shared++;
+      if (shared < term.length - max) continue;
+      const word = t.slice(at, end);
+      for (const len of whole ? [wl, term.length] : [term.length]) {
+        if (len < 3 || len > wl) continue;
         const d = distance(term, word.slice(0, len), max);
         if (d <= max) {
-          const s = 25 - d * 6 + (m.index === 0 ? 5 : 0);
-          if (!best || s > best.score) best = { score: s, idx: Array.from({ length: len }, (_, k) => m.index! + k) };
+          const s = 25 - d * 6 + (at === 0 ? 5 : 0);
+          if (!best || s > best.score) best = { score: s, idx: Array.from({ length: len }, (_, k) => at + k) };
         }
       }
     }
@@ -150,14 +155,25 @@ interface Prepared {
   original: string;
   f: Folded;
   starts: boolean[];
+  /** [start, end) of each word in the folded text, computed on first need. */
+  words?: [number, number][];
 }
+function words(p: Prepared): [number, number][] {
+  if (!p.words) {
+    p.words = [];
+    for (const m of p.f.text.matchAll(/[\p{L}\p{N}]+/gu)) p.words.push([m.index, m.index + m[0].length]);
+  }
+  return p.words;
+}
+// Large enough for every emote name plus the app's lists, so it is not cleared while typing.
+const CACHE_MAX = 40_000;
 const cache = new Map<string, Prepared>();
 function prepare(s: string): Prepared {
   let p = cache.get(s);
   if (!p) {
     const f = fold(s);
     p = { original: s, f, starts: wordStarts(s, f) };
-    if (cache.size > 5000) cache.clear();
+    if (cache.size >= CACHE_MAX) cache.clear();
     cache.set(s, p);
   }
   return p;
@@ -182,7 +198,7 @@ export function fuzzyMatch(query: string | string[], fields: (string | null | un
     let best: { score: number; field: number; idx: number[] } | null = null;
     prepared.forEach((p, i) => {
       if (!p) return;
-      const r = scoreTerm(term, p.f, p.starts);
+      const r = scoreTerm(term, p);
       if (!r) return;
       const w = weights?.[i] ?? Math.max(0.55, 1 - i * 0.15);
       const s = r.score * w;

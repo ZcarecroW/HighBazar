@@ -8,7 +8,7 @@
   const statusEl = document.getElementById("status");
   const MAX_LINES = 80;
 
-  let settings = { showBot: true, showEvents: true, showTranslations: true, hideAfterSecs: 0, background: 0.55, showEmotes: true, chatZoom: 1, chatScroll: { smooth: true, durationMs: 450, easing: "easeInOut" }, language: "auto" };
+  let settings = { showBot: true, showEvents: true, showTranslations: true, hideAfterSecs: 0, background: 0.55, showEmotes: true, chatZoom: 1, chatScroll: { smooth: true, durationMs: 450, easing: "easeInOut" }, language: "auto", chatInput: false };
   let emotes = {};
   const translations = new Map();
 
@@ -114,6 +114,7 @@
   }
 
   function applySettings() {
+    applyInput();
     document.documentElement.style.setProperty("--bg", String(settings.background));
     document.documentElement.style.setProperty("--in-ms", fadeMs() + "ms");
     chat.style.zoom = String(settings.chatZoom || 1);
@@ -191,6 +192,213 @@
     cancelAnimationFrame(raf);
     raf = 0;
     setDistance(0);
+  }
+
+  // ---------------------------------------------------------------- chat input
+  // Optional input to write in chat (Shift+Tab into the Steam overlay, reply,
+  // Enter). Suggestions come from the app, so they rank exactly like there:
+  // ":" emotes and emojis (":7 pog" = 7TV only), "@" people, Tab completes.
+  const say = document.getElementById("say");
+  const sayIn = document.getElementById("say-in");
+  const sayBtn = document.getElementById("say-btn");
+  const sug = document.getElementById("sug");
+  const T = {
+    de: { ph: "Nachricht … ( : Emotes, @ Leute, Tab ergänzt)", hint: "↑↓ wählen · Enter/Tab einfügen · :7 :b :f :t :e = Anbieter", off: "HighBazar: Bot läuft nicht" },
+    en: { ph: "Message … ( : emotes, @ people, Tab completes)", hint: "↑↓ choose · Enter/Tab insert · :7 :b :f :t :e = provider", off: "HighBazar: the bot is not running" },
+  };
+  const tr = () => T[lang()] || T.en;
+  const PROVIDER = { twitch: "Twitch", bttv: "BTTV", ffz: "FFZ", "7tv": "7TV", emoji: "Emoji" };
+  let items = [];
+  let activeIdx = 0;
+  let seq = 0;
+  let tabCycle = null;
+  const sent = [];
+  let histPos = -1;
+
+  function activeToken(text, caret) {
+    const before = text.slice(0, caret);
+    const colon = before.match(/(^|\s):((?:[7bfteBFTE] )?[^\s:]*)$/);
+    if (colon) return { mode: "colon", query: colon[2], start: caret - colon[2].length - 1 };
+    const at = before.match(/(^|\s)@([\p{L}\p{N}_]*)$/u);
+    if (at) return { mode: "mention", query: at[2], start: caret - at[2].length - 1 };
+    return null;
+  }
+  async function suggest(q, mode, limit) {
+    const url = `/suggest?k=${encodeURIComponent(key)}&m=${mode}&lang=${lang()}&q=${encodeURIComponent(q)}&n=${limit}`;
+    try {
+      const r = await fetch(url);
+      return r.ok ? await r.json() : [];
+    } catch {
+      return [];
+    }
+  }
+  function renderSug() {
+    sug.textContent = "";
+    sug.hidden = !items.length;
+    sayIn.setAttribute("aria-expanded", String(items.length > 0));
+    items.forEach((s, i) => {
+      const li = document.createElement("li");
+      li.setAttribute("role", "option");
+      li.setAttribute("aria-selected", String(i === activeIdx));
+      if (s.url) {
+        const img = document.createElement("img");
+        img.src = s.url;
+        img.alt = "";
+        li.append(img);
+      } else {
+        const b = document.createElement("span");
+        b.className = s.kind === "emoji" ? "emoji" : "at";
+        b.textContent = s.kind === "emoji" ? s.insert : "@";
+        li.append(b);
+      }
+      const lbl = document.createElement("span");
+      lbl.className = "lbl";
+      lbl.textContent = s.kind === "emoji" ? s.label : s.insert;
+      li.append(lbl);
+      if (s.kind !== "user") {
+        const p = document.createElement("span");
+        p.className = "prov";
+        p.textContent = s.scope === "sub" ? (lang() === "de" ? "Abo" : "Sub") : PROVIDER[s.provider] || "";
+        li.append(p);
+      }
+      li.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        pick(s);
+      });
+      sug.append(li);
+    });
+    if (items.length) {
+      const h = document.createElement("li");
+      h.className = "hint";
+      h.textContent = tr().hint;
+      sug.append(h);
+    }
+  }
+  async function refreshSug() {
+    const tok = activeToken(sayIn.value, sayIn.selectionStart ?? sayIn.value.length);
+    if (!tok) {
+      items = [];
+      renderSug();
+      return;
+    }
+    const mine = ++seq;
+    const r = await suggest(tok.query, tok.mode, 8);
+    if (mine !== seq) return;
+    items = r.slice(0, 8);
+    activeIdx = 0;
+    renderSug();
+  }
+  function pick(s) {
+    const caret = sayIn.selectionStart ?? sayIn.value.length;
+    const tok = activeToken(sayIn.value, caret);
+    if (!tok) return;
+    const after = sayIn.value.slice(caret).replace(/^\S*/, "");
+    const ins = after.startsWith(" ") ? s.insert : s.insert + " ";
+    sayIn.value = sayIn.value.slice(0, tok.start) + ins + after;
+    const pos = tok.start + ins.length + (after.startsWith(" ") ? 1 : 0);
+    sayIn.setSelectionRange(pos, pos);
+    items = [];
+    renderSug();
+  }
+  async function tabComplete(back) {
+    if (!tabCycle) {
+      const caret = sayIn.selectionStart ?? sayIn.value.length;
+      const m = sayIn.value.slice(0, caret).match(/(\S+)$/);
+      if (!m) return;
+      const list = await suggest(m[1].replace(/^@/, ""), "tab", 20);
+      if (!list.length) return;
+      tabCycle = { start: caret - m[1].length, end: caret, list, i: back ? list.length - 1 : 0 };
+    } else {
+      const n = tabCycle.list.length;
+      tabCycle.i = (tabCycle.i + (back ? n - 1 : 1)) % n;
+    }
+    const ins = tabCycle.list[tabCycle.i].insert + " ";
+    sayIn.value = sayIn.value.slice(0, tabCycle.start) + ins + sayIn.value.slice(tabCycle.end);
+    tabCycle.end = tabCycle.start + ins.length;
+    sayIn.setSelectionRange(tabCycle.end, tabCycle.end);
+  }
+  function flash(text) {
+    statusEl.textContent = text;
+    statusEl.hidden = false;
+    clearTimeout(flash.t);
+    flash.t = setTimeout(() => (statusEl.hidden = true), 6000);
+  }
+  async function send() {
+    const text = sayIn.value.trim();
+    if (!text || sayBtn.disabled) return;
+    sayBtn.disabled = true;
+    try {
+      const r = await fetch(`/send?k=${encodeURIComponent(key)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (j.ok) {
+        sent.push(text);
+        if (sent.length > 30) sent.shift();
+        sayIn.value = "";
+        items = [];
+        renderSug();
+      } else {
+        flash(j.error || tr().off);
+      }
+    } catch {
+      flash(tr().off);
+    } finally {
+      sayBtn.disabled = false;
+      histPos = -1;
+      sayIn.focus();
+    }
+  }
+  sayIn.addEventListener("input", () => {
+    tabCycle = null;
+    histPos = -1;
+    refreshSug();
+  });
+  sayIn.addEventListener("blur", () => {
+    items = [];
+    renderSug();
+  });
+  sayIn.addEventListener("keydown", (e) => {
+    const open = items.length > 0;
+    if (open && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+      e.preventDefault();
+      activeIdx = (activeIdx + (e.key === "ArrowDown" ? 1 : items.length - 1)) % items.length;
+      renderSug();
+    } else if (open && (e.key === "Enter" || e.key === "Tab")) {
+      e.preventDefault();
+      pick(items[activeIdx]);
+    } else if (open && e.key === "Escape") {
+      items = [];
+      renderSug();
+    } else if (e.key === "Tab") {
+      e.preventDefault();
+      tabComplete(e.shiftKey);
+    } else if (e.key === "ArrowUp" && sent.length && (!sayIn.value || histPos >= 0)) {
+      e.preventDefault();
+      histPos = Math.min(histPos + 1, sent.length - 1);
+      sayIn.value = sent[sent.length - 1 - histPos];
+    } else if (e.key === "ArrowDown" && histPos >= 0) {
+      e.preventDefault();
+      histPos--;
+      sayIn.value = histPos >= 0 ? sent[sent.length - 1 - histPos] : "";
+    } else if (e.key !== "Shift") {
+      tabCycle = null;
+    }
+  });
+  say.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!items.length) send();
+  });
+  // Opening the overlay should let you type right away.
+  window.addEventListener("focus", () => !say.hidden && sayIn.focus());
+  function applyInput() {
+    const on = !!settings.chatInput;
+    say.hidden = !on;
+    document.body.classList.toggle("typing", on);
+    sayIn.placeholder = tr().ph;
+    if (on && document.hasFocus()) sayIn.focus();
   }
 
   function connect() {

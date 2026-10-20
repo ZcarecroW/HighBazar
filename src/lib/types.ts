@@ -37,9 +37,16 @@ export interface AppSettings {
   overlay: OverlaySettings;
   /** HighBazar's own web search for AI providers without a built-in one. */
   webSearch: WebSearchSettings;
+  chatInput: ChatInputSettings;
 }
 
-export type WebSearchSource = "wikipedia" | "ollama" | "tavily" | "brave" | "searxng";
+export interface ChatInputSettings {
+  enabled: boolean;
+  /** Emote names / emojis pinned to the top of the suggestions. */
+  favorites: string[];
+}
+
+export type WebSearchSource = "youcom" | "wikipedia" | "exa" | "serper" | "tavily" | "brave" | "ollama" | "searxng";
 
 export interface WebSearchSettings {
   source: WebSearchSource;
@@ -439,6 +446,8 @@ export interface OverlaySettings {
   hideAfterSecs: number;
   /** Background opacity 0–1. */
   background: number;
+  /** Input field to write in chat from the overlay page. */
+  chatInput: boolean;
 }
 
 export interface OverlayStatus {

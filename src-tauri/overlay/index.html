@@ -10,6 +10,11 @@
   <body>
     <div id="feed"><div id="chat"></div></div>
     <div id="status" hidden></div>
+    <form id="say" hidden autocomplete="off">
+      <ul id="sug" role="listbox" hidden></ul>
+      <input id="say-in" maxlength="600" spellcheck="true" role="combobox" aria-autocomplete="list" aria-controls="sug" aria-expanded="false" />
+      <button id="say-btn" type="submit" aria-label="Send">➤</button>
+    </form>
     <script src="/overlay.js" id="js"></script>
   </body>
 </html>

@@ -16,10 +16,13 @@ const { t } = useI18n();
 const w = computed(() => app.config!.settings.webSearch);
 
 const SOURCES: { id: WebSearchSource; key: boolean; url: string }[] = [
+  { id: "youcom", key: false, url: "" },
   { id: "wikipedia", key: false, url: "" },
-  { id: "ollama", key: true, url: "https://ollama.com/settings/keys" },
+  { id: "exa", key: true, url: "https://dashboard.exa.ai/api-keys" },
+  { id: "serper", key: true, url: "https://serper.dev/api-key" },
   { id: "tavily", key: true, url: "https://app.tavily.com/home" },
   { id: "brave", key: true, url: "https://api-dashboard.search.brave.com/app/keys" },
+  { id: "ollama", key: true, url: "https://ollama.com/settings/keys" },
   { id: "searxng", key: false, url: "https://docs.searxng.org/admin/installation.html" },
 ];
 const current = computed(() => SOURCES.find((s) => s.id === w.value.source) ?? SOURCES[0]!);

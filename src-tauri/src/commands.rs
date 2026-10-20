@@ -414,6 +414,18 @@ pub fn get_usage(st: St<'_>) -> BTreeMap<String, BTreeMap<String, UsageStats>> {
     u.days.iter().rev().take(31).map(|(k, v)| (k.clone(), v.clone())).collect()
 }
 
+/// Suggestions while the streamer types (":" emotes and emojis, "@" people, Tab).
+#[tauri::command]
+pub fn chat_suggest(st: St<'_>, query: String, mode: crate::chat::Mode, german: bool, limit: Option<usize>) -> Vec<crate::chat::Suggestion> {
+    crate::chat::suggest_for(&st, &query, mode, german, limit.unwrap_or(10))
+}
+
+/// Sends a chat message as the streamer.
+#[tauri::command]
+pub async fn chat_send(st: St<'_>, text: String) -> AppResult<()> {
+    crate::chat::send(&st, text).await
+}
+
 #[tauri::command]
 pub fn get_emote_urls(st: St<'_>) -> HashMap<String, String> {
     (**st.emote_urls.read()).clone()

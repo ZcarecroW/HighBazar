@@ -75,12 +75,29 @@ pub struct AppSettings {
     pub overlay: OverlaySettings,
     /// Where HighBazar searches the web itself for AI providers without a built-in search.
     pub web_search: WebSearchSettings,
+    /// Writing in chat yourself from the live feed.
+    pub chat_input: ChatInputSettings,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct ChatInputSettings {
+    /// Input under the live feed in the app.
+    pub enabled: bool,
+    /// Emotes and emojis pinned to the top of the suggestions.
+    pub favorites: Vec<String>,
+}
+
+impl Default for ChatInputSettings {
+    fn default() -> Self {
+        Self { enabled: true, favorites: Vec::new() }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct WebSearchSettings {
-    /// "wikipedia" | "ollama" | "tavily" | "brave" | "searxng"
+    /// "youcom" | "wikipedia" | "exa" | "serper" | "tavily" | "brave" | "ollama" | "searxng"
     pub source: String,
     /// Base URL of the own SearXNG instance (JSON output must be enabled there).
     pub searxng_url: String,
@@ -89,7 +106,7 @@ pub struct WebSearchSettings {
 
 impl Default for WebSearchSettings {
     fn default() -> Self {
-        Self { source: "wikipedia".into(), searxng_url: String::new(), max_results: 5 }
+        Self { source: "youcom".into(), searxng_url: String::new(), max_results: 5 }
     }
 }
 
@@ -107,6 +124,8 @@ pub struct OverlaySettings {
     pub hide_after_secs: u32,
     /// Background opacity 0–1.
     pub background: f32,
+    /// Input field to write in chat from the overlay page.
+    pub chat_input: bool,
 }
 
 impl Default for OverlaySettings {
@@ -120,6 +139,7 @@ impl Default for OverlaySettings {
             show_translations: true,
             hide_after_secs: 0,
             background: 0.55,
+            chat_input: false,
         }
     }
 }
@@ -163,6 +183,7 @@ impl Default for AppSettings {
             start_in_tray: false,
             overlay: OverlaySettings::default(),
             web_search: WebSearchSettings::default(),
+            chat_input: ChatInputSettings::default(),
         }
     }
 }

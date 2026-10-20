@@ -12,6 +12,7 @@ import { useTwitch } from "../lib/twitch";
 import { useApp } from "../stores/app";
 import type { FeedItem, PendingMessage } from "../lib/types";
 import UiToggle from "../components/ui/UiToggle.vue";
+import ChatInput from "../components/ChatInput.vue";
 
 const app = useApp();
 const { t, locale } = useI18n();
@@ -398,6 +399,7 @@ function modEntry(item: FeedItem) {
           </div>
           </div>
         </div>
+        <ChatInput v-if="settings.chatInput.enabled" />
       </section>
 
       <!-- Side -->

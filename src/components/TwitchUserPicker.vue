@@ -6,6 +6,7 @@ import { api } from "../lib/api";
 import { fuzzySearch, type Ranges } from "../lib/fuzzy";
 import { useTwitch } from "../lib/twitch";
 import FuzzyText from "./ui/FuzzyText.vue";
+import { useCloseOutside } from "../lib/outside";
 
 // Login field with suggestions while typing: live channels you follow, people
 // in chat and Twitch's channel search – with avatar, title and category.
@@ -248,14 +249,8 @@ function onKey(e: KeyboardEvent) {
     open.value = false;
   }
 }
-function outside(e: MouseEvent) {
-  if (open.value && root.value && !root.value.contains(e.target as Node)) open.value = false;
-}
-document.addEventListener("mousedown", outside);
-onBeforeUnmount(() => {
-  document.removeEventListener("mousedown", outside);
-  clearTimeout(timer);
-});
+useCloseOutside(root, open);
+onBeforeUnmount(() => clearTimeout(timer));
 </script>
 
 <template>
