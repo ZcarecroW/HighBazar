@@ -2,6 +2,8 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { X } from "../icons";
+import { languageOptions } from "../lib/languages";
+import UiCombobox from "./ui/UiCombobox.vue";
 
 // Languages the streamer understands; the first one is the translation target.
 // Same list as the backend detector (src-tauri/src/bot/translate.rs).
@@ -20,6 +22,7 @@ function name(code: string) {
 }
 const available = computed(() => CODES.filter((c) => !model.value.includes(c)).sort((a, b) => name(a).localeCompare(name(b))));
 
+const options = computed(() => languageOptions(available.value, locale.value));
 function add() {
   if (adding.value && !model.value.includes(adding.value)) model.value = [...model.value, adding.value];
   adding.value = "";
@@ -51,10 +54,14 @@ function makeTarget(code: string) {
         </button>
         <button type="button" class="rounded-full p-0.5 opacity-70 hover:opacity-100" :aria-label="t('common.remove')" @click="remove(c)"><X :size="12" /></button>
       </span>
-      <select v-model="adding" class="input w-auto py-1 text-sm" @change="add">
-        <option value="" disabled>{{ t("translation.addLanguage") }}</option>
-        <option v-for="c in available" :key="c" :value="c">{{ name(c) }}</option>
-      </select>
+      <UiCombobox
+        v-model="adding"
+        class="w-56"
+        :options="options"
+        :placeholder="t('translation.addLanguage')"
+        :label="t('translation.addLanguage')"
+        @picked="add"
+      />
     </div>
   </div>
 </template>

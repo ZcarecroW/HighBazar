@@ -44,7 +44,8 @@ mit einem **eigenen Bot-Account**, wenn du einen verbindest.
 - **Emotes**: kennt die Twitch-, **BetterTTV**-, **FrankerFaceZ**- und **7TV**-Emotes deines Kanals und bevorzugt die, die deine Community wirklich nutzt.
 - **Reaktionen**: auf Ansprache, Erstchatter, Follows (gesammelt), Subs, Resubs, Sub-Geschenke, Raids (inkl. was der Raider gespielt hat) und Cheers.
 - **Befehle**: `!hb ask <Frage>`, `!hb fact`, `!hb joke`, `!hb about` – mit Cooldowns und Rollen.
-- **Spielrecherche**: beim Kategoriewechsel Wikipedia + Websuche des KI-Anbieters → Fakten & Tipps, pro Spiel zwischengespeichert.
+- **Spielrecherche**: beim Kategoriewechsel Wikipedia + Websuche → Fakten & Tipps, pro Spiel zwischengespeichert.
+- **Aktuelle Antworten**: Fragt der Chat nach Patches, Release-Terminen, Turnieren usw., schaut der Bot vorher im Web nach (Smalltalk beantwortet er sofort). Standardmäßig an, abschaltbar.
 - **Kontrolle**: automatisch senden, *Vorschau dann senden* oder *jede Nachricht freigeben*; „Jetzt etwas sagen“; Tagesbudget.
 
 ### 🛡️ Moderation
@@ -59,7 +60,11 @@ mit einem **eigenen Bot-Account**, wenn du einen verbindest.
 ### 🧠 KI-Anbieter
 Anthropic Claude · OpenAI · Google Gemini · OpenRouter · Mistral · Groq · xAI · DeepSeek · Perplexity · Together AI ·
 **Ollama** und **LM Studio** (lokal, kostenlos) · beliebige OpenAI-kompatible Endpunkte · optional die **Claude Code CLI**
-(siehe [FAQ](#kann-ich-mein-claude-pro-abo-nutzen)). Alles über **KI-Profile** einstellbar (Modell, Denkaufwand,
+(siehe [FAQ](#kann-ich-mein-claude-pro-abo-nutzen)) und die **Codex CLI** mit deinem ChatGPT-Abo (läuft ohne Befehle, Dateizugriff oder andere Werkzeuge).
+**Websuche bei jedem Anbieter:** Claude, OpenAI, Gemini, Grok, OpenRouter, Perplexity, Groq Compound und beide CLIs suchen
+selbst; für alle anderen – Ollama, LM Studio, DeepSeek, Mistral, Together, eigene Server – sucht HighBazar und gibt die
+Ergebnisse ans Modell weiter: mit **Wikipedia** (kostenlos, ohne Schlüssel), der **Ollama-Websuche**, **Tavily**,
+**Brave Search** oder deinem eigenen **SearXNG** (KI → *Websuche*). Alles über **KI-Profile** einstellbar (Modell, Denkaufwand,
 Tokens, Temperatur, Timeout, Preise, Header …) – das Modell wählst du aus einer durchsuchbaren Liste des Anbieters (oder tippst einen beliebigen Namen), dazu Verbindungstest und Kostenanzeige. Für die
 Moderation kannst du ein **günstigeres Modell** wählen.
 
@@ -84,7 +89,7 @@ Bazaar, Mitternacht, Ozean, Polarlicht, Wald, Gold, Abendrot, Karmesin, Sakura u
 - **Spiele haben Vorrang**: HighBazar läuft mit niedrigerer Prozess-Priorität, damit dein Spiel die CPU immer zuerst bekommt.
 
 ### ✨ Außerdem
-Einrichtungsassistent (überspringbar, jederzeit wieder aufrufbar) · Testmodus mit Chat-Simulator · Live-Feed mit
+**Fuzzy-Suche überall**: **Strg+K** springt zu jeder Seite, Einstellung, jedem Profil und jeder Aktion; Raid- und Shoutout-Ziele werden schon beim Tippen vorgeschlagen – Live-Kanäle, denen du folgst, Leute im Chat und die Twitch-Kanalsuche, mit Avatar, Titel, Kategorie und Zuschauern; Profile, Modelle, Sprachen und das Mod-Protokoll sind ebenfalls durchsuchbar, Tippfehler, Umlaute und Abkürzungen inklusive („minecarft“, „jc“ → Just Chatting) · Einrichtungsassistent (überspringbar, jederzeit wieder aufrufbar) · Testmodus mit Chat-Simulator · Live-Feed mit
 Löschen/Timeout/Bann per Klick · Emotes von Twitch, BTTV, FFZ und 7TV als Bilder (abschaltbar) · neue Chatnachrichten **gleiten sanft ein** statt zu springen (Tempo und Kurve einstellbar, mit Vorschau) · Chat und Oberfläche **getrennt zoombar** (Strg + Mausrad, Strg + Plus/Minus) · Designs System/Dunkel/Hell · Deutsch & Englisch · für 1920×1080 optimiert und
 responsiv · automatische Updates über GitHub · schlanker Rust-Kern statt Electron.
 

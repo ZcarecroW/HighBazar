@@ -10,7 +10,8 @@
     "build": "vue-tsc --noEmit && vite build",
     "typecheck": "vue-tsc --noEmit",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "test": "node scripts/fuzzy.test.ts"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",

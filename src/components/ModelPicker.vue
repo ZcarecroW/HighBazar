@@ -9,6 +9,8 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { Check, Loader2, RefreshCw, Search } from "../icons";
 import { useApp } from "../stores/app";
+import { fuzzySearch, type Ranges } from "../lib/fuzzy";
+import FuzzyText from "./ui/FuzzyText.vue";
 import { api, errorText } from "../lib/api";
 import type { AiProfile } from "../lib/types";
 
@@ -32,6 +34,8 @@ const listEl = ref<HTMLElement>();
 
 const info = computed(() => app.provider(props.profile.provider));
 const isCli = computed(() => props.profile.provider === "claudeCli");
+// Codex lists its catalog; empty = the default model of the ChatGPT plan.
+const isCodex = computed(() => props.profile.provider === "codexCli");
 const cacheKey = computed(() => [props.profile.provider, props.profile.baseUrl, props.profile.keyRef].join("|"));
 // OpenRouter publishes its model list without a key.
 const needsKey = computed(() => !!info.value?.needsKey && props.profile.provider !== "openrouter" && !app.hasKey(props.profile));
@@ -72,6 +76,7 @@ watch(needsKey, (v, old) => {
 });
 
 function label(m: ModelInfo) {
+  if (isCodex.value && !m.id) return t("ai.codexDefaultModel");
   if (isCli.value) return te(`ai.cliModels.${m.id || "default"}`) ? t(`ai.cliModels.${m.id || "default"}`) : m.id;
   return m.name || m.id;
 }
@@ -80,12 +85,11 @@ function hint(m: ModelInfo) {
   return m.name && m.name !== m.id ? m.id : "";
 }
 
-const options = computed<ModelInfo[]>(() => (isCli.value ? [{ id: "", name: "" }, ...models.value] : models.value));
-const filtered = computed(() => {
-  const f = filter.value.trim().toLowerCase();
-  if (!f) return options.value;
-  return options.value.filter((m) => m.id.toLowerCase().includes(f) || label(m).toLowerCase().includes(f));
-});
+const options = computed<ModelInfo[]>(() => (isCli.value || isCodex.value ? [{ id: "", name: "" }, ...models.value] : models.value));
+// "son 5" finds "Claude Sonnet 5.5", "gpt6 luna" finds "gpt-6-luna".
+const ranked = computed(() => fuzzySearch(options.value, filter.value, (m) => [label(m), hint(m) || m.id]));
+const filtered = computed(() => ranked.value.map((r) => r.item));
+const marks = computed(() => new Map<string, Ranges[]>(ranked.value.map((r) => [r.item.id, r.ranges])));
 const custom = computed(() => {
   const f = filter.value.trim();
   return f && !options.value.some((m) => m.id === f) ? f : "";
@@ -190,8 +194,8 @@ onBeforeUnmount(() => document.removeEventListener("mousedown", outside));
             <span class="min-w-0 flex-1 truncate">{{ t("ai.models.useCustom") }} <span class="font-mono">{{ m.id }}</span></span>
           </template>
           <template v-else>
-            <span class="min-w-0 flex-1 truncate">{{ label(m) }}</span>
-            <span v-if="hint(m)" class="max-w-[55%] shrink-0 truncate text-xs text-muted" :class="!isCli && 'font-mono'">{{ hint(m) }}</span>
+            <span class="min-w-0 flex-1 truncate"><FuzzyText :text="label(m)" :ranges="marks.get(m.id)?.[0]" /></span>
+            <span v-if="hint(m)" class="max-w-[55%] shrink-0 truncate text-xs text-muted" :class="!isCli && 'font-mono'"><FuzzyText :text="hint(m)" :ranges="marks.get(m.id)?.[1]" /></span>
           </template>
         </li>
         <li v-if="!rows.length" class="px-3 py-3 text-sm text-muted">{{ t("ai.models.typeName") }}</li>

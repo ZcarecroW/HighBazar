@@ -3,10 +3,10 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { pdesc, pname } from "../i18n";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { CircleCheck, CircleAlert, ExternalLink, Loader2, Plus, Send, Trash2, TriangleAlert, Search, Cpu, FlaskConical } from "../icons";
+import { CircleCheck, CircleAlert, ExternalLink, Loader2, Plus, Send, Trash2, TriangleAlert, Search, Cpu, FlaskConical, Globe, Info } from "../icons";
 import { useApp } from "../stores/app";
 import { api, errorText, newId } from "../lib/api";
-import type { AiProfile, AiTestResult, ModelInfo, UsageStats } from "../lib/types";
+import type { AiProfile, AiTestResult, CliStatus, ModelInfo, UsageStats } from "../lib/types";
 import ProfileList from "../components/ProfileList.vue";
 import BuiltinBanner from "../components/BuiltinBanner.vue";
 import UiToggle from "../components/ui/UiToggle.vue";
@@ -15,12 +15,15 @@ import UiNumber from "../components/ui/UiNumber.vue";
 import UiSegmented from "../components/ui/UiSegmented.vue";
 import ApiKeyInput from "../components/ApiKeyInput.vue";
 import ModelPicker from "../components/ModelPicker.vue";
+import WebSearchSettings from "../components/WebSearchSettings.vue";
+import UiCombobox from "../components/ui/UiCombobox.vue";
+import { useJump } from "../lib/jump";
 
 const app = useApp();
 const { t, te, locale } = useI18n();
 const cfg = computed(() => app.config!);
 
-const tab = ref<"profiles" | "keys" | "usage">("profiles");
+const tab = ref<"profiles" | "keys" | "webSearch" | "usage">("profiles");
 const selectedId = ref(app.activeChannel?.aiProfileId || cfg.value.aiProfiles[0]!.id);
 watch(
   () => cfg.value.aiProfiles.map((p) => p.id),
@@ -28,6 +31,13 @@ watch(
     if (!ids.includes(selectedId.value)) selectedId.value = ids[0]!;
   },
 );
+useJump("ai", (j) => {
+  if (j.profile && cfg.value.aiProfiles.some((x) => x.id === j.profile)) {
+    selectedId.value = j.profile;
+    tab.value = "profiles";
+  }
+  if (j.section && ["profiles", "keys", "webSearch", "usage"].includes(j.section)) tab.value = j.section as typeof tab.value;
+});
 const p = computed<AiProfile>(() => cfg.value.aiProfiles.find((x) => x.id === selectedId.value)!);
 const ro = computed(() => p.value.builtin);
 const info = computed(() => app.provider(p.value.provider));
@@ -68,6 +78,8 @@ const ownKey = computed({
 watch(selectedId, () => {
   testResult.value = null;
   testError.value = "";
+  cliFound.value = undefined;
+  codex.value = null;
 });
 // Another provider: the old model name, effort and prices don't fit any more.
 watch(
@@ -82,7 +94,7 @@ watch(
 );
 // The CLI bills the subscription and has no token limit or temperature;
 // local models cost nothing.
-const isCli = computed(() => p.value.provider === "claudeCli");
+const isCli = computed(() => p.value.provider === "claudeCli" || p.value.provider === "codexCli");
 const showPrices = computed(() => !info.value?.local || p.value.provider === "openaiCompatible");
 function onPicked(m: ModelInfo) {
   // Providers that publish prices (OpenRouter) fill them in.
@@ -98,21 +110,41 @@ const customTemp = computed({
 
 // CLI detection
 const cliFound = ref<string | null | undefined>(undefined);
+const codex = ref<CliStatus | null>(null);
+const detecting = ref(false);
 async function detectCli() {
-  cliFound.value = await api.detectClaudeCli(p.value.cliPath || undefined);
+  detecting.value = true;
+  try {
+    if (p.value.provider === "codexCli") codex.value = await api.codexCliStatus(p.value.cliPath || undefined);
+    else cliFound.value = await api.detectClaudeCli(p.value.cliPath || undefined);
+  } finally {
+    detecting.value = false;
+  }
 }
+watch(
+  () => [selectedId.value, p.value.provider],
+  () => {
+    if (p.value.provider === "codexCli" && !codex.value) void detectCli();
+  },
+  { immediate: true },
+);
+
+// Web search: the provider's own, or HighBazar's (AI → Web search).
+const native = computed(() => app.nativeSearch(p.value));
+const searchSourceName = computed(() => t(`webSearch.sources.${cfg.value.settings.webSearch.source}.name`));
 
 // Test
 const testPrompt = ref("");
 const testing = ref(false);
 const testResult = ref<AiTestResult | null>(null);
 const testError = ref("");
+const testSearch = ref(false);
 async function runTest() {
   testing.value = true;
   testResult.value = null;
   testError.value = "";
   try {
-    testResult.value = await api.aiTest(JSON.parse(JSON.stringify(p.value)), testPrompt.value || undefined);
+    testResult.value = await api.aiTest(JSON.parse(JSON.stringify(p.value)), testPrompt.value || undefined, testSearch.value);
   } catch (e) {
     testError.value = errorText(e);
   } finally {
@@ -135,6 +167,16 @@ const usageRows = computed(() =>
   Object.entries(usage.value).flatMap(([date, byChannel]) => Object.entries(byChannel).map(([ch, s]) => ({ date, ch, ...s }))),
 );
 
+// Searchable provider list: "lokal", "abo", "gratis" … find the right ones too.
+const providerOptions = computed(() =>
+  app.providers.map((pr) => ({
+    value: pr.id,
+    label: pr.name,
+    sub: pr.local ? t("ai.local") : pr.needsKey ? "" : t("ai.keyNotNeeded"),
+    keywords: [pr.id, pr.webSearch ? t("ai.webSearch") : "", pr.local ? "local lokal offline" : "", pr.id.endsWith("Cli") ? "cli abo subscription" : ""].join(" "),
+  })),
+);
+
 const keyProviders = computed(() => app.providers.filter((x) => x.needsKey || x.id === "openaiCompatible"));
 const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRef && x.keyRef !== x.provider));
 </script>
@@ -151,6 +193,7 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
         :options="[
           { value: 'profiles', label: t('ai.tabs.profiles') },
           { value: 'keys', label: t('ai.tabs.keys') },
+          { value: 'webSearch', label: t('ai.tabs.webSearch') },
           { value: 'usage', label: t('ai.tabs.usage') },
         ]"
       />
@@ -174,9 +217,7 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
           <div class="grid gap-5 md:grid-cols-2">
             <UiField :label="t('common.name')"><input v-if="!ro" v-model="p.name" class="input" /><input v-else :value="pname(p)" class="input" /></UiField>
             <UiField :label="t('ai.provider')">
-              <select v-model="p.provider" class="input">
-                <option v-for="pr in app.providers" :key="pr.id" :value="pr.id">{{ pr.name }}</option>
-              </select>
+              <UiCombobox v-model="p.provider" :options="providerOptions" :disabled="ro" :label="t('ai.provider')" />
             </UiField>
           </div>
           <UiField :label="t('common.description')"><input v-if="!ro" v-model="p.description" class="input" /><input v-else :value="pdesc(p)" class="input" /></UiField>
@@ -186,21 +227,41 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
             <TriangleAlert :size="16" class="mt-0.5 shrink-0 text-amber-500" />
             <span>{{ t("ai.cliWarning") }}</span>
           </div>
+          <div v-else-if="p.provider === 'codexCli'" class="flex gap-2 rounded-xl border border-sky-400/40 bg-sky-400/10 p-3 text-sm">
+            <Info :size="16" class="mt-0.5 shrink-0 text-sky-500" />
+            <span>{{ t("ai.codexInfo") }}</span>
+          </div>
 
           <div class="grid gap-5 md:grid-cols-2">
             <UiField :label="t('ai.model')">
               <ModelPicker v-model="p.model" :profile="p" :disabled="ro" @picked="onPicked" />
             </UiField>
-            <UiField v-if="p.provider !== 'claudeCli'" :label="t('ai.baseUrl')" :hint="t('ai.baseUrlHint')">
+            <UiField v-if="!isCli" :label="t('ai.baseUrl')" :hint="t('ai.baseUrlHint')">
               <input v-model="p.baseUrl" class="input font-mono" :placeholder="info?.baseUrl" spellcheck="false" />
             </UiField>
-            <UiField v-else :label="t('ai.cliPath')">
+            <UiField v-else :label="p.provider === 'codexCli' ? t('ai.codexPath') : t('ai.cliPath')">
               <div class="flex gap-2">
-                <input v-model="p.cliPath" class="input font-mono" placeholder="claude" spellcheck="false" />
-                <button type="button" class="btn shrink-0" @click="detectCli"><Search :size="15" /> {{ t("ai.cliDetect") }}</button>
+                <input v-model="p.cliPath" class="input font-mono" :placeholder="p.provider === 'codexCli' ? 'codex' : 'claude'" spellcheck="false" />
+                <button type="button" class="btn shrink-0" :disabled="detecting" @click="detectCli">
+                  <Loader2 v-if="detecting" :size="15" class="animate-spin" />
+                  <Search v-else :size="15" />
+                  {{ t("ai.cliDetect") }}
+                </button>
               </div>
-              <p v-if="cliFound" class="hint text-emerald-600">{{ t("ai.cliFound", { path: cliFound }) }}</p>
-              <p v-else-if="cliFound === null" class="hint text-red-500">{{ t("ai.cliNotFound") }}</p>
+              <template v-if="p.provider === 'codexCli'">
+                <template v-if="codex">
+                  <p v-if="!codex.path" class="hint text-red-500">
+                    {{ t("ai.codexNotFound") }}
+                    <button type="button" class="ml-1 underline" @click="openUrl(info!.keyUrl)">{{ t("ai.codexInstall") }}</button>
+                  </p>
+                  <p v-else-if="codex.login" class="hint text-emerald-600">{{ t("ai.codexReady", { path: codex.path, status: codex.login }) }}</p>
+                  <p v-else class="hint text-amber-600">{{ t("ai.codexLoggedOut", { path: codex.path }) }}</p>
+                </template>
+              </template>
+              <template v-else>
+                <p v-if="cliFound" class="hint text-emerald-600">{{ t("ai.cliFound", { path: cliFound }) }}</p>
+                <p v-else-if="cliFound === null" class="hint text-red-500">{{ t("ai.cliNotFound") }}</p>
+              </template>
             </UiField>
           </div>
 
@@ -220,7 +281,15 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
           </div>
 
           <div class="grid gap-4 md:grid-cols-2">
-            <UiToggle v-if="info?.webSearch" v-model="p.webSearch" :label="t('ai.webSearch')" :disabled="ro" />
+            <div>
+              <UiToggle v-model="p.webSearch" :label="t('ai.webSearch')" :disabled="ro" />
+              <p class="hint">
+                <template v-if="p.provider === 'groq' && !native">{{ t("ai.webSearchGroq", { source: searchSourceName }) }}</template>
+                <template v-else-if="native">{{ isCli ? t("ai.webSearchSubscription") : t("ai.webSearchNative") }}</template>
+                <template v-else>{{ t("ai.webSearchOwn", { source: searchSourceName }) }}</template>
+                <button v-if="!native" type="button" class="ml-1 underline" @click="tab = 'webSearch'">{{ t("ai.webSearchSetup") }}</button>
+              </p>
+            </div>
             <UiToggle v-if="p.provider === 'openai'" v-model="p.openaiResponses" :label="t('ai.openaiResponses')" :hint="t('ai.apiSwitchHint')" :disabled="ro" />
             <UiToggle v-if="p.provider === 'gemini'" v-model="p.geminiInteractions" :label="t('ai.geminiInteractions')" :hint="t('ai.apiSwitchHint')" :disabled="ro" />
           </div>
@@ -262,19 +331,21 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
         <!-- Test (works for built-in profiles too) -->
         <section class="card-pad space-y-3">
           <h2 class="section-title mb-0 flex items-center gap-2"><FlaskConical :size="17" class="text-brand-500" /> {{ t("common.test") }}</h2>
-          <div class="flex gap-2">
-            <input v-model="testPrompt" class="input" :placeholder="t('ai.testPrompt')" @keydown.enter="runTest" />
+          <div class="flex flex-wrap gap-2">
+            <input v-model="testPrompt" class="input min-w-0 flex-1" :placeholder="testSearch ? t('ai.testPromptSearch') : t('ai.testPrompt')" @keydown.enter="runTest" />
             <button class="btn-primary shrink-0" :disabled="testing" @click="runTest">
               <Loader2 v-if="testing" :size="15" class="animate-spin" />
               <Send v-else :size="15" />
               {{ t("ai.testRun") }}
             </button>
           </div>
+          <UiToggle v-model="testSearch" :label="t('ai.testWithSearch')" />
           <div v-if="testResult" class="rounded-lg border border-emerald-500/30 bg-emerald-500/8 p-3">
             <p class="selectable text-sm">{{ testResult.text }}</p>
             <p class="mt-2 text-xs text-muted">
               {{ t("ai.testResult", { ms: testResult.millis, inT: testResult.inputTokens, outT: testResult.outputTokens, cost: testResult.costUsd.toFixed(5) }) }}
               <template v-if="testResult.model"> · {{ testResult.model }}</template>
+              <template v-if="testResult.searches"> · <Globe :size="12" class="inline align-[-2px]" /> {{ t("ai.testSearches", testResult.searches) }}</template>
             </p>
           </div>
           <p v-if="testError" class="selectable rounded-lg border border-red-500/30 bg-red-500/8 p-3 text-sm text-red-600 dark:text-red-400">{{ testError }}</p>
@@ -301,6 +372,8 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
       </div>
     </div>
 
+    <WebSearchSettings v-else-if="tab === 'webSearch'" />
+
     <!-- USAGE -->
     <div v-else class="card overflow-x-auto">
       <div v-if="!usageRows.length" class="p-10 text-center text-sm text-muted">{{ t("ai.usageEmpty") }}</div>
@@ -313,6 +386,7 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
             <th class="px-2 py-2.5 text-right">{{ t("ai.usageTokens") }}</th>
             <th class="px-2 py-2.5 text-right">{{ t("ai.usageMessages") }}</th>
             <th class="px-2 py-2.5 text-right">{{ t("ai.usageMod") }}</th>
+            <th class="px-2 py-2.5 text-right">{{ t("ai.usageSearches") }}</th>
             <th class="px-4 py-2.5 text-right">{{ t("ai.usageCost") }}</th>
           </tr>
         </thead>
@@ -324,6 +398,7 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
             <td class="px-2 py-2 text-right">{{ (r.inputTokens + r.outputTokens).toLocaleString(locale) }}</td>
             <td class="px-2 py-2 text-right">{{ r.messagesSent }}</td>
             <td class="px-2 py-2 text-right">{{ r.modActions }}</td>
+            <td class="px-2 py-2 text-right">{{ r.webSearches ?? 0 }}</td>
             <td class="px-4 py-2 text-right font-semibold">${{ r.costUsd.toFixed(3) }}</td>
           </tr>
         </tbody>

@@ -91,11 +91,12 @@ pub async fn complete(p: &AiProfile, req: &AiRequest) -> AppResult<AiResponse> {
     tokio::fs::write(&prompt_file, &req.system).await?;
 
     // --safe-mode keeps the user's own Claude Code setup (CLAUDE.md, skills, plugins,
-    // hooks, MCP servers, memory) out of the bot's requests; older CLIs lack it.
+    // hooks, MCP servers, memory) out of the bot's requests; older CLIs lack it
+    // (and --permission-prompts).
     let mut result = run(&exe, p, req, &prompt_file, true).await;
     if let Err(e) = &result {
         let m = e.to_string().to_lowercase();
-        if m.contains("unknown option") || m.contains("safe-mode") {
+        if m.contains("unknown option") || m.contains("safe-mode") || m.contains("permission-prompts") {
             result = run(&exe, p, req, &prompt_file, false).await;
         }
     }
@@ -103,35 +104,16 @@ pub async fn complete(p: &AiProfile, req: &AiRequest) -> AppResult<AiResponse> {
     result
 }
 
-async fn run(exe: &std::path::Path, p: &AiProfile, req: &AiRequest, prompt_file: &std::path::Path, safe_mode: bool) -> AppResult<AiResponse> {
-    let is_cmd = exe.extension().is_some_and(|e| e.eq_ignore_ascii_case("cmd"));
-    let mut cmd = if is_cmd {
+/// A command for a CLI executable; npm installs a `.cmd` shim on Windows.
+pub(super) fn command_for(exe: &std::path::Path) -> Command {
+    let mut cmd = if exe.extension().is_some_and(|e| e.eq_ignore_ascii_case("cmd")) {
         let mut c = Command::new("cmd");
         c.arg("/C").arg(exe);
         c
     } else {
         Command::new(exe)
     };
-    cmd.arg("-p")
-        .arg("--output-format")
-        .arg("json")
-        .arg("--system-prompt-file")
-        .arg(prompt_file)
-        .arg("--tools")
-        .arg("")
-        .arg("--no-session-persistence")
-        .arg("--max-turns")
-        .arg("1");
-    if safe_mode {
-        cmd.arg("--safe-mode");
-    }
-    if !p.model.trim().is_empty() {
-        cmd.arg("--model").arg(p.model.trim());
-    }
-    if !p.reasoning.trim().is_empty() {
-        cmd.arg("--effort").arg(p.reasoning.trim());
-    }
-    // A neutral working directory: no project CLAUDE.md or settings get picked up.
+    // A neutral working directory: no project instructions or settings get picked up.
     cmd.current_dir(std::env::temp_dir());
     cmd.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).kill_on_drop(true);
     #[cfg(windows)]
@@ -139,7 +121,49 @@ async fn run(exe: &std::path::Path, p: &AiProfile, req: &AiRequest, prompt_file:
         const CREATE_NO_WINDOW: u32 = 0x0800_0000;
         cmd.creation_flags(CREATE_NO_WINDOW);
     }
+    cmd
+}
 
+/// The only tools the bot may use: web search (and reading pages, for requests
+/// that are not triggered by chat). No files, no commands.
+fn web_tools(req: &AiRequest) -> &'static str {
+    match (req.web_search, req.web_fetch) {
+        (false, _) => "",
+        (true, false) => "WebSearch",
+        (true, true) => "WebSearch,WebFetch",
+    }
+}
+
+async fn run(exe: &std::path::Path, p: &AiProfile, req: &AiRequest, prompt_file: &std::path::Path, modern: bool) -> AppResult<AiResponse> {
+    let mut cmd = command_for(exe);
+    let tools = web_tools(req);
+    cmd.arg("-p")
+        .arg("--output-format")
+        .arg("json")
+        .arg("--system-prompt-file")
+        .arg(prompt_file)
+        .arg("--tools")
+        .arg(tools)
+        .arg("--no-session-persistence")
+        .arg("--max-turns")
+        // Each search round trip is one turn.
+        .arg(if tools.is_empty() { "1" } else { "8" });
+    if !tools.is_empty() {
+        cmd.arg("--allowedTools").arg(tools);
+    }
+    if modern {
+        cmd.arg("--safe-mode");
+        if !tools.is_empty() {
+            // Anything else that would need a permission is refused, never asked.
+            cmd.arg("--permission-prompts").arg("none");
+        }
+    }
+    if !p.model.trim().is_empty() {
+        cmd.arg("--model").arg(p.model.trim());
+    }
+    if !p.reasoning.trim().is_empty() {
+        cmd.arg("--effort").arg(p.reasoning.trim());
+    }
     let mut child = cmd.spawn().map_err(|e| AppError::msg(format!("Could not start Claude Code CLI: {e}")))?;
     if let Some(mut stdin) = child.stdin.take() {
         stdin.write_all(req.user.as_bytes()).await?;
@@ -174,7 +198,14 @@ pub fn parse(v: &Value) -> AppResult<AiResponse> {
             v["result"].as_str().or(v["subtype"].as_str()).unwrap_or("unknown")
         )));
     }
+    if v["subtype"].as_str() == Some("error_max_turns") && v["result"].as_str().is_none_or(|r| r.trim().is_empty()) {
+        return Err(AppError::msg("Claude Code CLI stopped after too many search steps without an answer."));
+    }
     let u = &v["usage"];
+    let searches: u64 = v["modelUsage"]
+        .as_object()
+        .map(|m| m.values().filter_map(|x| x["webSearchRequests"].as_u64()).sum())
+        .unwrap_or(0);
     Ok(AiResponse {
         text: v["result"].as_str().unwrap_or_default().to_string(),
         input_tokens: u["input_tokens"].as_u64().unwrap_or(0)
@@ -184,6 +215,7 @@ pub fn parse(v: &Value) -> AppResult<AiResponse> {
         // Covered by the subscription – does not count against the API budget.
         reported_cost_usd: Some(0.0),
         tool_cost_usd: 0.0,
+        searches: searches as u32,
         model: "claude-code".into(),
     })
 }

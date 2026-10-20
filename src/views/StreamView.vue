@@ -10,6 +10,11 @@ import UiSegmented from "../components/ui/UiSegmented.vue";
 import UiTags from "../components/ui/UiTags.vue";
 import UiToggle from "../components/ui/UiToggle.vue";
 import UiNumber from "../components/ui/UiNumber.vue";
+import UiCombobox from "../components/ui/UiCombobox.vue";
+import { languageOptions } from "../lib/languages";
+import { useJump } from "../lib/jump";
+import { fuzzySearch } from "../lib/fuzzy";
+import FuzzyText from "../components/ui/FuzzyText.vue";
 import ChatSettingsPanel from "../components/stream/ChatSettingsPanel.vue";
 import ActionsPanel from "../components/stream/ActionsPanel.vue";
 import PollsPanel from "../components/stream/PollsPanel.vue";
@@ -20,6 +25,7 @@ import AdsSchedulePanel from "../components/stream/AdsSchedulePanel.vue";
 import ProfilePanel from "../components/stream/ProfilePanel.vue";
 
 const { t, locale } = useI18n();
+useJump("stream");
 const { app, account, id, tw } = useTwitch();
 
 const level = computed({
@@ -61,14 +67,6 @@ const cclList = ref<Ccl[]>([]);
 const original = ref("");
 
 const LANGS = ["de", "en", "es", "fr", "it", "pt", "nl", "pl", "ru", "tr", "sv", "ja", "ko", "zh", "ar", "other"];
-function langName(code: string) {
-  if (code === "other") return t("stream.otherLanguage");
-  try {
-    return new Intl.DisplayNames([locale.value], { type: "language" }).of(code) ?? code;
-  } catch {
-    return code;
-  }
-}
 const snapshot = () => JSON.stringify([title.value, category.value?.id, language.value, tags.value, ccls.value, branded.value, delay.value]);
 const dirty = computed(() => original.value !== "" && snapshot() !== original.value);
 
@@ -115,6 +113,28 @@ watch(query, (q) => {
     results.value = r?.data ?? [];
   }, 300);
 });
+// Best name matches first (Twitch also finds categories by other names, those follow).
+const ranked = computed(() => {
+  const hits = fuzzySearch(results.value, query.value, (c) => [c.name]);
+  const seen = new Set(hits.map((h) => h.item.id));
+  return [...hits, ...results.value.filter((c) => !seen.has(c.id)).map((item) => ({ item, score: 0, ranges: [[]] as [number, number][][] }))];
+});
+const activeCat = ref(0);
+watch(results, () => (activeCat.value = 0));
+function onCategoryKey(e: KeyboardEvent) {
+  const n = ranked.value.length;
+  if (!n) return;
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    activeCat.value = (activeCat.value + (e.key === "ArrowDown" ? 1 : n - 1)) % n;
+  } else if (e.key === "Enter") {
+    e.preventDefault();
+    const r = ranked.value[activeCat.value];
+    if (r) pick(r.item);
+  } else if (e.key === "Escape") {
+    results.value = [];
+  }
+}
 function pick(c: Category) {
   category.value = c;
   query.value = "";
@@ -183,7 +203,7 @@ onMounted(load);
       </div>
 
       <!-- Stream info (all levels) -->
-      <section class="card-pad space-y-5">
+      <section id="jump-info" class="card-pad scroll-mt-4 space-y-5">
         <div class="flex flex-wrap items-center gap-3">
           <h2 class="section-title mb-0 flex flex-1 items-center gap-2"><MonitorPlay :size="17" class="text-brand-500" /> {{ t("stream.info") }}</h2>
           <span v-if="live" class="chip bg-red-500/15 text-red-600"><Radio :size="12" /> {{ t("stream.live", { n: live.viewer_count }) }}</span>
@@ -206,20 +226,36 @@ onMounted(load);
               </div>
               <div class="relative">
                 <Search :size="14" class="absolute top-2.5 left-2.5 text-muted" />
-                <input v-model="query" class="input pl-8" :placeholder="t('stream.searchCategory')" />
+                <input
+                  v-model="query"
+                  class="input pl-8"
+                  :placeholder="t('stream.searchCategory')"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-controls="category-list"
+                  :aria-expanded="results.length > 0"
+                  @keydown="onCategoryKey"
+                />
               </div>
-              <div v-if="results.length" class="card absolute z-20 mt-1 max-h-80 w-full overflow-y-auto p-1 shadow-lg">
-                <button v-for="r in results" :key="r.id" class="flex w-full items-center gap-2 rounded-md p-1.5 text-left text-sm hover:bg-panel-2" @click="pick(r)">
-                  <img v-if="r.box_art_url" :src="boxArt(r.box_art_url)" class="h-9 w-6.5 rounded object-cover" alt="" />
-                  {{ r.name }}
+              <div v-if="results.length" id="category-list" role="listbox" class="card absolute z-20 mt-1 max-h-80 w-full overflow-y-auto p-1 shadow-lg">
+                <button
+                  v-for="(r, i) in ranked"
+                  :key="r.item.id"
+                  role="option"
+                  :aria-selected="i === activeCat"
+                  class="flex w-full items-center gap-2 rounded-md p-1.5 text-left text-sm"
+                  :class="i === activeCat ? 'bg-brand-500/12' : 'hover:bg-panel-2'"
+                  @mouseenter="activeCat = i"
+                  @click="pick(r.item)"
+                >
+                  <img v-if="r.item.box_art_url" :src="boxArt(r.item.box_art_url)" class="h-9 w-6.5 rounded object-cover" alt="" />
+                  <FuzzyText :text="r.item.name" :ranges="r.ranges[0]" />
                 </button>
               </div>
             </div>
           </UiField>
           <UiField :label="t('stream.language')">
-            <select v-model="language" class="input">
-              <option v-for="l in LANGS" :key="l" :value="l">{{ langName(l) }}</option>
-            </select>
+            <UiCombobox v-model="language" :options="languageOptions(LANGS, locale, t('stream.otherLanguage'))" :label="t('stream.language')" />
           </UiField>
         </div>
 

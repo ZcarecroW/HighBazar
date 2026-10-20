@@ -4,6 +4,7 @@ mod commands;
 mod config;
 mod error;
 mod overlay;
+mod search;
 mod secrets;
 mod shell;
 mod state;
@@ -106,6 +107,8 @@ pub fn run() {
             commands::ai_test,
             commands::ai_list_models,
             commands::detect_claude_cli,
+            commands::codex_cli_status,
+            commands::web_search_test,
             commands::twitch_login_start,
             commands::twitch_login_cancel,
             commands::twitch_remove_account,

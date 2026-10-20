@@ -35,6 +35,29 @@ export interface AppSettings {
   performanceMode: boolean;
   startInTray: boolean;
   overlay: OverlaySettings;
+  /** HighBazar's own web search for AI providers without a built-in one. */
+  webSearch: WebSearchSettings;
+}
+
+export type WebSearchSource = "wikipedia" | "ollama" | "tavily" | "brave" | "searxng";
+
+export interface WebSearchSettings {
+  source: WebSearchSource;
+  searxngUrl: string;
+  maxResults: number;
+}
+
+export interface SearchHit {
+  title: string;
+  url: string;
+  snippet: string;
+}
+
+export interface CliStatus {
+  path: string | null;
+  /** e.g. "Logged in using ChatGPT"; null = not logged in. */
+  login: string | null;
+  error: string;
 }
 
 export interface TwitchAccount {
@@ -172,6 +195,8 @@ export interface CompanionProfile {
   research: {
     enabled: boolean;
     webSearch: boolean;
+    /** Look up current facts when chat asks the bot something. */
+    answerSearch: boolean;
     wikipedia: boolean;
     refreshDays: number;
   };
@@ -357,6 +382,7 @@ export interface UsageStats {
   costUsd: number;
   messagesSent: number;
   modActions: number;
+  webSearches: number;
 }
 
 export interface LoginStart {
@@ -380,6 +406,7 @@ export interface AiTestResult {
   costUsd: number;
   millis: number;
   model: string;
+  searches: number;
 }
 
 export interface ModelInfo {

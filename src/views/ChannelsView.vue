@@ -4,7 +4,9 @@ import { useI18n } from "vue-i18n";
 import { CircleCheck, LogOut, TriangleAlert, Radio, Users, Bolt, Layers, Send, Languages } from "../icons";
 import { useApp } from "../stores/app";
 import { api, errorText, newId } from "../lib/api";
-import { pname } from "../i18n";
+import { aiProfileOptions, profileOptions } from "../lib/options";
+import UiCombobox from "../components/ui/UiCombobox.vue";
+import { useJump } from "../lib/jump";
 import type { ChannelProfile } from "../lib/types";
 import ProfileList from "../components/ProfileList.vue";
 import TwitchLogin from "../components/TwitchLogin.vue";
@@ -18,6 +20,9 @@ const { t } = useI18n();
 const cfg = computed(() => app.config!);
 
 const selectedId = ref(app.activeChannel?.id ?? cfg.value.channels[0]?.id ?? "");
+useJump("channels", (j) => {
+  if (j.profile && cfg.value.channels.some((c) => c.id === j.profile)) selectedId.value = j.profile;
+});
 watch(
   () => cfg.value.channels.map((c) => c.id),
   (ids) => {
@@ -171,41 +176,37 @@ const bot = computed(() => app.account(ch.value?.botAccountId));
           <div class="grid gap-5 md:grid-cols-2">
             <UiField :label="t('channels.companionProfile')">
               <div class="flex gap-2">
-                <select v-model="ch.companionProfileId" class="input">
-                  <option v-for="p in cfg.companionProfiles" :key="p.id" :value="p.id">{{ p.builtin ? "🔒 " : "" }}{{ pname(p) }}</option>
-                </select>
+                <UiCombobox v-model="ch.companionProfileId" class="min-w-0 flex-1" :options="profileOptions(cfg.companionProfiles, t)" :label="t('channels.companionProfile')" stacked />
                 <button class="btn" @click="app.view = 'companion'">{{ t("common.edit") }}</button>
               </div>
             </UiField>
             <UiField :label="t('channels.moderationProfile')">
               <div class="flex gap-2">
-                <select v-model="ch.moderationProfileId" class="input">
-                  <option v-for="p in cfg.moderationProfiles" :key="p.id" :value="p.id">{{ p.builtin ? "🔒 " : "" }}{{ pname(p) }}</option>
-                </select>
+                <UiCombobox v-model="ch.moderationProfileId" class="min-w-0 flex-1" :options="profileOptions(cfg.moderationProfiles, t)" :label="t('channels.moderationProfile')" stacked />
                 <button class="btn" @click="app.view = 'moderation'">{{ t("common.edit") }}</button>
               </div>
             </UiField>
             <UiField :label="t('channels.aiProfile')">
-              <select v-model="ch.aiProfileId" class="input">
-                <option value="">— {{ t("common.none") }} —</option>
-                <option v-for="p in cfg.aiProfiles" :key="p.id" :value="p.id">
-                  {{ pname(p) }}{{ app.hasKey(p) ? "" : " ⚠" }}
-                </option>
-              </select>
+              <UiCombobox
+                v-model="ch.aiProfileId"
+                :options="[{ value: '', label: `— ${t('common.none')} —` }, ...aiProfileOptions(app, cfg.aiProfiles, t)]"
+                :label="t('channels.aiProfile')"
+                stacked
+              />
             </UiField>
             <UiField :label="t('channels.moderationAiProfile')">
-              <select v-model="ch.moderationAiProfileId" class="input">
-                <option value="">{{ t("channels.sameAsMain") }}</option>
-                <option v-for="p in cfg.aiProfiles" :key="p.id" :value="p.id">
-                  {{ pname(p) }}{{ app.hasKey(p) ? "" : " ⚠" }}
-                </option>
-              </select>
+              <UiCombobox
+                v-model="ch.moderationAiProfileId"
+                :options="[{ value: '', label: t('channels.sameAsMain') }, ...aiProfileOptions(app, cfg.aiProfiles, t)]"
+                :label="t('channels.moderationAiProfile')"
+                stacked
+              />
             </UiField>
           </div>
         </section>
 
         <!-- Languages & translation -->
-        <section v-if="ch.translation" class="card-pad">
+        <section v-if="ch.translation" id="jump-translation" class="card-pad scroll-mt-4">
           <h2 class="section-title flex items-center gap-2"><Languages :size="17" class="text-brand-500" /> {{ t("translation.title") }}</h2>
           <p class="mb-4 max-w-3xl text-sm text-muted">{{ t("translation.intro") }}</p>
           <UiField :label="t('translation.languages')" :hint="t('translation.languagesHint')">

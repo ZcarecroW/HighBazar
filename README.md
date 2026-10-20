@@ -51,7 +51,8 @@ The bot writes with **your streamer account** by default (marked with a configur
 | **Emotes** | Knows Twitch, **BetterTTV**, **FrankerFaceZ** and **7TV** emotes of your channel and prefers the ones your community actually uses. |
 | **Reactions** | Replies when addressed, welcomes first-time chatters, thanks follows (batched), subs, resubs, gift subs, raids (mentions what the raider played) and cheers. |
 | **Commands** | `!hb ask <question>`, `!hb fact`, `!hb joke`, `!hb about` — cooldowns and role requirements per command. |
-| **Game research** | On category change: Wikipedia + the AI provider's web search → 15 facts & 8 tips, cached per game. |
+| **Game research** | On category change: Wikipedia + a web search → 15 facts & 8 tips, cached per game. |
+| **Current answers** | When chat asks about patches, release dates, tournaments and the like, the bot looks it up on the web first (small talk is answered right away). On by default, can be switched off. |
 | **Control** | Automatic sending, *preview then send*, or *approve every message*. "Say something now" button. Daily AI budget. |
 
 ### 🛡️ Moderation
@@ -66,14 +67,20 @@ The bot writes with **your streamer account** by default (marked with a configur
 ### 🧠 AI providers
 | Provider | Notes |
 |---|---|
-| **Anthropic Claude** | Messages API, prompt caching, web search for research. Presets: Opus 5.5, Sonnet 5.5, Haiku 5.5. |
+| **Anthropic Claude** | Messages API, prompt caching, web search. Presets: Opus 5.5, Sonnet 5.5, Haiku 5.5. |
 | **OpenAI** | Responses API (or Chat Completions). Presets: GPT‑6.1 Sol, GPT‑6 Luna. |
 | **Google Gemini** | Interactions API with automatic fallback to generateContent, Google Search grounding. |
-| **OpenRouter** | One key for hundreds of models, exact cost reporting, web plugin. |
+| **OpenRouter** | One key for hundreds of models, exact cost reporting, web search tool. |
 | **Mistral, Groq, xAI, DeepSeek, Perplexity, Together AI** | Via their OpenAI-compatible endpoints. |
 | **Ollama, LM Studio** | Local models, free, nothing leaves your PC (except Twitch). |
 | **Any OpenAI-compatible endpoint** | Custom base URL and headers. |
-| **Claude Code CLI** *(optional)* | Uses your locally installed, logged-in `claude` CLI and thus your Claude subscription. See the [note below](#can-i-use-my-claude-pro-subscription). |
+| **Claude Code CLI** *(optional)* | Uses your locally installed, logged-in `claude` CLI and thus your Claude subscription, with web search. See the [note below](#can-i-use-my-claude-pro-subscription). |
+| **Codex CLI** *(optional)* | Uses your locally installed OpenAI Codex CLI logged in with your ChatGPT plan (counts against its Codex usage limits), with web search. HighBazar runs it without commands, file access or other tools. |
+
+**Web search for every provider.** Claude, OpenAI, Gemini, Grok, OpenRouter, Perplexity, Groq Compound and both CLIs use
+their own web search. For everything else – Ollama, LM Studio, DeepSeek, Mistral, Together, custom servers – HighBazar
+searches itself and hands the results to the model: with **Wikipedia** (free, no key), the **Ollama web search**,
+**Tavily**, **Brave Search** or your own **SearXNG** (AI → *Web search*).
 
 Every provider is configured through **AI profiles** (model, reasoning effort, max tokens, temperature, timeout,
 prices, extra headers…). Pick the model from a searchable list loaded from the provider (or type any name), test the connection, see tokens and costs.
@@ -102,6 +109,7 @@ Bazaar, Midnight, Ocean, Aurora, Forest, Gold, Sunset, Crimson, Sakura and Cyber
 - **Games come first**: HighBazar runs with lower process priority, so your game always gets the CPU first.
 
 ### ✨ And also
+- **Fuzzy search everywhere**: **Ctrl+K** jumps to any page, setting, profile or action; raid and shoutout targets are suggested while you type – live channels you follow, people in chat and Twitch's channel search, with avatar, title, category and viewers; profiles, models, languages and the moderation log are searchable too. Typos, umlauts and abbreviations are forgiven ("minecarft", "jc" → Just Chatting).
 - **Setup wizard** on first start (skippable, can be reopened any time).
 - **Test mode + chat simulator** — try everything without sending anything to Twitch.
 - **Live feed** with chat, bot messages, events and moderation; delete / timeout / ban with one click. Twitch, BetterTTV, FrankerFaceZ and 7TV **emotes are shown as images** (can be switched off).

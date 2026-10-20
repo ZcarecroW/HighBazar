@@ -16,7 +16,8 @@ const providers: ProviderInfo[] = [
   { id: "perplexity", name: "Perplexity", baseUrl: "https://api.perplexity.ai", needsKey: true, webSearch: true, keyUrl: "", local: false, reasoningOptions: [""] },
   { id: "ollama", name: "Ollama (local)", baseUrl: "http://localhost:11434/v1", needsKey: false, webSearch: false, keyUrl: "", local: true, reasoningOptions: [""] },
   { id: "lmstudio", name: "LM Studio (local)", baseUrl: "http://localhost:1234/v1", needsKey: false, webSearch: false, keyUrl: "", local: true, reasoningOptions: [""] },
-  { id: "claudeCli", name: "Claude Code CLI (subscription)", baseUrl: "", needsKey: false, webSearch: false, keyUrl: "", local: true, reasoningOptions: ["", "low", "medium", "high"] },
+  { id: "claudeCli", name: "Claude Code CLI (subscription)", baseUrl: "", needsKey: false, webSearch: true, keyUrl: "", local: true, reasoningOptions: ["", "low", "medium", "high"] },
+  { id: "codexCli", name: "Codex CLI (ChatGPT subscription)", baseUrl: "", needsKey: false, webSearch: true, keyUrl: "https://learn.chatgpt.com/docs/codex-cli", local: true, reasoningOptions: ["", "low", "medium", "high", "xhigh", "max", "ultra"] },
 ];
 
 let config: Config = JSON.parse(JSON.stringify(cfgJson));

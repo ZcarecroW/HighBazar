@@ -47,6 +47,7 @@ pub struct RunningInfo {
 fn key_status(st: &AppState, cfg: &Config) -> BTreeMap<String, bool> {
     let mut refs: Vec<String> = ai::providers().iter().map(|p| p.id.to_string()).collect();
     refs.extend(cfg.ai_profiles.iter().map(ai::key_ref));
+    refs.extend(crate::search::SOURCES.iter().filter(|(_, needs_key)| *needs_key).map(|(id, _)| crate::search::key_ref(id)));
     refs.sort();
     refs.dedup();
     refs.into_iter()
@@ -113,19 +114,27 @@ pub struct AiTestResult {
     cost_usd: f64,
     millis: u128,
     model: String,
+    searches: u32,
 }
 
 #[tauri::command]
-pub async fn ai_test(st: St<'_>, profile: AiProfile, prompt: Option<String>) -> AppResult<AiTestResult> {
+pub async fn ai_test(st: St<'_>, profile: AiProfile, prompt: Option<String>, web_search: Option<bool>) -> AppResult<AiTestResult> {
     let key = st.ai_key(&profile);
+    let web_search = web_search.unwrap_or(false);
+    let mut system = String::from("You are HighBazar, a friendly Twitch chat companion. Reply with one short, fun chat message (max 150 characters).");
+    if web_search {
+        system.push_str(" Look up current facts on the web when the message needs them. No links or source lists.");
+    }
     let req = AiRequest {
-        system: "You are HighBazar, a friendly Twitch chat companion. Reply with one short, fun chat message (max 150 characters).".into(),
+        system,
         user: prompt.unwrap_or_else(|| "Say hello to the chat and introduce yourself in one sentence.".into()),
-        max_tokens: None,
-        web_search: false,
+        web_search,
+        ..Default::default()
     };
     let start = Instant::now();
-    let resp = ai::complete(&st.http, &profile, key.as_deref(), &req).await?;
+    let cfg = st.config.read().settings.web_search.clone();
+    let own = ai::OwnSearch { key: st.search_key(&cfg.source), cfg: &cfg, lang: String::new() };
+    let resp = ai::complete_searching(&st.http, &profile, key.as_deref(), &req, &own).await?;
     Ok(AiTestResult {
         cost_usd: resp.cost(&profile),
         text: resp.text,
@@ -133,7 +142,38 @@ pub async fn ai_test(st: St<'_>, profile: AiProfile, prompt: Option<String>) -> 
         output_tokens: resp.output_tokens,
         millis: start.elapsed().as_millis(),
         model: resp.model,
+        searches: resp.searches,
     })
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CliStatus {
+    path: Option<String>,
+    /// e.g. "Logged in using ChatGPT"; `None` = not logged in or unknown.
+    login: Option<String>,
+    error: String,
+}
+
+/// Finds the Codex CLI and checks its login.
+#[tauri::command]
+pub async fn codex_cli_status(path: Option<String>) -> CliStatus {
+    let path = path.unwrap_or_default();
+    let Some(exe) = ai::detect_codex_cli(&path) else {
+        return CliStatus { path: None, login: None, error: String::new() };
+    };
+    let (login, error) = match ai::codex_login_status(&path).await {
+        Ok(l) => (l, String::new()),
+        Err(e) => (None, e.to_string()),
+    };
+    CliStatus { path: Some(exe.to_string_lossy().to_string()), login, error }
+}
+
+/// Runs one query with HighBazar's own web search (settings → web search).
+#[tauri::command]
+pub async fn web_search_test(st: St<'_>, settings: crate::config::WebSearchSettings, query: String) -> AppResult<Vec<crate::search::Hit>> {
+    let key = st.search_key(&settings.source);
+    crate::search::search(&st.http, &settings, key.as_deref(), &query, "").await
 }
 
 #[tauri::command]
@@ -390,6 +430,9 @@ const CHANNEL_API: &[(&str, &str)] = &[
     ("PATCH", "/channels"),
     ("GET", "/streams"),
     ("GET", "/search/categories"),
+    ("GET", "/search/channels"),
+    ("GET", "/streams/followed"),
+    ("GET", "/chat/chatters"),
     ("GET", "/games"),
     ("GET", "/content_classification_labels"),
     ("POST", "/streams/markers"),

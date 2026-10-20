@@ -3,6 +3,9 @@ import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { Check, Incognito, Plus, RefreshCw, Search, Train, Undo2, Users, UserTime, X } from "../../icons";
 import { useTwitch } from "../../lib/twitch";
+import { fuzzySearch } from "../../lib/fuzzy";
+import TwitchUserPicker from "../TwitchUserPicker.vue";
+import FuzzyText from "../ui/FuzzyText.vue";
 import UiSegmented from "../ui/UiSegmented.vue";
 
 const { t, locale } = useI18n();
@@ -145,11 +148,10 @@ async function setWatch(remove: boolean) {
   busy.value = false;
 }
 
-const list = computed(() => {
-  const l = tab.value === "mods" ? mods.value : tab.value === "vips" ? vips.value : banned.value;
-  const f = filter.value.trim().toLowerCase();
-  return f ? l.filter((p) => p.user_name.toLowerCase().includes(f) || (p.user_login ?? "").includes(f)) : l;
-});
+const current = computed(() => (tab.value === "mods" ? mods.value : tab.value === "vips" ? vips.value : banned.value));
+const results = computed(() => fuzzySearch(current.value, filter.value, (p) => [p.user_name, p.user_login, p.reason]));
+const list = computed(() => results.value.map((r) => r.item));
+const marks = computed(() => new Map(results.value.map((r) => [r.item.user_id, r.ranges[0]])));
 const fmt = (s?: string) => (s ? new Date(s).toLocaleString(locale.value, { dateStyle: "short", timeStyle: "short" }) : "");
 
 onMounted(load);
@@ -208,7 +210,7 @@ onMounted(load);
     <!-- Suspicious users -->
     <template v-else-if="tab === 'watch'">
       <p class="hint mt-0">{{ t("stream.community.watchHint") }}</p>
-      <input v-model="watchLogin" class="input" :placeholder="t('stream.loginPh')" />
+      <TwitchUserPicker v-model="watchLogin" mode="user" :placeholder="t('picker.userPh')" :label="t('stream.community.watchHint')" />
       <div class="flex flex-wrap items-center gap-2">
         <select v-model="watchStatus" class="input w-auto">
           <option value="ACTIVE_MONITORING">{{ t("stream.community.monitor") }}</option>
@@ -222,10 +224,10 @@ onMounted(load);
     <!-- Mods / VIPs / banned -->
     <template v-else>
       <div v-if="tab !== 'banned'" class="flex gap-2">
-        <input v-model="login" class="input" :placeholder="t('stream.loginPh')" @keydown.enter="add" />
+        <TwitchUserPicker v-model="login" mode="user" :placeholder="t('picker.userPh')" :label="t('common.add')" @submit="add" />
         <button class="btn shrink-0" :disabled="!login.trim() || busy" @click="add"><Plus :size="15" /> {{ t("common.add") }}</button>
       </div>
-      <div v-else-if="banned.length > 8" class="relative">
+      <div v-if="current.length > 8" class="relative">
         <Search :size="14" class="absolute top-2.5 left-2.5 text-muted" />
         <input v-model="filter" class="input pl-8" :placeholder="t('stream.community.filterPh')" />
       </div>
@@ -233,7 +235,7 @@ onMounted(load);
       <ul v-else class="max-h-72 divide-y divide-line overflow-y-auto rounded-lg border border-line">
         <li v-for="p in list" :key="p.user_id" class="flex items-center gap-2 px-3 py-1.5 text-sm">
           <span class="min-w-0 flex-1 truncate">
-            <span class="font-medium">{{ p.user_name }}</span>
+            <span class="font-medium"><FuzzyText :text="p.user_name" :ranges="marks.get(p.user_id)" /></span>
             <span v-if="tab === 'banned'" class="text-xs text-muted">
               · {{ p.expires_at ? t("stream.community.until", { d: fmt(p.expires_at) }) : t("stream.community.permanent") }}<template v-if="p.reason"> · {{ p.reason }}</template>
             </span>

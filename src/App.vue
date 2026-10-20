@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   Bot,
@@ -14,6 +14,7 @@ import {
   CircleCheck,
   Info,
   MonitorPlay,
+  Search,
 } from "./icons";
 import { useApp, type View } from "./stores/app";
 import { setLocale } from "./i18n";
@@ -28,6 +29,7 @@ import AiView from "./views/AiView.vue";
 import SettingsView from "./views/SettingsView.vue";
 import WizardView from "./views/WizardView.vue";
 import UpdateDialog from "./components/UpdateDialog.vue";
+import CommandPalette from "./components/CommandPalette.vue";
 
 const app = useApp();
 const { t } = useI18n();
@@ -93,6 +95,16 @@ function onZoomWheel(e: WheelEvent) {
   changeZoom(inChat ? "chatZoom" : "uiZoom", e.deltaY < 0 ? 1 : -1);
 }
 window.addEventListener("keydown", onZoomKey);
+
+// Quick search: Ctrl+K (also from inside text fields).
+const paletteOpen = ref(false);
+function onPaletteKey(e: KeyboardEvent) {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "k") {
+    e.preventDefault();
+    paletteOpen.value = !paletteOpen.value;
+  }
+}
+window.addEventListener("keydown", onPaletteKey);
 window.addEventListener("wheel", onZoomWheel, { passive: false });
 
 onMounted(async () => {
@@ -129,6 +141,19 @@ const statusDot = computed(() => {
           <div class="text-[11px] text-muted">v{{ app.version }}</div>
         </div>
       </div>
+      <div class="px-2 pt-1">
+        <button
+          class="flex w-full items-center justify-center gap-2 rounded-lg border border-line px-3 py-2 text-sm text-muted transition hover:border-brand-300 hover:text-fg xl:justify-start"
+          :title="`${t('palette.title')} (Ctrl+K)`"
+          :aria-label="t('palette.title')"
+          aria-keyshortcuts="Control+K"
+          @click="paletteOpen = true"
+        >
+          <Search :size="16" />
+          <span class="hidden flex-1 text-left xl:inline">{{ t("palette.button") }}</span>
+          <kbd class="hidden rounded border border-line px-1 text-[10px] xl:inline">Ctrl K</kbd>
+        </button>
+      </div>
       <nav class="flex flex-1 flex-col gap-1 px-2 py-2">
         <button
           v-for="n in nav"
@@ -162,6 +187,7 @@ const statusDot = computed(() => {
 
     <WizardView v-if="app.wizardOpen" />
     <UpdateDialog />
+    <CommandPalette v-model="paletteOpen" />
 
     <!-- Toasts -->
     <div class="pointer-events-none fixed right-4 bottom-4 z-[60] flex w-96 max-w-[calc(100vw-2rem)] flex-col gap-2">

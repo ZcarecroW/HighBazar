@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { Megaphone, Heart, Swords, Scissors, Bookmark, X, Bolt, Pin } from "../../icons";
 import { useTwitch } from "../../lib/twitch";
+import TwitchUserPicker from "../TwitchUserPicker.vue";
 
 defineProps<{ live: boolean }>();
 const { t } = useI18n();
@@ -131,19 +132,19 @@ onMounted(loadPinned);
       </div>
     </div>
 
-    <div>
+    <div id="jump-shoutout" class="scroll-mt-4">
       <span class="label">{{ t("stream.actions.shoutout") }}</span>
       <div class="flex gap-2">
-        <input v-model="shoutoutLogin" class="input" :placeholder="t('stream.loginPh')" />
+        <TwitchUserPicker v-model="shoutoutLogin" mode="shoutout" :placeholder="t('picker.channelPh')" :label="t('stream.actions.shoutout')" @submit="shoutoutLogin.trim() && live && shoutout()" />
         <button class="btn shrink-0" :disabled="!shoutoutLogin.trim() || !live || busy === 'shoutout'" @click="shoutout"><Heart :size="15" /> {{ t("stream.actions.shoutoutBtn") }}</button>
       </div>
       <p class="hint">{{ t("stream.actions.shoutoutHint") }}</p>
     </div>
 
-    <div>
+    <div id="jump-raid" class="scroll-mt-4">
       <span class="label">{{ t("stream.actions.raid") }}</span>
       <div class="flex gap-2">
-        <input v-model="raidLogin" class="input" :placeholder="t('stream.loginPh')" />
+        <TwitchUserPicker v-model="raidLogin" mode="raid" :placeholder="t('picker.raidPh')" :label="t('stream.actions.raid')" @submit="raidLogin.trim() && raid()" />
         <button v-if="!raiding" class="btn shrink-0" :disabled="!raidLogin.trim() || busy === 'raid'" @click="raid"><Swords :size="15" /> {{ t("stream.actions.raidBtn") }}</button>
         <button v-else class="btn-danger shrink-0" :disabled="busy === 'raid'" @click="cancelRaid"><X :size="15" /> {{ t("stream.actions.raidCancel") }}</button>
       </div>

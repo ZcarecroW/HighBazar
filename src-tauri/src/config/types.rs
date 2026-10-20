@@ -73,6 +73,24 @@ pub struct AppSettings {
     pub start_in_tray: bool,
     /// Chat page for the Steam overlay browser (served on localhost).
     pub overlay: OverlaySettings,
+    /// Where HighBazar searches the web itself for AI providers without a built-in search.
+    pub web_search: WebSearchSettings,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct WebSearchSettings {
+    /// "wikipedia" | "ollama" | "tavily" | "brave" | "searxng"
+    pub source: String,
+    /// Base URL of the own SearXNG instance (JSON output must be enabled there).
+    pub searxng_url: String,
+    pub max_results: u32,
+}
+
+impl Default for WebSearchSettings {
+    fn default() -> Self {
+        Self { source: "wikipedia".into(), searxng_url: String::new(), max_results: 5 }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -144,6 +162,7 @@ impl Default for AppSettings {
             performance_mode: false,
             start_in_tray: false,
             overlay: OverlaySettings::default(),
+            web_search: WebSearchSettings::default(),
         }
     }
 }
@@ -548,8 +567,11 @@ impl Default for CommandConfig {
 #[serde(rename_all = "camelCase", default)]
 pub struct ResearchSettings {
     pub enabled: bool,
-    /// Ask the AI provider to use its built-in web search (if supported).
+    /// Search the web while researching the game (the provider's own search,
+    /// otherwise HighBazar's search source).
     pub web_search: bool,
+    /// Let the bot look up current information when chat asks it something.
+    pub answer_search: bool,
     pub wikipedia: bool,
     pub refresh_days: u32,
 }
@@ -559,6 +581,7 @@ impl Default for ResearchSettings {
         Self {
             enabled: true,
             web_search: true,
+            answer_search: true,
             wikipedia: true,
             refresh_days: 14,
         }

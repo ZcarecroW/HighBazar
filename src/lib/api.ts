@@ -20,6 +20,9 @@ import type {
   LoginStart,
   ModLogEntry,
   UsageStats,
+  CliStatus,
+  WebSearchSettings,
+  SearchHit,
 } from "./types";
 
 export const api = {
@@ -27,9 +30,11 @@ export const api = {
   saveConfig: (config: Config) => invoke<Config>("save_config", { config }),
   keyStatus: () => invoke<Record<string, boolean>>("get_key_status"),
   setAiKey: (keyRef: string, key: string) => invoke<void>("set_ai_key", { keyRef, key }),
-  aiTest: (profile: AiProfile, prompt?: string) => invoke<AiTestResult>("ai_test", { profile, prompt }),
+  aiTest: (profile: AiProfile, prompt?: string, webSearch = false) => invoke<AiTestResult>("ai_test", { profile, prompt, webSearch }),
   aiListModels: (profile: AiProfile) => invoke<ModelInfo[]>("ai_list_models", { profile }),
   detectClaudeCli: (path?: string) => invoke<string | null>("detect_claude_cli", { path }),
+  codexCliStatus: (path?: string) => invoke<CliStatus>("codex_cli_status", { path }),
+  webSearchTest: (settings: WebSearchSettings, query: string) => invoke<SearchHit[]>("web_search_test", { settings, query }),
   twitchLoginStart: (kind: "streamer" | "bot", level?: string) => invoke<LoginStart>("twitch_login_start", { kind, level }),
   twitchLoginCancel: (loginId: string) => invoke<void>("twitch_login_cancel", { loginId }),
   twitchRemoveAccount: (id: string) => invoke<Config>("twitch_remove_account", { id }),

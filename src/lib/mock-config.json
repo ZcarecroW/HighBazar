@@ -11,7 +11,12 @@
     "twitchClientId": "",
     "feedLimit": 400,
     "showEmotes": true,
-    "channelManagerLevel": "simple"
+    "channelManagerLevel": "simple",
+    "webSearch": {
+      "source": "wikipedia",
+      "searxngUrl": "",
+      "maxResults": 5
+    }
   },
   "accounts": [],
   "channels": [
@@ -32,7 +37,7 @@
       "sendMode": "auto",
       "previewDelaySecs": 10,
       "aboutStream": "",
-      "dailyBudgetUsd": 2.0
+      "dailyBudgetUsd": 2
     }
   ],
   "companionProfiles": [
@@ -140,7 +145,8 @@
         "enabled": true,
         "webSearch": true,
         "wikipedia": true,
-        "refreshDays": 14
+        "refreshDays": 14,
+        "answerSearch": true
       }
     },
     {
@@ -247,7 +253,8 @@
         "enabled": true,
         "webSearch": true,
         "wikipedia": true,
-        "refreshDays": 14
+        "refreshDays": 14,
+        "answerSearch": true
       }
     },
     {
@@ -354,7 +361,8 @@
         "enabled": true,
         "webSearch": true,
         "wikipedia": true,
-        "refreshDays": 14
+        "refreshDays": 14,
+        "answerSearch": true
       }
     },
     {
@@ -461,7 +469,8 @@
         "enabled": true,
         "webSearch": true,
         "wikipedia": true,
-        "refreshDays": 14
+        "refreshDays": 14,
+        "answerSearch": true
       }
     },
     {
@@ -568,7 +577,8 @@
         "enabled": true,
         "webSearch": true,
         "wikipedia": true,
-        "refreshDays": 14
+        "refreshDays": 14,
+        "answerSearch": true
       }
     },
     {
@@ -675,7 +685,8 @@
         "enabled": true,
         "webSearch": true,
         "wikipedia": true,
-        "refreshDays": 14
+        "refreshDays": 14,
+        "answerSearch": true
       }
     },
     {
@@ -782,7 +793,8 @@
         "enabled": true,
         "webSearch": true,
         "wikipedia": true,
-        "refreshDays": 14
+        "refreshDays": 14,
+        "answerSearch": true
       }
     }
   ],
@@ -1774,8 +1786,8 @@
       "reasoning": "low",
       "webSearch": true,
       "timeoutSecs": 90,
-      "priceInputPerMtok": 4.0,
-      "priceOutputPerMtok": 20.0,
+      "priceInputPerMtok": 4,
+      "priceOutputPerMtok": 20,
       "extraHeaders": [],
       "openaiResponses": true,
       "geminiInteractions": true,
@@ -1795,8 +1807,8 @@
       "reasoning": "low",
       "webSearch": true,
       "timeoutSecs": 90,
-      "priceInputPerMtok": 2.0,
-      "priceOutputPerMtok": 10.0,
+      "priceInputPerMtok": 2,
+      "priceOutputPerMtok": 10,
       "extraHeaders": [],
       "openaiResponses": true,
       "geminiInteractions": true,
@@ -1837,8 +1849,8 @@
       "reasoning": "low",
       "webSearch": true,
       "timeoutSecs": 90,
-      "priceInputPerMtok": 2.0,
-      "priceOutputPerMtok": 10.0,
+      "priceInputPerMtok": 2,
+      "priceOutputPerMtok": 10,
       "extraHeaders": [],
       "openaiResponses": true,
       "geminiInteractions": true,
@@ -1921,8 +1933,8 @@
       "reasoning": "",
       "webSearch": true,
       "timeoutSecs": 90,
-      "priceInputPerMtok": 0.0,
-      "priceOutputPerMtok": 0.0,
+      "priceInputPerMtok": 0,
+      "priceOutputPerMtok": 0,
       "extraHeaders": [],
       "openaiResponses": true,
       "geminiInteractions": true,
@@ -1942,8 +1954,8 @@
       "reasoning": "",
       "webSearch": false,
       "timeoutSecs": 90,
-      "priceInputPerMtok": 0.0,
-      "priceOutputPerMtok": 0.0,
+      "priceInputPerMtok": 0,
+      "priceOutputPerMtok": 0,
       "extraHeaders": [],
       "openaiResponses": true,
       "geminiInteractions": true,
@@ -1963,8 +1975,8 @@
       "reasoning": "",
       "webSearch": false,
       "timeoutSecs": 90,
-      "priceInputPerMtok": 0.0,
-      "priceOutputPerMtok": 0.0,
+      "priceInputPerMtok": 0,
+      "priceOutputPerMtok": 0,
       "extraHeaders": [],
       "openaiResponses": true,
       "geminiInteractions": true,
@@ -1984,8 +1996,8 @@
       "reasoning": "",
       "webSearch": true,
       "timeoutSecs": 90,
-      "priceInputPerMtok": 0.0,
-      "priceOutputPerMtok": 0.0,
+      "priceInputPerMtok": 0,
+      "priceOutputPerMtok": 0,
       "extraHeaders": [],
       "openaiResponses": true,
       "geminiInteractions": true,
@@ -2005,8 +2017,8 @@
       "reasoning": "",
       "webSearch": false,
       "timeoutSecs": 90,
-      "priceInputPerMtok": 0.0,
-      "priceOutputPerMtok": 0.0,
+      "priceInputPerMtok": 0,
+      "priceOutputPerMtok": 0,
       "extraHeaders": [],
       "openaiResponses": true,
       "geminiInteractions": true,
@@ -2026,8 +2038,8 @@
       "reasoning": "",
       "webSearch": false,
       "timeoutSecs": 90,
-      "priceInputPerMtok": 0.0,
-      "priceOutputPerMtok": 0.0,
+      "priceInputPerMtok": 0,
+      "priceOutputPerMtok": 0,
       "extraHeaders": [],
       "openaiResponses": true,
       "geminiInteractions": true,
@@ -2047,8 +2059,8 @@
       "reasoning": "",
       "webSearch": false,
       "timeoutSecs": 90,
-      "priceInputPerMtok": 0.0,
-      "priceOutputPerMtok": 0.0,
+      "priceInputPerMtok": 0,
+      "priceOutputPerMtok": 0,
       "extraHeaders": [],
       "openaiResponses": true,
       "geminiInteractions": true,

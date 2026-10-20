@@ -19,6 +19,16 @@ import type {
 } from "../lib/types";
 
 export type View = "dashboard" | "stream" | "channels" | "companion" | "moderation" | "ai" | "settings";
+export interface Jump {
+  view: View;
+  /** Section, tab or element id (`jump-<section>`) on that page. */
+  section?: string;
+  /** Profile or channel to select. */
+  profile?: string;
+  /** Focus the first field of the section. */
+  focus?: boolean;
+  n: number;
+}
 
 export interface Toast {
   id: number;
@@ -40,13 +50,21 @@ export const useApp = defineStore("app", () => {
   const accountStatus = ref<Record<string, boolean>>({});
   const view = ref<View>("dashboard");
   const wizardOpen = ref(false);
+  /** A pending jump to a part of a page (quick search); the page applies and clears it. */
+  const jump = ref<Jump | null>(null);
+  let jumps = 0;
+  function goto(target: View, opts: Omit<Jump, "view" | "n"> = {}) {
+    wizardOpen.value = false;
+    view.value = target;
+    jump.value = { view: target, ...opts, n: ++jumps };
+  }
 
   const running = ref<{ channelId: string; sandbox: boolean } | null>(null);
   const status = ref<BotStatus | null>(null);
   const feed = shallowRef<FeedItem[]>([]);
   const pending = ref<PendingMessage[]>([]);
   const modEntries = ref<Map<string, ModLogEntry>>(new Map());
-  /** Emote name â†’ image URL of the channel the bot loaded (Twitch, BTTV, FFZ, 7TV). */
+  /** Emote name → image URL of the channel the bot loaded (Twitch, BTTV, FFZ, 7TV). */
   const emoteUrls = shallowRef<Record<string, string>>({});
   // Translations of chat messages, by message id (shown under the message in the feed).
   const translations = shallowRef<Map<string, ChatTranslation>>(new Map());
@@ -165,6 +183,11 @@ export const useApp = defineStore("app", () => {
   }
   function keyRefOf(p: AiProfile) {
     return p.keyRef.trim() || p.provider;
+  }
+  /** The provider searches the web itself (else HighBazar's own search is used). */
+  function nativeSearch(p: AiProfile) {
+    if (p.provider === "groq") return p.model.trim().startsWith("groq/compound");
+    return !!provider(p.provider)?.webSearch;
   }
   function hasKey(p: AiProfile) {
     const info = provider(p.provider);
@@ -301,6 +324,8 @@ export const useApp = defineStore("app", () => {
     keyStatus,
     accountStatus,
     view,
+    jump,
+    goto,
     wizardOpen,
     running,
     status,
@@ -325,6 +350,7 @@ export const useApp = defineStore("app", () => {
     aiProfile,
     provider,
     keyRefOf,
+    nativeSearch,
     hasKey,
     duplicateCompanion,
     duplicateModeration,

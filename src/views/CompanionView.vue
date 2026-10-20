@@ -12,6 +12,9 @@ import UiField from "../components/ui/UiField.vue";
 import UiSlider from "../components/ui/UiSlider.vue";
 import UiNumber from "../components/ui/UiNumber.vue";
 import UiTags from "../components/ui/UiTags.vue";
+import UiCombobox from "../components/ui/UiCombobox.vue";
+import { languageOptions } from "../lib/languages";
+import { useJump } from "../lib/jump";
 
 const app = useApp();
 const { t, tm, locale } = useI18n();
@@ -31,6 +34,10 @@ const isUsed = computed(() => app.activeChannel?.companionProfileId === p.value.
 const sections = ["personality", "timing", "content", "language", "emotes", "interactions", "commands", "research"] as const;
 const sectionIcons = { personality: Smile, timing: Clock, content: Tag, language: Globe, emotes: Heart, interactions: Bell, commands: Chat, research: Brain };
 const section = ref<(typeof sections)[number]>("personality");
+useJump("companion", (j) => {
+  if (j.profile && cfg.value.companionProfiles.some((x) => x.id === j.profile)) selectedId.value = j.profile;
+  if (sections.includes(j.section as (typeof sections)[number])) section.value = j.section as (typeof sections)[number];
+});
 
 function duplicate(id = selectedId.value) {
   const src = cfg.value.companionProfiles.find((x) => x.id === id);
@@ -50,13 +57,6 @@ function useIt() {
 
 const mixKeys = ["chatReaction", "gameFact", "gameTip", "trivia", "joke", "question", "hype", "streamMoment"] as const;
 const languages = ["en", "de", "es", "fr", "it", "pt", "nl", "pl", "tr", "ru", "uk", "sv", "da", "no", "fi", "cs", "hu", "ro", "el", "ja", "ko", "zh", "ar", "hi", "th", "vi", "id"];
-const langName = (code: string) => {
-  try {
-    return new Intl.DisplayNames([locale.value], { type: "language" }).of(code) ?? code;
-  } catch {
-    return code;
-  }
-};
 const roles = ["everyone", "subscriber", "vip", "moderator", "broadcaster"] as const;
 const commands: { key: "ask" | "fact" | "joke" | "about"; label: string }[] = [
   { key: "ask", label: "companion.cmdAsk" },
@@ -193,9 +193,7 @@ const emoteLevels = computed(() => tm("companion.emoteLevels") as unknown as str
               </select>
             </UiField>
             <UiField :label="t('companion.fixedLanguage')">
-              <select v-model="p.language.fixed" class="input">
-                <option v-for="l in languages" :key="l" :value="l">{{ langName(l) }}</option>
-              </select>
+              <UiCombobox v-model="p.language.fixed" :options="languageOptions(languages, locale)" :disabled="ro" :label="t('companion.fixedLanguage')" />
             </UiField>
             <UiToggle v-model="p.language.replyInUserLanguage" :label="t('companion.replyInUserLanguage')" :disabled="ro" />
             <UiToggle v-model="p.language.allowSlang" :label="t('companion.allowSlang')" :disabled="ro" />
@@ -321,10 +319,11 @@ const emoteLevels = computed(() => tm("companion.emoteLevels") as unknown as str
           <div v-else-if="section === 'research'" class="space-y-5">
             <UiToggle v-model="p.research.enabled" :label="t('companion.researchEnabled')" :hint="t('companion.researchHint')" :disabled="ro" />
             <div class="grid gap-5 md:grid-cols-3" :class="!p.research.enabled && 'opacity-60'">
-              <UiToggle v-model="p.research.webSearch" :label="t('companion.webSearch')" :disabled="ro" />
+              <UiToggle v-model="p.research.webSearch" :label="t('companion.webSearch')" :hint="t('companion.webSearchHint')" :disabled="ro" />
               <UiToggle v-model="p.research.wikipedia" :label="t('companion.wikipedia')" :disabled="ro" />
               <UiNumber v-model="p.research.refreshDays" :label="t('companion.refreshDays')" :min="1" :max="365" :disabled="ro" />
             </div>
+            <UiToggle v-model="p.research.answerSearch" :label="t('companion.answerSearch')" :hint="t('companion.answerSearchHint')" :disabled="ro" />
           </div>
         </fieldset>
       </div>

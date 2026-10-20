@@ -13,6 +13,7 @@ export const LEVEL_SCOPES: Record<ChannelLevel, string[]> = {
     "moderator:manage:shoutouts",
     "channel:manage:raids",
     "clips:edit",
+    "user:read:follows",
   ],
   expert: [
     "channel:manage:polls",

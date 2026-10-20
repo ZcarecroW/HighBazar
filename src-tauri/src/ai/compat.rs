@@ -39,7 +39,9 @@ pub async fn complete(http: &reqwest::Client, p: &AiProfile, key: &str, req: &Ai
     if p.provider == "openrouter" {
         b["usage"] = json!({ "include": true });
         if req.web_search {
-            b["plugins"] = json!([{ "id": "web", "max_results": 5 }]);
+            // Server tool: the model decides whether and how often to search
+            // (native search of the model's provider where it has one, else Exa).
+            b["tools"] = json!([{ "type": "openrouter:web_search", "parameters": { "max_results": 5, "max_uses": 3 } }]);
         }
     }
     let mut rb = http
@@ -86,12 +88,19 @@ pub fn parse(v: &Value) -> AppResult<AiResponse> {
     // Some reasoning models wrap their thoughts in <think> tags.
     let text = strip_think(&text);
     let u = &v["usage"];
+    // OpenRouter counts its searches here (and includes them in `cost`);
+    // Groq's Compound systems list the tools they ran ($5 per 1000 basic searches).
+    let groq_searches = msg["executed_tools"]
+        .as_array()
+        .map_or(0, |t| t.iter().filter(|x| x["type"].as_str().is_some_and(|k| k.contains("search"))).count()) as u64;
+    let searches = u["server_tool_use"]["web_search_requests"].as_u64().unwrap_or(0) + groq_searches;
     Ok(AiResponse {
         text,
         input_tokens: u["prompt_tokens"].as_u64().unwrap_or(0),
         output_tokens: u["completion_tokens"].as_u64().unwrap_or(0),
         reported_cost_usd: u["cost"].as_f64(),
-        tool_cost_usd: 0.0,
+        tool_cost_usd: groq_searches as f64 * 0.005,
+        searches: searches as u32,
         model: v["model"].as_str().unwrap_or_default().to_string(),
     })
 }

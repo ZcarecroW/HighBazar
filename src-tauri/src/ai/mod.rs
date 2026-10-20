@@ -2,6 +2,7 @@
 
 mod anthropic;
 mod claude_cli;
+mod codex_cli;
 mod compat;
 mod gemini;
 mod openai;
@@ -11,17 +12,24 @@ use std::time::Duration;
 use serde::Serialize;
 use serde_json::Value;
 
-use crate::config::AiProfile;
+use crate::config::{AiProfile, WebSearchSettings};
 use crate::error::{AppError, AppResult};
 
 pub use claude_cli::detect as detect_claude_cli;
+pub use codex_cli::{detect as detect_codex_cli, login_status as codex_login_status};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct AiRequest {
     pub system: String,
     pub user: String,
     pub max_tokens: Option<u32>,
+    /// Let the model look things up on the web (see `complete_searching`).
     pub web_search: bool,
+    /// Also let it open web pages (only for requests not triggered by chat).
+    pub web_fetch: bool,
+    /// Known search query: HighBazar's own search runs it up front instead of
+    /// letting the model ask for one.
+    pub search_query: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -35,6 +43,8 @@ pub struct AiResponse {
     /// Extra cost of server-side tools (e.g. web searches), in USD.
     pub tool_cost_usd: f64,
     pub model: String,
+    /// Number of web searches made for this answer.
+    pub searches: u32,
 }
 
 impl AiResponse {
@@ -55,6 +65,7 @@ pub struct ProviderInfo {
     pub name: &'static str,
     pub base_url: &'static str,
     pub needs_key: bool,
+    /// The provider searches the web itself (otherwise HighBazar's own search is used).
     pub web_search: bool,
     pub key_url: &'static str,
     pub local: bool,
@@ -71,14 +82,15 @@ pub fn providers() -> Vec<ProviderInfo> {
         ProviderInfo { id: "openrouter", name: "OpenRouter", base_url: "https://openrouter.ai/api/v1", needs_key: true, web_search: true, key_url: "https://openrouter.ai/settings/keys", local: false, reasoning_options: EFFORT },
         ProviderInfo { id: "mistral", name: "Mistral AI", base_url: "https://api.mistral.ai/v1", needs_key: true, web_search: false, key_url: "https://console.mistral.ai/api-keys", local: false, reasoning_options: &[""] },
         ProviderInfo { id: "groq", name: "Groq", base_url: "https://api.groq.com/openai/v1", needs_key: true, web_search: false, key_url: "https://console.groq.com/keys", local: false, reasoning_options: EFFORT },
-        ProviderInfo { id: "xai", name: "xAI (Grok)", base_url: "https://api.x.ai/v1", needs_key: true, web_search: false, key_url: "https://console.x.ai", local: false, reasoning_options: EFFORT },
+        ProviderInfo { id: "xai", name: "xAI (Grok)", base_url: "https://api.x.ai/v1", needs_key: true, web_search: true, key_url: "https://console.x.ai", local: false, reasoning_options: EFFORT },
         ProviderInfo { id: "deepseek", name: "DeepSeek", base_url: "https://api.deepseek.com/v1", needs_key: true, web_search: false, key_url: "https://platform.deepseek.com/api_keys", local: false, reasoning_options: &[""] },
         ProviderInfo { id: "perplexity", name: "Perplexity", base_url: "https://api.perplexity.ai", needs_key: true, web_search: true, key_url: "https://www.perplexity.ai/account/api/keys", local: false, reasoning_options: &[""] },
         ProviderInfo { id: "together", name: "Together AI", base_url: "https://api.together.xyz/v1", needs_key: true, web_search: false, key_url: "https://api.together.ai/settings/api-keys", local: false, reasoning_options: &[""] },
         ProviderInfo { id: "ollama", name: "Ollama (local)", base_url: "http://localhost:11434/v1", needs_key: false, web_search: false, key_url: "https://ollama.com/download", local: true, reasoning_options: &[""] },
         ProviderInfo { id: "lmstudio", name: "LM Studio (local)", base_url: "http://localhost:1234/v1", needs_key: false, web_search: false, key_url: "https://lmstudio.ai", local: true, reasoning_options: &[""] },
         ProviderInfo { id: "openaiCompatible", name: "Custom (OpenAI-compatible)", base_url: "", needs_key: false, web_search: false, key_url: "", local: false, reasoning_options: EFFORT },
-        ProviderInfo { id: "claudeCli", name: "Claude Code CLI (subscription)", base_url: "", needs_key: false, web_search: false, key_url: "https://code.claude.com/docs/en/setup", local: true, reasoning_options: &["", "low", "medium", "high", "xhigh", "max"] },
+        ProviderInfo { id: "claudeCli", name: "Claude Code CLI (subscription)", base_url: "", needs_key: false, web_search: true, key_url: "https://code.claude.com/docs/en/setup", local: true, reasoning_options: &["", "low", "medium", "high", "xhigh", "max"] },
+        ProviderInfo { id: "codexCli", name: "Codex CLI (ChatGPT subscription)", base_url: "", needs_key: false, web_search: true, key_url: "https://learn.chatgpt.com/docs/codex-cli", local: true, reasoning_options: &["", "low", "medium", "high", "xhigh", "max", "ultra"] },
     ]
 }
 
@@ -99,6 +111,88 @@ pub fn key_ref(p: &AiProfile) -> String {
     if p.key_ref.trim().is_empty() { p.provider.clone() } else { p.key_ref.trim().to_string() }
 }
 
+/// Whether this profile's provider searches the web itself.
+pub fn native_search(p: &AiProfile) -> bool {
+    match p.provider.as_str() {
+        // Only the Compound systems have Groq's built-in search.
+        "groq" => p.model.trim().starts_with("groq/compound"),
+        id => provider_info(id).is_some_and(|i| i.web_search),
+    }
+}
+
+/// HighBazar's own web search, for providers without one.
+pub struct OwnSearch<'a> {
+    pub cfg: &'a WebSearchSettings,
+    pub key: Option<String>,
+    /// Preferred result language (e.g. the stream language).
+    pub lang: String,
+}
+
+const ASK_FOR_SEARCH: &str = "\n\nWeb search: if a correct answer needs current or specific facts you do not reliably know (patches, release dates, news, events, results, prices, records), reply with only one line \"SEARCH: <short web search query>\" and nothing else. Otherwise answer right away.";
+
+/// Like `complete`, but with web access when `req.web_search` is set: the
+/// provider's own search where it has one, otherwise HighBazar searches with
+/// its configured source and passes the results to the model.
+pub async fn complete_searching(
+    http: &reqwest::Client,
+    p: &AiProfile,
+    key: Option<&str>,
+    req: &AiRequest,
+    own: &OwnSearch<'_>,
+) -> AppResult<AiResponse> {
+    if !req.web_search || native_search(p) {
+        return complete(http, p, key, req).await;
+    }
+    let plain = AiRequest { web_search: false, web_fetch: false, search_query: None, ..req.clone() };
+    let run_search = |q: String| async move {
+        let hits = match crate::search::search(http, own.cfg, own.key.as_deref(), &q, &own.lang).await {
+            Ok(h) => h,
+            Err(e) => {
+                log::warn!("web search for {q:?} failed: {e}");
+                Vec::new()
+            }
+        };
+        crate::search::prompt_block(&q, &hits)
+    };
+    if let Some(q) = req.search_query.clone().filter(|q| !q.trim().is_empty()) {
+        let block = run_search(q).await;
+        let mut r = complete(http, p, key, &AiRequest { user: format!("{}\n\n{block}", req.user), ..plain }).await?;
+        r.searches = 1;
+        return Ok(r);
+    }
+    // Let the model decide: it either answers or asks for one search.
+    let first = complete(http, p, key, &AiRequest { user: format!("{}{ASK_FOR_SEARCH}", req.user), ..plain.clone() }).await?;
+    let Some(q) = search_request(&first.text) else {
+        return Ok(first);
+    };
+    let block = run_search(q).await;
+    let user = format!("{}\n\n{block}\n\nNow write your answer using these results where they help. Do not ask for another search.", req.user);
+    let second = complete(http, p, key, &AiRequest { user, ..plain }).await?;
+    Ok(AiResponse {
+        input_tokens: first.input_tokens + second.input_tokens,
+        output_tokens: first.output_tokens + second.output_tokens,
+        reported_cost_usd: match (first.reported_cost_usd, second.reported_cost_usd) {
+            (Some(a), Some(b)) => Some(a + b),
+            _ => None,
+        },
+        tool_cost_usd: first.tool_cost_usd + second.tool_cost_usd,
+        searches: 1,
+        ..second
+    })
+}
+
+/// "SEARCH: query" as the model's whole answer.
+fn search_request(text: &str) -> Option<String> {
+    let t = text.trim().trim_matches(|c| c == '`' || c == '"').trim();
+    let first = t.lines().next()?.trim();
+    let (head, rest) = first.split_at_checked(7)?;
+    if !head.eq_ignore_ascii_case("search:") {
+        return None;
+    }
+    let q: String = rest.trim().trim_matches(|c| c == '"' || c == '<' || c == '>' || c == '`').trim().chars().take(200).collect();
+    (!q.is_empty()).then_some(q)
+}
+
 pub async fn complete(http: &reqwest::Client, p: &AiProfile, key: Option<&str>, req: &AiRequest) -> AppResult<AiResponse> {
     let needs_key = provider_info(&p.provider).map(|i| i.needs_key).unwrap_or(false);
     if needs_key && key.is_none_or(|k| k.trim().is_empty()) {
@@ -109,9 +203,12 @@ pub async fn complete(http: &reqwest::Client, p: &AiProfile, key: Option<&str>, 
     loop {
         let result = match p.provider.as_str() {
             "anthropic" => anthropic::complete(http, p, key, req).await,
-            "openai" if p.openai_responses => openai::complete(http, p, key, req).await,
+            "openai" if p.openai_responses || req.web_search => openai::complete(http, p, key, req).await,
+            // xAI's web search only exists in its Responses API.
+            "xai" if req.web_search => openai::complete(http, p, key, req).await,
             "gemini" => gemini::complete(http, p, key, req).await,
             "claudeCli" => claude_cli::complete(p, req).await,
+            "codexCli" => codex_cli::complete(p, req).await,
             _ => compat::complete(http, p, key, req).await,
         };
         match result {
@@ -154,6 +251,8 @@ pub async fn list_models(http: &reqwest::Client, p: &AiProfile, key: Option<&str
         "gemini" => gemini::list_models(http, p, key).await?,
         // Aliases of the Claude Code CLI always point to the latest model of each family.
         "claudeCli" => return Ok(["haiku", "sonnet", "opus", "fable"].iter().map(|a| ModelInfo::new(*a, "")).collect()),
+        // The CLI's own catalog, in its order (newest first).
+        "codexCli" => return Ok(dedup(codex_cli::list_models(p).await?)),
         _ => compat::list_models(http, p, key).await?,
     };
     models.sort_by(|a, b| a.id.cmp(&b.id));
@@ -196,4 +295,30 @@ pub(crate) fn apply_headers(mut rb: reqwest::RequestBuilder, p: &AiProfile) -> r
         }
     }
     rb
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reads_search_requests() {
+        assert_eq!(search_request("SEARCH: elden ring nightreign patch"), Some("elden ring nightreign patch".into()));
+        assert_eq!(search_request("  `search: \"dlc release date\"`"), Some("dlc release date".into()));
+        assert_eq!(search_request("@max The patch came out yesterday!"), None);
+        assert_eq!(search_request("SEARCH:"), None);
+        assert_eq!(search_request("Süß"), None);
+    }
+
+    #[test]
+    fn groq_searches_only_with_compound() {
+        let mut p = AiProfile { provider: "groq".into(), model: "llama-3.3-70b-versatile".into(), ..Default::default() };
+        assert!(!native_search(&p));
+        p.model = "groq/compound-mini".into();
+        assert!(native_search(&p));
+        p.provider = "ollama".into();
+        assert!(!native_search(&p));
+        p.provider = "codexCli".into();
+        assert!(native_search(&p));
+    }
 }

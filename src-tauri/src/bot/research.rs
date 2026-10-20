@@ -98,7 +98,9 @@ fn strings(v: &Value) -> Vec<String> {
         .unwrap_or_default()
 }
 
-/// Researches a game. Returns the knowledge and the AI cost in USD.
+/// Researches a game. Returns the knowledge, the AI cost in USD and the
+/// number of web searches.
+#[allow(clippy::too_many_arguments)]
 pub async fn research(
     http: &reqwest::Client,
     dir: &Path,
@@ -107,12 +109,21 @@ pub async fn research(
     key: Option<&str>,
     use_web: bool,
     use_wiki: bool,
-) -> Result<(Knowledge, f64), String> {
+    own: &ai::OwnSearch<'_>,
+) -> Result<(Knowledge, f64, u32), String> {
     let wiki = if use_wiki { wikipedia(http, game).await } else { None };
     let (system, user) = super::prompt::research_prompt(game, wiki.as_ref().map(|w| w.0.as_str()).unwrap_or(""));
-    let supports_web = ai::provider_info(&profile.provider).is_some_and(|i| i.web_search) && profile.web_search;
-    let req = AiRequest { system, user, max_tokens: Some(4000), web_search: use_web && supports_web };
-    let resp = ai::complete(http, profile, key, &req).await.map_err(|e| e.to_string())?;
+    let req = AiRequest {
+        system,
+        user,
+        max_tokens: Some(4000),
+        web_search: use_web,
+        // Not triggered by chat, so reading patch notes etc. is fine.
+        web_fetch: true,
+        // Without the provider's own search, HighBazar looks this up first.
+        search_query: Some(format!("{game} game latest update patch news")),
+    };
+    let resp = ai::complete_searching(http, profile, key, &req, own).await.map_err(|e| e.to_string())?;
     let cost = resp.cost(profile);
     let v = extract_json(&resp.text).ok_or_else(|| "research answer was not valid JSON".to_string())?;
     let mut k = Knowledge {
@@ -131,7 +142,7 @@ pub async fn research(
         return Err("research returned no facts".into());
     }
     let _ = storage::write_json_atomic(&cache_path(dir, game), &k);
-    Ok((k, cost))
+    Ok((k, cost, resp.searches))
 }
 
 #[cfg(test)]

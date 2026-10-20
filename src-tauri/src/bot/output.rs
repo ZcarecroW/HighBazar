@@ -8,11 +8,38 @@ static URL: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"(?i)(https?://|www\.)\S+|\b[a-z0-9-]+\.(com|net|org|io|gg|tv|ly|xyz|ru)/\S*").unwrap()
 });
 
+static MD_LINK: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\[([^\]\n]+)\]\(\s*https?://[^)\s]*\s*\)").unwrap());
+static CITATION: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"(?i)\s*(\[\d{1,2}(?:\s*,\s*\d{1,2})*\]|【[^】]*】|\((?:source|quelle|via)?:?\s*https?://[^)\s]*\))").unwrap()
+});
+static SOURCES_HEAD: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?i)^\W*(sources?|quellen?|references|citations)\W*:").unwrap());
+
 pub const TWITCH_MAX: usize = 500;
+
+/// Answers written with web search often end with a list of sources, link
+/// markup or citation marks; chat gets the plain text.
+fn strip_sources(raw: &str) -> String {
+    let mut lines = Vec::new();
+    for line in raw.lines() {
+        if SOURCES_HEAD.is_match(line.trim()) {
+            break;
+        }
+        // A line that only lists a link.
+        let bare = line.trim().trim_start_matches(['-', '*', '•', ' ']);
+        if bare.starts_with("http://") || bare.starts_with("https://") || (bare.starts_with('[') && MD_LINK.is_match(bare) && MD_LINK.replace(bare, "").trim().is_empty()) {
+            continue;
+        }
+        lines.push(line);
+    }
+    let s = lines.join("\n");
+    let s = MD_LINK.replace_all(&s, "$1");
+    CITATION.replace_all(&s, "").into_owned()
+}
 
 /// Returns `None` if the model chose to skip or produced nothing usable.
 pub fn sanitize(raw: &str, bot_name: &str, prefix: &str, max_len: usize) -> Option<String> {
-    let mut s = raw.trim().to_string();
+    let mut s = strip_sources(raw.trim()).trim().to_string();
     if s.is_empty() || s.contains("[SKIP]") {
         return None;
     }
@@ -99,6 +126,24 @@ pub fn limit_emotes(text: &str, is_emote: impl Fn(&str) -> bool, max: usize) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn strips_search_sources() {
+        let raw = "@max Patch **1.02.2** kam am 10. September 2025 [1] – vor allem Balance-Änderungen ([Bandai Namco](https://en.bandainamcoent.eu/x)).
+
+Quellen:
+- [Patch Notes](https://example.com/a)
+- [GameWave](https://example.com/b)";
+        assert_eq!(
+            sanitize(raw, "Bot", "", 300).as_deref(),
+            Some("@max Patch 1.02.2 kam am 10. September 2025 – vor allem Balance-Änderungen (Bandai Namco).")
+        );
+        let raw = "@sam Season 3 starts on 5 May. (source: https://example.com/s3)
+https://example.com/news";
+        assert_eq!(sanitize(raw, "Bot", "", 300).as_deref(), Some("@sam Season 3 starts on 5 May."));
+        // A link in the middle of the text still blocks the message.
+        assert_eq!(sanitize("@sam see www.example.com for more", "Bot", "", 300), None);
+    }
 
     #[test]
     fn cleans_output() {

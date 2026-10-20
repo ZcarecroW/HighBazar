@@ -312,7 +312,7 @@ pub fn ai_presets() -> Vec<AiProfile> {
             "mistral-small-latest",
             0.0,
             0.0,
-            |p| p.web_search = false,
+            |_| {},
         ),
         ai(
             "builtin-ai-deepseek",
@@ -322,7 +322,7 @@ pub fn ai_presets() -> Vec<AiProfile> {
             "deepseek-chat",
             0.0,
             0.0,
-            |p| p.web_search = false,
+            |_| {},
         ),
         ai(
             "builtin-ai-perplexity-sonar",
@@ -342,7 +342,7 @@ pub fn ai_presets() -> Vec<AiProfile> {
             "llama3.2",
             0.0,
             0.0,
-            |p| p.web_search = false,
+            |_| {},
         ),
         ai(
             "builtin-ai-lmstudio",
@@ -352,7 +352,7 @@ pub fn ai_presets() -> Vec<AiProfile> {
             "local-model",
             0.0,
             0.0,
-            |p| p.web_search = false,
+            |_| {},
         ),
         ai(
             "builtin-ai-claude-cli",
@@ -362,7 +362,17 @@ pub fn ai_presets() -> Vec<AiProfile> {
             "haiku",
             0.0,
             0.0,
-            |p| p.web_search = false,
+            |_| {},
+        ),
+        ai(
+            "builtin-ai-codex-cli",
+            "Codex CLI (ChatGPT subscription)",
+            "Uses your locally installed Codex CLI, logged in with your ChatGPT plan; counts against its Codex usage limits.",
+            "codexCli",
+            "gpt-6-luna",
+            0.0,
+            0.0,
+            |p| p.reasoning = "low".into(),
         ),
     ]
 }

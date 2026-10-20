@@ -28,6 +28,8 @@ pub const CHANNEL_ADVANCED_SCOPES: &[&str] = &[
     "moderator:manage:shoutouts",
     "channel:manage:raids",
     "clips:edit",
+    // Live channels you follow, suggested as raid and shoutout targets.
+    "user:read:follows",
 ];
 pub const CHANNEL_EXPERT_SCOPES: &[&str] = &[
     "channel:manage:polls",

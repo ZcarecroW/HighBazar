@@ -17,11 +17,13 @@ import OverlaySettings from "../components/OverlaySettings.vue";
 import { glide } from "../lib/smoothFollow";
 import { clampZoom, CHAT_ZOOM, UI_ZOOM } from "../lib/zoom";
 import type { ScrollEasing } from "../lib/types";
+import { useJump } from "../lib/jump";
 
 const app = useApp();
 const { t } = useI18n();
 const s = computed(() => app.config!.settings);
 const checking = ref(false);
+useJump("settings");
 
 const themeOptions = computed(() => (["system", "dark", "light"] as const).map((v) => ({ value: v, label: t(`settings.themes.${v}`) })));
 const langOptions = computed(() => (["auto", "en", "de"] as const).map((v) => ({ value: v, label: t(`settings.languages.${v}`) })));
@@ -85,7 +87,7 @@ function resetChatDisplay() {
   <div class="mx-auto max-w-5xl space-y-5 p-4 xl:p-6">
     <h1 class="flex items-center gap-2 text-xl font-bold"><Settings :size="22" class="text-brand-500" /> {{ t("settings.title") }}</h1>
 
-    <section class="card-pad space-y-5">
+    <section id="jump-appearance" class="card-pad scroll-mt-4 space-y-5">
       <h2 class="section-title mb-0 flex items-center gap-2"><Palette :size="17" class="text-brand-500" /> {{ t("settings.appearance") }}</h2>
       <UiSegmented v-model="s.theme" :label="t('settings.theme')" :options="themeOptions" />
       <div>
@@ -96,7 +98,7 @@ function resetChatDisplay() {
       <UiToggle v-model="s.showEmotes" :label="t('settings.showEmotes')" :hint="t('settings.showEmotesHint')" />
     </section>
 
-    <section class="card-pad space-y-5">
+    <section id="jump-chatDisplay" class="card-pad scroll-mt-4 space-y-5">
       <div class="flex items-center gap-2">
         <h2 class="section-title mb-0 flex flex-1 items-center gap-2"><Chat :size="17" class="text-brand-500" /> {{ t("settings.chatDisplay") }}</h2>
         <button class="btn-ghost text-xs" @click="resetChatDisplay"><Undo2 :size="14" /> {{ t("settings.resetDefaults") }}</button>
@@ -150,7 +152,7 @@ function resetChatDisplay() {
       </div>
     </section>
 
-    <section class="card-pad space-y-5">
+    <section id="jump-performance" class="card-pad scroll-mt-4 space-y-5">
       <h2 class="section-title mb-0 flex items-center gap-2"><Activity :size="17" class="text-brand-500" /> {{ t("settings.performance") }}</h2>
       <p class="max-w-3xl text-sm text-muted">{{ t("settings.performanceIntro") }}</p>
       <UiToggle v-model="s.lowPriority" :label="t('settings.lowPriority')" :hint="t('settings.lowPriorityHint')" />
@@ -161,9 +163,9 @@ function resetChatDisplay() {
       </div>
     </section>
 
-    <OverlaySettings />
+    <OverlaySettings id="jump-overlay" class="scroll-mt-4" />
 
-    <section class="card-pad space-y-4">
+    <section id="jump-startup" class="card-pad scroll-mt-4 space-y-4">
       <h2 class="section-title mb-0 flex items-center gap-2"><Bolt :size="17" class="text-brand-500" /> {{ t("settings.startup") }}</h2>
       <div class="flex flex-wrap items-center gap-4">
         <UiToggle v-model="s.checkUpdatesOnStart" :label="t('settings.checkUpdates')" class="flex-1" />
@@ -179,7 +181,7 @@ function resetChatDisplay() {
       </div>
     </section>
 
-    <section class="card-pad space-y-4">
+    <section id="jump-data" class="card-pad scroll-mt-4 space-y-4">
       <h2 class="section-title mb-0 flex items-center gap-2"><FolderOpen :size="17" class="text-brand-500" /> {{ t("settings.data") }}</h2>
       <div class="flex flex-wrap gap-2">
         <button class="btn" @click="api.openDataDir()"><FolderOpen :size="15" /> {{ t("settings.openData") }}</button>
@@ -192,7 +194,7 @@ function resetChatDisplay() {
       </p>
     </section>
 
-    <section class="card-pad space-y-4">
+    <section id="jump-advanced" class="card-pad scroll-mt-4 space-y-4">
       <h2 class="section-title mb-0 flex items-center gap-2"><Key :size="17" class="text-brand-500" /> {{ t("settings.advanced") }}</h2>
       <UiField :label="t('settings.clientId')" :hint="t('settings.clientIdHint')">
         <input v-model="s.twitchClientId" class="input font-mono" spellcheck="false" autocomplete="off" />
@@ -200,7 +202,7 @@ function resetChatDisplay() {
       <UiNumber v-model="s.feedLimit" :label="t('settings.feedLimit')" :min="50" :max="5000" :step="50" />
     </section>
 
-    <section class="card-pad space-y-3">
+    <section id="jump-about" class="card-pad scroll-mt-4 space-y-3">
       <h2 class="section-title mb-0 flex items-center gap-2"><Info :size="17" class="text-brand-500" /> {{ t("settings.about") }}</h2>
       <div class="flex items-center gap-3">
         <img src="/icon.png" class="h-12 w-12 rounded-xl" alt="" />

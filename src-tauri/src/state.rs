@@ -74,4 +74,9 @@ impl AppState {
     pub fn ai_key(&self, profile: &config::AiProfile) -> Option<String> {
         self.secrets.get(&crate::secrets::ai_key_name(&crate::ai::key_ref(profile)))
     }
+
+    /// Key of a web search source (Ollama, Tavily, Brave).
+    pub fn search_key(&self, source: &str) -> Option<String> {
+        self.secrets.get(&crate::secrets::ai_key_name(&crate::search::key_ref(source)))
+    }
 }

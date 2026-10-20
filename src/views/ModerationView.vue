@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { Plus, Trash2, RefreshCw, ShieldCheck, Settings, Tag, Hammer, Bolt, Crown, Chat } from "../icons";
+import { Plus, Trash2, RefreshCw, ShieldCheck, Settings, Tag, Hammer, Bolt, Crown, Chat, Search } from "../icons";
 import { useApp } from "../stores/app";
 import { modReason, pdesc, pname } from "../i18n";
 import { api, errorText } from "../lib/api";
@@ -16,6 +16,9 @@ import UiSlider from "../components/ui/UiSlider.vue";
 import UiNumber from "../components/ui/UiNumber.vue";
 import UiTags from "../components/ui/UiTags.vue";
 import UiSegmented from "../components/ui/UiSegmented.vue";
+import FuzzyText from "../components/ui/FuzzyText.vue";
+import { fuzzySearch } from "../lib/fuzzy";
+import { useJump } from "../lib/jump";
 
 const app = useApp();
 const { t, locale } = useI18n();
@@ -36,6 +39,17 @@ const isUsed = computed(() => app.activeChannel?.moderationProfileId === p.value
 const sections = ["general", "categories", "escalation", "rules", "exemptions", "messages"] as const;
 const sectionIcons = { general: Settings, categories: Tag, escalation: Hammer, rules: Bolt, exemptions: Crown, messages: Chat };
 const section = ref<(typeof sections)[number]>("general");
+useJump("moderation", (j) => {
+  if (j.profile && cfg.value.moderationProfiles.some((x) => x.id === j.profile)) {
+    selectedId.value = j.profile;
+    tab.value = "profile";
+  }
+  if (j.section === "log") tab.value = "log";
+  else if (sections.includes(j.section as (typeof sections)[number])) {
+    tab.value = "profile";
+    section.value = j.section as (typeof sections)[number];
+  }
+});
 
 function duplicate(id = selectedId.value) {
   const src = cfg.value.moderationProfiles.find((x) => x.id === id);
@@ -63,6 +77,7 @@ function addStep() {
 // ------------------------------------------------------------- log
 const log = ref<ModLogEntry[]>([]);
 const logFilter = ref<"all" | "actions" | "suggested">("all");
+const logQuery = ref("");
 const loadingLog = ref(false);
 async function loadLog() {
   if (!app.activeChannel) return;
@@ -85,6 +100,12 @@ const merged = computed(() => {
   if (logFilter.value === "suggested") list = list.filter((e) => e.status === "suggested");
   return list;
 });
+// Search by name, message, translation, reason or category.
+const logResults = computed(() =>
+  fuzzySearch(merged.value, logQuery.value, (e) => [e.displayName, e.text, e.translation, e.reason, t(`moderation.categories.${e.category}`)], {
+    weights: [1, 0.9, 0.8, 0.6, 0.6],
+  }),
+);
 function fmt(ts: number) {
   return new Date(ts).toLocaleString(locale.value, { dateStyle: "short", timeStyle: "short" });
 }
@@ -297,21 +318,26 @@ function sourceLabel(source: string) {
             { value: 'suggested', label: t('moderation.log.onlySuggested') },
           ]"
         />
+        <div class="relative min-w-48 flex-1">
+          <Search :size="14" class="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted" />
+          <input v-model="logQuery" class="input py-1.5 pl-8" :placeholder="t('moderation.log.searchPh')" :aria-label="t('common.search')" spellcheck="false" @keydown.esc="logQuery = ''" />
+        </div>
         <span v-if="!app.isRunning" class="text-xs text-muted">{{ t("moderation.log.notRunning") }}</span>
-        <button class="btn ml-auto" :disabled="loadingLog" @click="loadLog"><RefreshCw :size="14" :class="loadingLog && 'animate-spin'" /></button>
+        <button class="btn" :disabled="loadingLog" @click="loadLog"><RefreshCw :size="14" :class="loadingLog && 'animate-spin'" /></button>
       </div>
       <div v-if="!merged.length" class="p-10 text-center text-sm text-muted">{{ t("moderation.log.empty") }}</div>
+      <div v-else-if="!logResults.length" class="p-10 text-center text-sm text-muted">{{ t("common.noMatches") }}</div>
       <div v-else class="selectable max-h-[calc(100vh-14rem)] overflow-y-auto">
         <table class="w-full text-sm">
           <tbody>
-            <tr v-for="e in merged" :key="e.id" class="border-b border-line align-top">
+            <tr v-for="{ item: e, ranges } in logResults" :key="e.id" class="border-b border-line align-top">
               <td class="px-4 py-2.5 text-xs whitespace-nowrap text-muted">{{ fmt(e.ts) }}</td>
               <td class="px-2 py-2.5">
-                <div class="font-semibold">{{ e.displayName }}</div>
+                <div class="font-semibold"><FuzzyText :text="e.displayName" :ranges="ranges[0]" /></div>
                 <div class="text-xs text-muted">{{ sourceLabel(e.source) }}</div>
               </td>
               <td class="w-full px-2 py-2.5">
-                <div class="break-words italic">“{{ e.text }}”</div>
+                <div class="break-words italic">“<FuzzyText :text="e.text" :ranges="ranges[1]" />”</div>
                 <div class="mt-0.5 text-xs text-muted">
                   {{ t(`moderation.categories.${e.category}`) }} · {{ t(`moderation.log.verdicts.${e.verdict}`) }}<template v-if="e.source === 'ai'"> · {{ Math.round(e.confidence * 100) }}%</template>
                   <template v-if="e.reason"> — {{ modReason(e.reason) }}</template>

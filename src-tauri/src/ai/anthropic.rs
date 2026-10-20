@@ -108,6 +108,7 @@ pub fn parse(v: &Value) -> AppResult<AiResponse> {
         output_tokens: u["output_tokens"].as_u64().unwrap_or(0),
         reported_cost_usd: None,
         tool_cost_usd: searches as f64 * 0.01,
+        searches: searches as u32,
         model: v["model"].as_str().unwrap_or_default().to_string(),
     })
 }

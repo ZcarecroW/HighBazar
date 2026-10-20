@@ -318,7 +318,7 @@ pub fn research_prompt(game: &str, wiki: &str) -> (String, String) {
     let mut user = format!(
         "Research the game/category \"{game}\". Return ONLY JSON with this shape:\n\
 {{\"summary\":\"2-3 sentences about the game\",\"facts\":[\"15 surprising, fun or little-known facts (development, lore, records, easter eggs, speedruns, culture)\"],\"tips\":[\"8 short, genuinely useful gameplay tips\"]}}\n\
-Each item must be one short sentence."
+Each item must be one short sentence. If you know of a recent update, season, DLC or patch, include one fact about it with its date."
     );
     if !wiki.trim().is_empty() {
         let _ = write!(user, "\n\nWikipedia summary for reference:\n{}", wiki.trim());

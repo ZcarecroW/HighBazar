@@ -12,6 +12,8 @@ import UiToggle from "../components/ui/UiToggle.vue";
 import UiSegmented from "../components/ui/UiSegmented.vue";
 import ThemePicker from "../components/ThemePicker.vue";
 import LanguagePicker from "../components/LanguagePicker.vue";
+import UiCombobox from "../components/ui/UiCombobox.vue";
+import { aiProfileOptions } from "../lib/options";
 
 const app = useApp();
 const { t } = useI18n();
@@ -183,6 +185,7 @@ const recommendedModAi = "builtin-ai-claude-haiku";
               <div v-if="selectedAi.provider === 'claudeCli'" class="flex gap-2 text-xs text-amber-600 dark:text-amber-400">
                 <TriangleAlert :size="15" class="shrink-0" /> {{ t("ai.cliWarning") }}
               </div>
+              <div v-else-if="selectedAi.provider === 'codexCli'" class="text-xs text-muted">{{ t("ai.codexInfo") }}</div>
               <div v-if="aiInfo?.needsKey">
                 <div class="mb-1 flex items-center">
                   <span class="label mb-0">{{ t("wizard.aiKey", { provider: aiInfo.name }) }}</span>
@@ -247,10 +250,16 @@ const recommendedModAi = "builtin-ai-claude-haiku";
             </div>
             <div v-if="ch.moderationEnabled">
               <span class="label">{{ t("channels.moderationAiProfile") }}</span>
-              <select v-model="ch.moderationAiProfileId" class="input max-w-md">
-                <option value="">{{ t("channels.sameAsMain") }}</option>
-                <option v-for="a in cfg.aiProfiles" :key="a.id" :value="a.id">{{ a.name }}{{ a.id === recommendedModAi ? " ★" : "" }}{{ app.hasKey(a) ? "" : " ⚠" }}</option>
-              </select>
+              <UiCombobox
+                v-model="ch.moderationAiProfileId"
+                class="max-w-md"
+                :options="[
+                  { value: '', label: t('channels.sameAsMain') },
+                  ...aiProfileOptions(app, cfg.aiProfiles, t).map((o) => (o.value === recommendedModAi ? { ...o, badge: t('common.recommended') } : o)),
+                ]"
+                :label="t('channels.moderationAiProfile')"
+                stacked
+              />
               <p class="hint">{{ t("wizard.modAiHint") }}</p>
             </div>
             <div v-if="ch.translation" class="rounded-xl bg-panel-2 p-4">

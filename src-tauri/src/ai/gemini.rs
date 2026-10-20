@@ -77,6 +77,7 @@ pub fn parse_interaction(v: &Value) -> AiResponse {
         output_tokens: u["total_output_tokens"].as_u64().unwrap_or(0) + u["total_thought_tokens"].as_u64().unwrap_or(0),
         reported_cost_usd: None,
         tool_cost_usd: 0.0,
+        searches: 0,
         model: v["model"].as_str().unwrap_or_default().to_string(),
     }
 }
@@ -129,12 +130,15 @@ pub fn parse_generate(v: &Value) -> AppResult<AiResponse> {
         })
         .unwrap_or_default();
     let u = &v["usageMetadata"];
+    // Grounding with Google Search is billed per search query (about $14 per 1000).
+    let searches = cand["groundingMetadata"]["webSearchQueries"].as_array().map_or(0, |q| q.len()) as u32;
     Ok(AiResponse {
         text,
         input_tokens: u["promptTokenCount"].as_u64().unwrap_or(0),
         output_tokens: u["candidatesTokenCount"].as_u64().unwrap_or(0) + u["thoughtsTokenCount"].as_u64().unwrap_or(0),
         reported_cost_usd: None,
-        tool_cost_usd: 0.0,
+        tool_cost_usd: searches as f64 * 0.014,
+        searches,
         model: v["modelVersion"].as_str().unwrap_or_default().to_string(),
     })
 }

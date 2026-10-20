@@ -16,6 +16,7 @@ pub struct UsageStats {
     pub cost_usd: f64,
     pub messages_sent: u64,
     pub mod_actions: u64,
+    pub web_searches: u64,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -52,6 +53,12 @@ impl UsageBook {
         e.input_tokens += input;
         e.output_tokens += output;
         e.cost_usd += cost;
+    }
+
+    pub fn add_searches(&mut self, channel: &str, n: u32) {
+        if n > 0 {
+            self.entry(channel).web_searches += n as u64;
+        }
     }
 
     pub fn add_message(&mut self, channel: &str) {

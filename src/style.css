@@ -265,3 +265,23 @@ select,
     animation: none;
   }
 }
+
+/* Quick search: the section you jumped to lights up briefly. */
+@keyframes jump-flash {
+  0%,
+  40% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-500) 55%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 3px transparent;
+  }
+}
+.jump-flash {
+  animation: jump-flash 1.6s ease-out;
+  border-radius: 0.75rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .jump-flash {
+    animation: none;
+  }
+}

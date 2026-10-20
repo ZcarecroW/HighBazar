@@ -4,6 +4,20 @@ All notable changes to HighBazar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Web search for chat questions** (Companion → *Research & web search*, on by default): when chat asks the bot about patches, release dates, tournaments and the like, it looks it up on the web before answering; small talk is answered right away. The model decides when a search is needed.
+- **Web search for every AI provider.** Providers with their own search use it (Claude, OpenAI, Gemini, OpenRouter's new web search tool, Perplexity, xAI Grok via its Responses API, Groq Compound). For all others – Ollama, LM Studio, DeepSeek, Mistral, Together, custom servers – HighBazar searches itself and passes the results to the model as untrusted reference material. Sources (AI → *Web search*): Wikipedia (free, no key), Ollama web search, Tavily, Brave Search or your own SearXNG instance, with a test search. The number of web searches is shown in the usage table and in the AI test ("Test with web search").
+- **Claude Code CLI with web search**: only the web search tool is allowed (plus reading pages during game research); everything else stays switched off.
+- **Codex CLI** as a new AI provider (and built-in profile) for your ChatGPT plan: automatic detection (standalone installer, npm, PATH), login check, model list from the CLI's own catalog, reasoning effort, web search. Codex runs isolated – no shell, code, image, agent or app tools, a read-only sandbox, no user config, rules, project instructions or saved sessions, and HighBazar's instructions replace Codex's coding-agent prompt. Verified against codex-cli 0.163.0.
+- **Fuzzy search everywhere**: quick search with **Ctrl+K** (pages, sections, settings, profiles, channels and actions such as start/stop bot, raid or tray); raid and shoutout targets are suggested while typing – live channels you follow, people in chat and Twitch's channel search, with avatar, title, category and viewer count; mod/VIP and watch fields suggest people from chat; searchable AI provider, profile, model and language lists (find "German" as "Deutsch", "de" or "german"); search in the profile lists, the moderation log and the mod/VIP/ban lists; keyboard navigation and highlighted matches. Tolerates typos, umlauts and abbreviations.
+
+### Changed
+- Web search is now on by default in all built-in AI profiles (it used to be off for providers without their own search).
+- Answers written with web search are cleaned for chat: source lists, markdown links and citation marks are removed instead of the whole message being dropped.
+- The channel manager's *Advanced* level additionally asks Twitch for `user:read:follows` (live channels you follow as raid suggestions) – reconnect your account once to use it.
+
 ## [1.5.0] – 2026-10-20
 
 Performance release for gamers: HighBazar should never slow down your game. Tested with Claude Code (CPU and memory measured on the release build in every state – window visible, minimized and in the tray –, overlay rendered in a real browser, performance mode round trip, all pages without a console error). Windows build.
