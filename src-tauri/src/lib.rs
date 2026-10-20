@@ -3,7 +3,9 @@ mod bot;
 mod commands;
 mod config;
 mod error;
+mod overlay;
 mod secrets;
+mod shell;
 mod state;
 mod storage;
 mod twitch;
@@ -20,17 +22,25 @@ pub fn run() {
     // the WebSocket client can build its TLS config.
     let _ = rustls::crypto::aws_lc_rs::default_provider().install_default();
 
+    // The bot mostly waits for the network: two worker threads are plenty and
+    // keep the footprint small (the default is one per CPU core).
+    if let Ok(rt) = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(2)
+        .thread_name("highbazar")
+        .enable_all()
+        .build()
+    {
+        tauri::async_runtime::set(rt.handle().clone());
+        // Lives as long as the app.
+        std::mem::forget(rt);
+    }
+
     let mut builder = tauri::Builder::default();
 
     #[cfg(desktop)]
     {
-        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            if let Some(w) = app.get_webview_window("main") {
-                let _ = w.unminimize();
-                let _ = w.show();
-                let _ = w.set_focus();
-            }
-        }));
+        // A second start brings the window back (also from the tray).
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| shell::open_window(app)));
     }
 
     builder
@@ -65,6 +75,16 @@ pub fn run() {
             };
             app.manage(state.clone());
 
+            // Priority first, so the WebView2 processes started with the window inherit it.
+            shell::apply_settings(app.handle(), &state);
+            let in_tray = {
+                let s = &state.config.read().settings;
+                s.performance_mode && s.start_in_tray
+            };
+            if !in_tray {
+                shell::open_window(app.handle());
+            }
+
             if autostart
                 && let Some(channel) = channel {
                     let handle = app.handle().clone();
@@ -77,6 +97,7 @@ pub fn run() {
                 }
             Ok(())
         })
+        .on_window_event(shell::on_window_event)
         .invoke_handler(tauri::generate_handler![
             commands::get_bootstrap,
             commands::save_config,
@@ -98,10 +119,20 @@ pub fn run() {
             commands::get_emote_urls,
             commands::twitch_api,
             commands::open_data_dir,
+            commands::get_recent_feed,
+            commands::overlay_status,
+            commands::app_to_tray,
         ])
         .build(tauri::generate_context!())
         .expect("error while building HighBazar")
         .run(|app, event| {
+            // Performance mode: closing the last window keeps the bot running in the tray.
+            if let tauri::RunEvent::ExitRequested { code: None, api, .. } = &event
+                && shell::keep_running_without_window(app)
+            {
+                api.prevent_exit();
+                return;
+            }
             // Stop the bot cleanly on exit so usage numbers and the list of known
             // chatters are written to disk instead of being lost.
             if let tauri::RunEvent::Exit = event

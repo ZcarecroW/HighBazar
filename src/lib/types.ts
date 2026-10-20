@@ -29,6 +29,12 @@ export interface AppSettings {
   /** Size of the rest of the app (1 = 100 %). */
   uiZoom: number;
   chatScroll: ChatScroll;
+  /** Run with "below normal" priority so games get the CPU first. */
+  lowPriority: boolean;
+  /** Minimizing or closing closes the whole UI; the bot keeps running in the tray. */
+  performanceMode: boolean;
+  startInTray: boolean;
+  overlay: OverlaySettings;
 }
 
 export interface TwitchAccount {
@@ -392,4 +398,25 @@ export interface ChatScroll {
   smooth: boolean;
   durationMs: number;
   easing: ScrollEasing;
+}
+
+export interface OverlaySettings {
+  enabled: boolean;
+  port: number;
+  /** Random part of the overlay URL. */
+  key: string;
+  showBot: boolean;
+  showEvents: boolean;
+  showTranslations: boolean;
+  /** Fade out after this many seconds (0 = stay). */
+  hideAfterSecs: number;
+  /** Background opacity 0–1. */
+  background: number;
+}
+
+export interface OverlayStatus {
+  running: boolean;
+  url: string;
+  error: string;
+  clients: number;
 }

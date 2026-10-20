@@ -3,9 +3,10 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { modReason } from "../i18n";
 import EmoteText from "../components/EmoteText.vue";
-import { Play, Square, FlaskConical, MessageSquarePlus, RefreshCw, Wifi, WifiOff, Gamepad2, Users, Clock, Coins, Send, Pencil, X, Trash2, TimerReset, Ban, ShieldAlert, Sparkles, Bot, Heart, Gift, Swords, Star, Brain, Smile, Activity, CircleAlert, Info, Bolt, Pin, Languages } from "../icons";
+import { Play, Square, FlaskConical, MessageSquarePlus, RefreshCw, Wifi, WifiOff, Gamepad2, Users, Clock, Coins, Send, Pencil, X, Trash2, TimerReset, Ban, ShieldAlert, Sparkles, Bot, Heart, Gift, Swords, Star, Brain, Smile, Activity, CircleAlert, Info, Bolt, Pin, Languages, EyeOff } from "../icons";
 import ModNote from "../components/ModNote.vue";
 import { SmoothFollow } from "../lib/smoothFollow";
+import { api } from "../lib/api";
 import { chatScale, clampZoom, CHAT_ZOOM } from "../lib/zoom";
 import { useTwitch } from "../lib/twitch";
 import { useApp } from "../stores/app";
@@ -13,7 +14,7 @@ import type { FeedItem, PendingMessage } from "../lib/types";
 import UiToggle from "../components/ui/UiToggle.vue";
 
 const app = useApp();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const now = ref(Date.now());
 let timer: ReturnType<typeof setInterval>;
@@ -45,6 +46,10 @@ watch(autoscroll, (v) => {
   if (v) follower.follow();
   else follower.stop();
 });
+async function toTray() {
+  await app.saveNow();
+  await api.appToTray();
+}
 const chatZoomStyle = computed(() => ({ zoom: chatScale(settings.value.chatZoom ?? 1, settings.value.uiZoom ?? 1) }));
 const fadeMs = computed(() => (settings.value.chatScroll.smooth ? Math.min(400, settings.value.chatScroll.durationMs) : 0));
 function stepChatZoom(dir: number) {
@@ -60,8 +65,28 @@ const visible = computed(() =>
   }),
 );
 
+// One formatter for all rows (toLocaleTimeString builds a new one per call).
+const timeFmt = new Intl.DateTimeFormat([], { hour: "2-digit", minute: "2-digit", hour12: false });
 function time(ts: number) {
-  return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  return timeFmt.format(ts);
+}
+// The moderation buttons are rendered only for the row under the mouse
+// (pre-rendering them in every row tripled the size of the feed).
+const hoverId = ref("");
+// A row only re-renders when something it shows changed, not on every status tick.
+function rowDeps(item: FeedItem) {
+  return [
+    item,
+    hoverId.value === item.id,
+    isDark.value,
+    locale.value,
+    settings.value.showEmotes,
+    app.emoteUrls,
+    app.isRunning,
+    app.translations.get(item.messageId),
+    item.kind === "mod" ? app.modEntries.get(item.meta?.id) : null,
+    channel.value?.translation?.noteOnDelete,
+  ];
 }
 function msg(item: FeedItem) {
   return item.meta?.key ? t(`feed.${item.meta.key}`, item.meta.params ?? {}) : item.text;
@@ -222,6 +247,7 @@ function modEntry(item: FeedItem) {
       </div>
 
       <div class="ml-auto flex flex-wrap items-center gap-2">
+        <button v-if="settings.performanceMode" class="btn" :title="t('dashboard.toTrayHint')" @click="toTray"><EyeOff :size="16" /> {{ t("dashboard.toTray") }}</button>
         <template v-if="!app.isRunning">
           <button class="btn" :disabled="!canStart" @click="app.startBot(true)"><FlaskConical :size="16" /> {{ t("dashboard.startTest") }}</button>
           <button class="btn-primary" :disabled="!canStartLive" :title="canStartLive ? undefined : t('dashboard.needAccount')" @click="app.startBot(false)"><Play :size="16" /> {{ t("dashboard.start") }}</button>
@@ -283,7 +309,10 @@ function modEntry(item: FeedItem) {
           <div
             v-for="item in visible"
             :key="item.id"
+            v-memo="rowDeps(item)"
             class="group relative flex gap-2 rounded-lg px-2 py-1 text-[13.5px] leading-snug hover:bg-panel-2"
+            @mouseenter="hoverId = item.id"
+            @mouseleave="hoverId = ''"
             :class="{
               'feed-in': fadeMs > 0 && item.ts >= mountedAt,
               'bg-brand-500/8': item.kind === 'bot',
@@ -305,7 +334,7 @@ function modEntry(item: FeedItem) {
                 <Languages :size="12" class="mt-px shrink-0 text-brand-500" />
                 <span><span class="font-medium">{{ app.translations.get(item.messageId)!.lang }}:</span> <EmoteText :text="app.translations.get(item.messageId)!.text" :emotes="item.meta?.emotes" /></span>
               </div>
-              <span v-if="app.isRunning && item.userId" class="absolute top-0.5 right-1 hidden gap-0.5 rounded-md border border-line bg-panel p-0.5 shadow-sm group-hover:flex">
+              <span v-if="hoverId === item.id && app.isRunning && item.userId" class="absolute top-0.5 right-1 flex gap-0.5 rounded-md border border-line bg-panel p-0.5 shadow-sm">
                 <button v-if="canPin(item)" class="rounded p-1 text-muted hover:text-brand-500" :title="t('dashboard.pin')" @click="pin(item)"><Pin :size="13" /></button>
                 <button class="rounded p-1 text-muted hover:text-fg" :title="t('dashboard.deleteMsg')" @click="manual(item, 'delete')"><Trash2 :size="13" /></button>
                 <button class="rounded p-1 text-muted hover:text-amber-500" :title="t('dashboard.timeout10')" @click="manual(item, 'timeout', 600)"><TimerReset :size="13" /></button>

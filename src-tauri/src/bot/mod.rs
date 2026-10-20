@@ -169,6 +169,7 @@ impl BotManager {
             channel_id,
             sandbox,
         });
+        crate::shell::refresh_tray(app);
         Ok(())
     }
 
@@ -179,6 +180,7 @@ impl BotManager {
             let _ = tokio::time::timeout(std::time::Duration::from_secs(5), r.handle).await;
             let _ = app.emit(EVT_STATUS, BotStatus::default());
         }
+        crate::shell::refresh_tray(app.clone());
     }
 
     pub async fn control(&self, c: Control) -> AppResult<()> {

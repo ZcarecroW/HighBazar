@@ -96,6 +96,11 @@ Bazaar, Midnight, Ocean, Aurora, Forest, Gold, Sunset, Crimson, Sakura and Cyber
 - **Channel profiles** (global profiles) — one per Twitch channel or setup, each with its own accounts, prefix, companion, moderation and AI profiles. Switch any time.
 - **Companion, moderation and AI profiles** — built-in presets are read-only and improve with updates; duplicate one and make it yours, or start from scratch.
 
+### 🎮 Made for gaming PCs
+- **Performance mode**: minimize or close the window and the whole interface shuts down – HighBazar keeps running in the notification area with about **9 MB of memory and no measurable CPU load** (bot, moderation, translation and overlay keep working). A minimized window pauses its interface even without performance mode.
+- **Steam chat overlay**: a local link that shows your live chat – with emotes, smooth gliding and translations – in the Steam overlay browser, pinned over your game. Follow chat on one screen without Alt+Tab (also works as an OBS browser source).
+- **Games come first**: HighBazar runs with lower process priority, so your game always gets the CPU first.
+
 ### ✨ And also
 - **Setup wizard** on first start (skippable, can be reopened any time).
 - **Test mode + chat simulator** — try everything without sending anything to Twitch.

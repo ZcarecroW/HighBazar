@@ -4,6 +4,21 @@ All notable changes to HighBazar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] – 2026-10-20
+
+Performance release for gamers: HighBazar should never slow down your game. Tested with Claude Code (CPU and memory measured on the release build in every state – window visible, minimized and in the tray –, overlay rendered in a real browser, performance mode round trip, all pages without a console error). Windows build.
+
+### Added
+- **Performance mode** (Settings → *Performance*): minimizing or closing the window shuts the interface down completely – WebView2 and all its processes end – and HighBazar keeps running in the notification area (bot, moderation, translation, overlay) with about 9 MB of memory and no measurable CPU load. Click the tray icon to open the window again (the chat of the running session is restored); the right-click menu starts/stops the bot and quits. Optionally start directly in the tray, together with "Start the bot automatically" like a background service.
+- **Steam chat overlay** (Settings → *Steam overlay*): a local web page (127.0.0.1 only, secret link) that shows the live chat with your chat settings – emotes, smooth gliding, chat size, translations – plus follows/subs/raids and bot messages (each optional), adjustable background and fading of older messages. Pin it in the Steam overlay browser over your game to follow chat on one screen without Alt+Tab; it also works as an OBS browser source. Messages removed by moderation disappear from it as well. Nothing runs while it is off.
+- **"Games come first"** (on by default): HighBazar runs with "below normal" process priority, so a game always gets the CPU first.
+
+### Changed
+- A minimized window no longer renders anything: the interface pauses (≈1 % instead of ≈17 % of a CPU core with a busy chat) and catches up when it is shown again.
+- The live feed is much lighter: rows only re-render when they change (not on every status tick), the moderation buttons are created only for the row under the mouse (≈75 % fewer page elements), times are formatted with a shared formatter. New installations keep 200 instead of 400 feed entries.
+- Emote lookups use an index instead of scanning every emote for every chat word.
+- The Rust core uses two worker threads instead of one per CPU core.
+
 ## [1.4.0] – 2026-10-20
 
 Tested with Claude Code (translation and mod notes in test mode with the Claude Code CLI, model picker for every provider including a live OpenRouter list, smooth scrolling and zoom measured in the running app, all pages at 100 % and 140 % without a console error). Windows build.

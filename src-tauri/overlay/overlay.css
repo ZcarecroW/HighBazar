@@ -1,0 +1,94 @@
+/* HighBazar chat overlay – kept deliberately light: no blur, no shadows on boxes,
+   animations only on opacity/transform. */
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: rgba(12, 12, 16, var(--bg, 0.55));
+  color: #f1f1f4;
+  font: 15px/1.38 "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+#feed {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  padding: 0 10px;
+}
+#chat {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 100%;
+  padding: 8px 0;
+  box-sizing: border-box;
+}
+.line {
+  padding: 3px 4px;
+  overflow-wrap: anywhere;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+  transition: opacity 1.2s ease;
+}
+.line.in {
+  animation: line-in var(--in-ms, 300ms) ease-out both;
+}
+@keyframes line-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.line.gone {
+  opacity: 0;
+}
+.name {
+  font-weight: 700;
+}
+.sep {
+  color: rgba(255, 255, 255, 0.55);
+}
+.bot .name::before {
+  content: "◆ ";
+  font-size: 0.8em;
+}
+.event {
+  color: #ffd27a;
+  font-weight: 600;
+}
+.event::before {
+  content: "★ ";
+}
+.shared {
+  opacity: 0.75;
+}
+.tr {
+  display: block;
+  margin-top: 1px;
+  font-size: 0.86em;
+  color: rgba(255, 255, 255, 0.72);
+}
+.tr b {
+  font-weight: 600;
+}
+.emote {
+  height: 1.75em;
+  width: auto;
+  margin: -0.4em 0.05em;
+  vertical-align: middle;
+}
+#status {
+  position: fixed;
+  left: 8px;
+  bottom: 8px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.7);
+  font-size: 12px;
+  color: #ffb4b4;
+}
+@media (prefers-reduced-motion: reduce) {
+  .line.in {
+    animation: none;
+  }
+}

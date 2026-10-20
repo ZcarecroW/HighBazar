@@ -2,7 +2,7 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { ExternalLink, FolderOpen, Loader2, RefreshCw, Sparkles, Trash2, Settings, Palette, Bolt, Key, Info, Chat, Undo2 } from "../icons";
+import { ExternalLink, FolderOpen, Loader2, RefreshCw, Sparkles, Trash2, Settings, Palette, Bolt, Key, Info, Chat, Undo2, Activity, Download } from "../icons";
 import { useApp } from "../stores/app";
 import { api, errorText } from "../lib/api";
 import { checkForUpdate } from "../lib/updater";
@@ -13,6 +13,7 @@ import UiSegmented from "../components/ui/UiSegmented.vue";
 import ThemePicker from "../components/ThemePicker.vue";
 import UiSlider from "../components/ui/UiSlider.vue";
 import ChatMotionPreview from "../components/ChatMotionPreview.vue";
+import OverlaySettings from "../components/OverlaySettings.vue";
 import { glide } from "../lib/smoothFollow";
 import { clampZoom, CHAT_ZOOM, UI_ZOOM } from "../lib/zoom";
 import type { ScrollEasing } from "../lib/types";
@@ -67,6 +68,11 @@ function curve(e: ScrollEasing) {
     pts.push(`${(2 + tt * 44).toFixed(1)} ${(30 - y * 28).toFixed(1)}`);
   }
   return "M" + pts.join(" L");
+}
+// Performance mode: save first, so the backend knows the window may close.
+async function toTray() {
+  await app.saveNow();
+  await api.appToTray();
 }
 function resetChatDisplay() {
   s.value.uiZoom = 1;
@@ -143,6 +149,19 @@ function resetChatDisplay() {
         </div>
       </div>
     </section>
+
+    <section class="card-pad space-y-5">
+      <h2 class="section-title mb-0 flex items-center gap-2"><Activity :size="17" class="text-brand-500" /> {{ t("settings.performance") }}</h2>
+      <p class="max-w-3xl text-sm text-muted">{{ t("settings.performanceIntro") }}</p>
+      <UiToggle v-model="s.lowPriority" :label="t('settings.lowPriority')" :hint="t('settings.lowPriorityHint')" />
+      <UiToggle v-model="s.performanceMode" :label="t('settings.performanceMode')" :hint="t('settings.performanceModeHint')" />
+      <div class="space-y-4 pl-12" :class="!s.performanceMode && 'pointer-events-none opacity-50'">
+        <UiToggle v-model="s.startInTray" :label="t('settings.startInTray')" :hint="t('settings.startInTrayHint')" />
+        <button class="btn" @click="toTray"><Download :size="15" /> {{ t("settings.toTrayNow") }}</button>
+      </div>
+    </section>
+
+    <OverlaySettings />
 
     <section class="card-pad space-y-4">
       <h2 class="section-title mb-0 flex items-center gap-2"><Bolt :size="17" class="text-brand-500" /> {{ t("settings.startup") }}</h2>

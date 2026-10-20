@@ -1,6 +1,6 @@
 //! Emotes from Twitch, BetterTTV, FrankerFaceZ and 7TV (names + image URLs).
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde::Serialize;
 use serde_json::Value;
@@ -18,6 +18,9 @@ pub struct EmoteCatalog {
     /// Emote name → image URL (1x) for showing emotes in the UI.
     #[serde(skip)]
     pub urls: HashMap<String, String>,
+    /// All names, for fast lookups (every chat word is checked against it).
+    #[serde(skip)]
+    names: HashSet<String>,
 }
 
 impl EmoteCatalog {
@@ -26,7 +29,7 @@ impl EmoteCatalog {
     }
 
     pub fn contains(&self, name: &str) -> bool {
-        self.all().any(|e| e == name)
+        self.names.contains(name)
     }
 
     pub fn total(&self) -> usize {
@@ -127,7 +130,7 @@ pub async fn fetch(helix: &Helix, broadcaster_id: &str) -> EmoteCatalog {
 
     let mut cat = EmoteCatalog::default();
     for (list, out) in [(twitch, &mut cat.twitch), (bttv, &mut cat.bttv), (ffz, &mut cat.ffz), (stv, &mut cat.seventv)] {
-        let mut seen = std::collections::HashSet::new();
+        let mut seen = HashSet::new();
         for (name, url) in list {
             if name.is_empty() || !seen.insert(name.clone()) {
                 continue;
@@ -139,5 +142,6 @@ pub async fn fetch(helix: &Helix, broadcaster_id: &str) -> EmoteCatalog {
             out.push(name);
         }
     }
+    cat.names = cat.all().cloned().collect();
     cat
 }

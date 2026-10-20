@@ -46,7 +46,7 @@ export const useApp = defineStore("app", () => {
   const feed = shallowRef<FeedItem[]>([]);
   const pending = ref<PendingMessage[]>([]);
   const modEntries = ref<Map<string, ModLogEntry>>(new Map());
-  /** Emote name → image URL of the channel the bot loaded (Twitch, BTTV, FFZ, 7TV). */
+  /** Emote name â†’ image URL of the channel the bot loaded (Twitch, BTTV, FFZ, 7TV). */
   const emoteUrls = shallowRef<Record<string, string>>({});
   // Translations of chat messages, by message id (shown under the message in the feed).
   const translations = shallowRef<Map<string, ChatTranslation>>(new Map());
@@ -85,6 +85,14 @@ export const useApp = defineStore("app", () => {
       applyBootstrap(await api.bootstrap());
       // The bot outlives a reload of the window.
       running.value = await api.botRunning().catch(() => null);
+      if (running.value) {
+        // Window reopened (e.g. from the tray): show what happened meanwhile.
+        const recent = await api.recentFeed().catch(() => null);
+        if (recent) {
+          feed.value = recent.items.slice(-(config.value?.settings.feedLimit ?? 200));
+          translations.value = new Map(recent.translations.map((t) => [t.messageId, { lang: t.lang, text: t.text }]));
+        }
+      }
       emoteUrls.value = await api.emoteUrls().catch(() => ({}));
       ready.value = true;
       if (!config.value!.settings.wizardCompleted) wizardOpen.value = true;
@@ -235,8 +243,24 @@ export const useApp = defineStore("app", () => {
     }
   }
 
+  // While the window is hidden or minimized nothing is drawn; collect entries
+  // and add them in one go when it is visible again.
+  let hiddenQueue: FeedItem[] = [];
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden || !hiddenQueue.length) return;
+    const q = hiddenQueue;
+    hiddenQueue = [];
+    const limit = config.value?.settings.feedLimit ?? 200;
+    feed.value = [...feed.value, ...q].slice(-limit);
+  });
+
   function pushFeed(item: FeedItem) {
-    const limit = config.value?.settings.feedLimit ?? 400;
+    if (document.hidden) {
+      hiddenQueue.push(item);
+      if (hiddenQueue.length > 2000) hiddenQueue = hiddenQueue.slice(-1000);
+      return;
+    }
+    const limit = config.value?.settings.feedLimit ?? 200;
     const next = feed.value.length >= limit ? feed.value.slice(feed.value.length - limit + 1) : feed.value.slice();
     next.push(item);
     feed.value = next;

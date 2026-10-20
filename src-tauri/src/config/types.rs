@@ -64,6 +64,46 @@ pub struct AppSettings {
     pub ui_zoom: f32,
     /// How new chat messages move into view.
     pub chat_scroll: ChatScroll,
+    /// Run HighBazar with "below normal" priority so games get the CPU first.
+    pub low_priority: bool,
+    /// Performance mode: minimizing or closing the window closes the whole
+    /// interface and keeps only the bot running in the tray.
+    pub performance_mode: bool,
+    /// With performance mode: start in the tray without opening the window.
+    pub start_in_tray: bool,
+    /// Chat page for the Steam overlay browser (served on localhost).
+    pub overlay: OverlaySettings,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct OverlaySettings {
+    pub enabled: bool,
+    pub port: u16,
+    /// Random part of the overlay URL, so only the streamer's browser can read it.
+    pub key: String,
+    pub show_bot: bool,
+    pub show_events: bool,
+    pub show_translations: bool,
+    /// Messages fade out after this many seconds (0 = stay).
+    pub hide_after_secs: u32,
+    /// Background opacity 0–1.
+    pub background: f32,
+}
+
+impl Default for OverlaySettings {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            port: 47823,
+            key: String::new(),
+            show_bot: true,
+            show_events: true,
+            show_translations: true,
+            hide_after_secs: 0,
+            background: 0.55,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -94,12 +134,16 @@ impl Default for AppSettings {
             active_channel_id: None,
             start_bot_on_launch: false,
             twitch_client_id: String::new(),
-            feed_limit: 400,
+            feed_limit: 200,
             show_emotes: true,
             channel_manager_level: "simple".into(),
             chat_zoom: 1.0,
             ui_zoom: 1.0,
             chat_scroll: ChatScroll::default(),
+            low_priority: true,
+            performance_mode: false,
+            start_in_tray: false,
+            overlay: OverlaySettings::default(),
         }
     }
 }

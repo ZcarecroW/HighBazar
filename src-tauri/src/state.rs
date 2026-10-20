@@ -24,6 +24,9 @@ pub struct AppState {
     pub logins: parking_lot::Mutex<std::collections::HashMap<String, Arc<std::sync::atomic::AtomicBool>>>,
     /// Emote name → image URL of the channel the bot last loaded (for the UI).
     pub emote_urls: RwLock<Arc<std::collections::HashMap<String, String>>>,
+    /// Live feed fan-out (Steam overlay page, reopened windows).
+    pub overlay: crate::overlay::Hub,
+    pub overlay_server: crate::overlay::Server,
 }
 
 impl AppState {
@@ -50,6 +53,8 @@ impl AppState {
             bot: BotManager::default(),
             logins: Default::default(),
             emote_urls: Default::default(),
+            overlay: Default::default(),
+            overlay_server: Default::default(),
         }
     }
 

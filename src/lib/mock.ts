@@ -126,6 +126,12 @@ export async function mockInvoke(cmd: string, args: any): Promise<any> {
     case "ai_test":
       await new Promise((r) => setTimeout(r, 600));
       return { text: "Hey Chat! Ich bin HighBazar – euer neuer Lieblings-Mitbewohner im Chat. Wer hat Snacks? 🍿", inputTokens: 412, outputTokens: 38, costUsd: 0.00241, millis: 912, model: "claude-opus-5-5" };
+    case "get_recent_feed":
+      return { items: [], translations: [] };
+    case "overlay_status":
+      return { running: config.settings.overlay?.enabled ?? false, url: "http://127.0.0.1:47823/?k=demo", error: "", clients: 0 };
+    case "app_to_tray":
+      return null;
     case "ai_list_models":
       return (args.profile as { provider: string }).provider === "claudeCli"
         ? ["haiku", "sonnet", "opus", "fable"].map((id) => ({ id, name: "" }))

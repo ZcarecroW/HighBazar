@@ -246,6 +246,7 @@ impl Session {
     // ------------------------------------------------------------------
 
     fn feed(&self, item: FeedItem) {
+        self.st.overlay.push(&item);
         let _ = self.app.emit(EVT_FEED, item);
     }
 
@@ -400,6 +401,7 @@ impl Session {
         *self.emotes.write() = cat;
         *self.st.emote_urls.write() = urls.clone();
         let _ = self.app.emit(super::EVT_EMOTES, &*urls);
+        self.st.overlay.emotes(&urls);
         log::info!("loaded {n} emotes");
         self.emit_status();
     }
@@ -1228,6 +1230,12 @@ impl Session {
             self.error(format!("Moderation action against {} failed: {e}", entry.display_name));
         } else {
             self.st.usage.lock().add_mod_action(&self.channel_id);
+            // Removed messages also disappear from the overlay.
+            match entry.action.kind.as_str() {
+                "delete" | "warn" => self.st.overlay.removed(&entry.message_id, &entry.user_id, purge),
+                "timeout" | "ban" => self.st.overlay.removed(&entry.message_id, &entry.user_id, true),
+                _ => {}
+            }
             if announce && matches!(entry.action.kind.as_str(), "timeout" | "ban" | "warn") {
                 let de = prompt::fixed_text_lang(&self.profiles().comp, &self.stream.lock().language) == "de";
                 let action = match (de, entry.action.kind.as_str()) {
@@ -1276,6 +1284,7 @@ impl Session {
 
     /// Shows a translation under the chat message in the feed.
     fn publish_translation(&self, m: &ChatMessage, t: &Translation) {
+        self.st.overlay.translation(&m.id, &t.lang, &t.text);
         let _ = self.app.emit(EVT_TRANSLATION, json!({ "messageId": m.id, "lang": t.lang, "text": t.text }));
     }
 
@@ -1787,6 +1796,7 @@ impl Session {
 
 pub async fn run(session: Arc<Session>, mut ctrl: mpsc::UnboundedReceiver<Control>, mut shutdown: watch::Receiver<bool>) {
     let s = session;
+    s.st.overlay.clear();
     if s.sandbox {
         s.keyed("system", "startedTest", json!({}), "Bot started in test mode — nothing is sent to Twitch.".into());
     } else {

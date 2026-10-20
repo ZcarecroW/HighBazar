@@ -78,6 +78,11 @@ Bazaar, Mitternacht, Ozean, Polarlicht, Wald, Gold, Abendrot, Karmesin, Sakura u
 - **Kanalprofile** (globale Profile) – eins pro Twitch-Kanal oder Setup, jederzeit umschaltbar.
 - **Begleiter-, Moderations- und KI-Profile** – Vorlagen sind schreibgeschützt und werden mit Updates besser; duplizieren und anpassen oder neu anlegen.
 
+### 🎮 Für Gaming-PCs gemacht
+- **Performance-Modus**: Fenster minimieren oder schließen, und die Oberfläche wird komplett beendet – HighBazar läuft im Infobereich der Taskleiste weiter, mit rund **9 MB Arbeitsspeicher und ohne messbare CPU-Last** (Bot, Moderation, Übersetzung und Overlay laufen weiter). Ein minimiertes Fenster pausiert seine Oberfläche auch ohne Performance-Modus.
+- **Steam-Chat-Overlay**: ein lokaler Link, der deinen Live-Chat – mit Emotes, sanftem Einrollen und Übersetzungen – im Browser des Steam-Overlays anzeigt, angeheftet über dem Spiel. So verfolgst du den Chat mit nur einem Bildschirm ohne Alt+Tab (funktioniert auch als Browserquelle in OBS).
+- **Spiele haben Vorrang**: HighBazar läuft mit niedrigerer Prozess-Priorität, damit dein Spiel die CPU immer zuerst bekommt.
+
 ### ✨ Außerdem
 Einrichtungsassistent (überspringbar, jederzeit wieder aufrufbar) · Testmodus mit Chat-Simulator · Live-Feed mit
 Löschen/Timeout/Bann per Klick · Emotes von Twitch, BTTV, FFZ und 7TV als Bilder (abschaltbar) · neue Chatnachrichten **gleiten sanft ein** statt zu springen (Tempo und Kurve einstellbar, mit Vorschau) · Chat und Oberfläche **getrennt zoombar** (Strg + Mausrad, Strg + Plus/Minus) · Designs System/Dunkel/Hell · Deutsch & Englisch · für 1920×1080 optimiert und

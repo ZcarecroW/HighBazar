@@ -77,13 +77,14 @@ pub async fn get_bootstrap(st: St<'_>) -> AppResult<Bootstrap> {
 }
 
 #[tauri::command]
-pub async fn save_config(st: St<'_>, config: Config) -> AppResult<Config> {
+pub async fn save_config(app: AppHandle, st: St<'_>, config: Config) -> AppResult<Config> {
     let mut cfg = config;
     // Accounts are managed by the backend only.
     cfg.accounts = st.config.read().accounts.clone();
     cfg.normalize();
     *st.config.write() = cfg.clone();
     st.save_config()?;
+    crate::shell::apply_settings(&app, st.inner());
     Ok(cfg)
 }
 
@@ -484,4 +485,30 @@ pub fn open_data_dir(app: AppHandle, st: St<'_>) -> AppResult<()> {
     app.opener()
         .open_path(st.data_dir.to_string_lossy().to_string(), None::<&str>)
         .map_err(|e| AppError::msg(e.to_string()))
+}
+
+// ---------------------------------------------------------------- shell & overlay
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecentFeed {
+    pub items: Vec<crate::bot::FeedItem>,
+    pub translations: Vec<Value>,
+}
+
+/// Feed entries of the running session, for a window reopened from the tray.
+#[tauri::command]
+pub fn get_recent_feed(st: St<'_>) -> RecentFeed {
+    RecentFeed { items: st.overlay.recent(), translations: st.overlay.recent_translations() }
+}
+
+#[tauri::command]
+pub fn overlay_status(st: St<'_>) -> crate::overlay::Status {
+    st.overlay_server.status()
+}
+
+/// Performance mode: close the interface now and keep running in the tray.
+#[tauri::command]
+pub fn app_to_tray(app: AppHandle) {
+    crate::shell::to_tray(&app);
 }
