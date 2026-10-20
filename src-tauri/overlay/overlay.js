@@ -210,6 +210,9 @@
   const PROVIDER = { twitch: "Twitch", bttv: "BTTV", ffz: "FFZ", "7tv": "7TV", emoji: "Emoji" };
   let items = [];
   let activeIdx = 0;
+  // The token the list belongs to; whether a suggestion was chosen with the arrow keys.
+  let curTok = null;
+  let chosen = false;
   let seq = 0;
   let tabCycle = null;
   const sent = [];
@@ -217,11 +220,17 @@
 
   function activeToken(text, caret) {
     const before = text.slice(0, caret);
-    const colon = before.match(/(^|\s):((?:[7bfteBFTE] )?[^\s:]*)$/);
+    // Only letters, digits, "_" and "-" after the colon: ":)" and ":D" stay smileys.
+    const colon = before.match(/(^|\s):((?:[7bfteBFTE] )?[\p{L}\p{N}_-]*)$/u);
     if (colon) return { mode: "colon", query: colon[2], start: caret - colon[2].length - 1 };
     const at = before.match(/(^|\s)@([\p{L}\p{N}_]*)$/u);
     if (at) return { mode: "mention", query: at[2], start: caret - at[2].length - 1 };
     return null;
+  }
+  // Enter takes a suggestion, except for one letter after ":" (":D", ":P")
+  // unless it was chosen with the arrow keys (same rule as the app).
+  function enterPicks(tok, chosenWithKeys) {
+    return chosenWithKeys || !tok || tok.mode !== "colon" || tok.query.length >= 2;
   }
   async function suggest(q, mode, limit) {
     const url = `/suggest?k=${encodeURIComponent(key)}&m=${mode}&lang=${lang()}&q=${encodeURIComponent(q)}&n=${limit}`;
@@ -276,6 +285,7 @@
   }
   async function refreshSug() {
     const tok = activeToken(sayIn.value, sayIn.selectionStart ?? sayIn.value.length);
+    curTok = tok;
     if (!tok) {
       items = [];
       renderSug();
@@ -286,6 +296,7 @@
     if (mine !== seq) return;
     items = r.slice(0, 8);
     activeIdx = 0;
+    chosen = false;
     renderSug();
   }
   function pick(s) {
@@ -365,10 +376,15 @@
     if (open && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
       e.preventDefault();
       activeIdx = (activeIdx + (e.key === "ArrowDown" ? 1 : items.length - 1)) % items.length;
+      chosen = true;
       renderSug();
-    } else if (open && (e.key === "Enter" || e.key === "Tab")) {
+    } else if (open && (e.key === "Tab" || (e.key === "Enter" && enterPicks(curTok, chosen)))) {
       e.preventDefault();
       pick(items[activeIdx]);
+    } else if (open && e.key === "Enter") {
+      // ":D" + Enter sends the smiley (the form submits right after).
+      items = [];
+      renderSug();
     } else if (open && e.key === "Escape") {
       items = [];
       renderSug();

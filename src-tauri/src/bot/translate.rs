@@ -264,6 +264,45 @@ pub fn mod_note(t: &Translation, de: bool) -> String {
     s
 }
 
+/// Translations of recent messages by text: the same foreign message ("hola",
+/// "merci") is translated once, not every time someone writes it.
+#[derive(Default)]
+pub struct TranslationCache {
+    map: std::collections::HashMap<String, (Translation, i64)>,
+}
+
+impl TranslationCache {
+    const TTL_MS: i64 = 6 * 3600 * 1000;
+    const MAX: usize = 500;
+
+    fn key(text: &str) -> String {
+        text.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase()
+    }
+
+    pub fn get(&self, text: &str, now: i64) -> Option<Translation> {
+        self.map.get(&Self::key(text)).filter(|(_, t)| now - t < Self::TTL_MS).map(|(tr, _)| tr.clone())
+    }
+
+    pub fn put(&mut self, text: &str, t: &Translation, now: i64) {
+        if self.map.len() >= Self::MAX {
+            self.map.retain(|_, (_, ts)| now - *ts < Self::TTL_MS);
+            if self.map.len() >= Self::MAX {
+                self.map.clear();
+            }
+        }
+        // Only the translation itself: the meaning belongs to one flagged message.
+        self.map.insert(Self::key(text), (Translation { meaning: String::new(), ..t.clone() }, now));
+    }
+}
+
+/// The chat message that shares a translation with everyone.
+pub fn chat_line(prefix: &str, name: &str, t: &Translation) -> String {
+    let lang = if t.lang.is_empty() { String::new() } else { format!(" ({})", t.lang) };
+    let p = prefix.trim();
+    let text = super::output::strip_links(&t.text);
+    if p.is_empty() { format!("{name}{lang}: {text}") } else { format!("{p} {name}{lang}: {text}") }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

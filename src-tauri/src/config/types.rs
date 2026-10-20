@@ -22,7 +22,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            version: 1,
+            version: super::CONFIG_VERSION,
             settings: AppSettings::default(),
             accounts: Vec::new(),
             channels: Vec::new(),
@@ -77,6 +77,38 @@ pub struct AppSettings {
     pub web_search: WebSearchSettings,
     /// Writing in chat yourself from the live feed.
     pub chat_input: ChatInputSettings,
+    /// AutoMod presets the streamer saved (the built-in ones live in the UI).
+    pub automod_presets: Vec<AutomodPreset>,
+    /// Channel point reward templates the streamer saved.
+    pub reward_templates: Vec<RewardTemplate>,
+}
+
+/// Twitch AutoMod levels (0–4) per category, saved under a name.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct AutomodPreset {
+    pub id: String,
+    pub name: String,
+    pub levels: std::collections::BTreeMap<String, u8>,
+}
+
+/// A channel point reward to create with one click.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct RewardTemplate {
+    pub id: String,
+    pub name: String,
+    pub cost: u32,
+    pub prompt: String,
+    pub input: bool,
+    pub cooldown: u32,
+    pub color: String,
+    pub max_per_stream: u32,
+    pub max_per_user: u32,
+    /// "" = handled by the streamer, otherwise what the bot does (see `RewardAction`).
+    pub action: String,
+    /// Extra instructions for the AI ("custom" action).
+    pub instructions: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -184,6 +216,8 @@ impl Default for AppSettings {
             overlay: OverlaySettings::default(),
             web_search: WebSearchSettings::default(),
             chat_input: ChatInputSettings::default(),
+            automod_presets: Vec::new(),
+            reward_templates: Vec::new(),
         }
     }
 }
@@ -233,6 +267,77 @@ pub struct ChannelProfile {
     /// 0 = unlimited.
     pub daily_budget_usd: f64,
     pub translation: TranslationSettings,
+    /// Turns Twitch's Shield Mode on when chat is attacked (off by default).
+    pub auto_shield: AutoShieldSettings,
+    /// Ad automation (off by default).
+    pub ads: AdSettings,
+    /// Channel point rewards the bot handles, by Twitch reward id.
+    pub reward_actions: Vec<RewardAction>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct AutoShieldSettings {
+    pub enabled: bool,
+    /// Different accounts that have to post hate, harassment, threats or
+    /// sexual harassment within `window_secs`.
+    pub attackers: u32,
+    pub window_secs: u32,
+    /// Shield Mode goes off again after this many minutes without new attacks.
+    pub calm_mins: u32,
+}
+
+impl Default for AutoShieldSettings {
+    fn default() -> Self {
+        Self { enabled: false, attackers: 4, window_secs: 120, calm_mins: 10 }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct AdSettings {
+    /// Master switch of the automation.
+    pub auto: bool,
+    /// Runs a mid-roll before the pre-roll free time runs out, so people who
+    /// join the stream don't get a pre-roll.
+    pub preroll_guard: bool,
+    /// Length of the ads HighBazar starts (30–180 s).
+    pub length: u32,
+    /// Announces upcoming ads in chat.
+    pub announce: bool,
+    pub announce_secs: u32,
+    /// Empty = a built-in text in the stream's language.
+    pub announce_text: String,
+    /// Pushes the next ad back when a raid comes in.
+    pub snooze_on_raid: bool,
+    /// No companion messages while an ad runs (nobody sees them).
+    pub quiet_during_ads: bool,
+}
+
+impl Default for AdSettings {
+    fn default() -> Self {
+        Self {
+            auto: false,
+            preroll_guard: true,
+            length: 90,
+            announce: true,
+            announce_secs: 60,
+            announce_text: String::new(),
+            snooze_on_raid: true,
+            quiet_during_ads: true,
+        }
+    }
+}
+
+/// A channel point reward the bot answers in chat.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct RewardAction {
+    pub reward_id: String,
+    /// "ask" | "roast" | "rhyme" | "fact" | "custom" | "emoteOnly"
+    pub action: String,
+    /// Extra instructions for the AI ("custom").
+    pub instructions: String,
 }
 
 impl Default for ChannelProfile {
@@ -256,6 +361,9 @@ impl Default for ChannelProfile {
             about_stream: String::new(),
             daily_budget_usd: 2.0,
             translation: TranslationSettings::default(),
+            auto_shield: AutoShieldSettings::default(),
+            ads: AdSettings::default(),
+            reward_actions: Vec::new(),
         }
     }
 }
@@ -271,11 +379,21 @@ pub struct TranslationSettings {
     /// Deleting a translated message becomes a 1-second timeout, so the
     /// translation reaches the moderators as the timeout reason.
     pub note_on_delete: bool,
+    /// Posts translations in chat as well, so everyone can follow.
+    pub post_to_chat: bool,
+    /// Prefix of those chat messages.
+    pub chat_prefix: String,
 }
 
 impl Default for TranslationSettings {
     fn default() -> Self {
-        Self { enabled: true, languages: Vec::new(), note_on_delete: true }
+        Self {
+            enabled: true,
+            languages: Vec::new(),
+            note_on_delete: true,
+            post_to_chat: true,
+            chat_prefix: "[HighBazar][Translator]".into(),
+        }
     }
 }
 
@@ -421,7 +539,7 @@ impl Default for LanguageSettings {
         Self {
             mode: "stream".into(),
             fixed: "en".into(),
-            reply_in_user_language: true,
+            reply_in_user_language: false,
             allow_slang: true,
         }
     }

@@ -1,27 +1,54 @@
 {
-  "version": 1,
+  "version": 2,
   "settings": {
     "theme": "system",
     "colorTheme": "bazaar",
     "language": "auto",
     "checkUpdatesOnStart": true,
     "wizardCompleted": false,
-    "activeChannelId": "b7d9856f191c",
+    "activeChannelId": "a5163e5fd2da",
     "startBotOnLaunch": false,
     "twitchClientId": "",
-    "feedLimit": 400,
+    "feedLimit": 200,
     "showEmotes": true,
     "channelManagerLevel": "simple",
+    "chatZoom": 1.0,
+    "uiZoom": 1.0,
+    "chatScroll": {
+      "smooth": true,
+      "durationMs": 450,
+      "easing": "easeInOut"
+    },
+    "lowPriority": true,
+    "performanceMode": false,
+    "startInTray": false,
+    "overlay": {
+      "enabled": false,
+      "port": 47823,
+      "key": "",
+      "showBot": true,
+      "showEvents": true,
+      "showTranslations": true,
+      "hideAfterSecs": 0,
+      "background": 0.55,
+      "chatInput": false
+    },
     "webSearch": {
-      "source": "wikipedia",
+      "source": "youcom",
       "searxngUrl": "",
       "maxResults": 5
-    }
+    },
+    "chatInput": {
+      "enabled": true,
+      "favorites": []
+    },
+    "automodPresets": [],
+    "rewardTemplates": []
   },
   "accounts": [],
   "channels": [
     {
-      "id": "b7d9856f191c",
+      "id": "a5163e5fd2da",
       "name": "My channel",
       "streamerAccountId": null,
       "botAccountId": null,
@@ -37,7 +64,31 @@
       "sendMode": "auto",
       "previewDelaySecs": 10,
       "aboutStream": "",
-      "dailyBudgetUsd": 2
+      "dailyBudgetUsd": 2.0,
+      "translation": {
+        "enabled": true,
+        "languages": [],
+        "noteOnDelete": true,
+        "postToChat": true,
+        "chatPrefix": "[HighBazar][Translator]"
+      },
+      "autoShield": {
+        "enabled": false,
+        "attackers": 4,
+        "windowSecs": 120,
+        "calmMins": 10
+      },
+      "ads": {
+        "auto": false,
+        "prerollGuard": true,
+        "length": 90,
+        "announce": true,
+        "announceSecs": 60,
+        "announceText": "",
+        "snoozeOnRaid": true,
+        "quietDuringAds": true
+      },
+      "rewardActions": []
     }
   ],
   "companionProfiles": [
@@ -76,7 +127,7 @@
       "language": {
         "mode": "stream",
         "fixed": "en",
-        "replyInUserLanguage": true,
+        "replyInUserLanguage": false,
         "allowSlang": true
       },
       "emotes": {
@@ -144,9 +195,9 @@
       "research": {
         "enabled": true,
         "webSearch": true,
+        "answerSearch": true,
         "wikipedia": true,
-        "refreshDays": 14,
-        "answerSearch": true
+        "refreshDays": 14
       }
     },
     {
@@ -184,7 +235,7 @@
       "language": {
         "mode": "stream",
         "fixed": "en",
-        "replyInUserLanguage": true,
+        "replyInUserLanguage": false,
         "allowSlang": true
       },
       "emotes": {
@@ -252,9 +303,9 @@
       "research": {
         "enabled": true,
         "webSearch": true,
+        "answerSearch": true,
         "wikipedia": true,
-        "refreshDays": 14,
-        "answerSearch": true
+        "refreshDays": 14
       }
     },
     {
@@ -292,7 +343,7 @@
       "language": {
         "mode": "stream",
         "fixed": "en",
-        "replyInUserLanguage": true,
+        "replyInUserLanguage": false,
         "allowSlang": true
       },
       "emotes": {
@@ -360,9 +411,9 @@
       "research": {
         "enabled": true,
         "webSearch": true,
+        "answerSearch": true,
         "wikipedia": true,
-        "refreshDays": 14,
-        "answerSearch": true
+        "refreshDays": 14
       }
     },
     {
@@ -400,7 +451,7 @@
       "language": {
         "mode": "stream",
         "fixed": "en",
-        "replyInUserLanguage": true,
+        "replyInUserLanguage": false,
         "allowSlang": true
       },
       "emotes": {
@@ -468,9 +519,9 @@
       "research": {
         "enabled": true,
         "webSearch": true,
+        "answerSearch": true,
         "wikipedia": true,
-        "refreshDays": 14,
-        "answerSearch": true
+        "refreshDays": 14
       }
     },
     {
@@ -508,7 +559,7 @@
       "language": {
         "mode": "stream",
         "fixed": "en",
-        "replyInUserLanguage": true,
+        "replyInUserLanguage": false,
         "allowSlang": true
       },
       "emotes": {
@@ -576,9 +627,9 @@
       "research": {
         "enabled": true,
         "webSearch": true,
+        "answerSearch": true,
         "wikipedia": true,
-        "refreshDays": 14,
-        "answerSearch": true
+        "refreshDays": 14
       }
     },
     {
@@ -616,7 +667,7 @@
       "language": {
         "mode": "stream",
         "fixed": "en",
-        "replyInUserLanguage": true,
+        "replyInUserLanguage": false,
         "allowSlang": true
       },
       "emotes": {
@@ -684,9 +735,9 @@
       "research": {
         "enabled": true,
         "webSearch": true,
+        "answerSearch": true,
         "wikipedia": true,
-        "refreshDays": 14,
-        "answerSearch": true
+        "refreshDays": 14
       }
     },
     {
@@ -724,7 +775,7 @@
       "language": {
         "mode": "stream",
         "fixed": "en",
-        "replyInUserLanguage": true,
+        "replyInUserLanguage": false,
         "allowSlang": true
       },
       "emotes": {
@@ -792,9 +843,9 @@
       "research": {
         "enabled": true,
         "webSearch": true,
+        "answerSearch": true,
         "wikipedia": true,
-        "refreshDays": 14,
-        "answerSearch": true
+        "refreshDays": 14
       }
     }
   ],
@@ -1786,8 +1837,8 @@
       "reasoning": "low",
       "webSearch": true,
       "timeoutSecs": 90,
-      "priceInputPerMtok": 4,
-      "priceOutputPerMtok": 20,
+      "priceInputPerMtok": 4.0,
+      "priceOutputPerMtok": 20.0,
       "extraHeaders": [],
       "openaiResponses": true,
       "geminiInteractions": true,
@@ -1807,8 +1858,8 @@
       "reasoning": "low",
       "webSearch": true,
       "timeoutSecs": 90,
-      "priceInputPerMtok": 2,
-      "priceOutputPerMtok": 10,
+      "priceInputPerMtok": 2.0,
+      "priceOutputPerMtok": 10.0,
       "extraHeaders": [],
       "openaiResponses": true,
       "geminiInteractions": true,
@@ -1849,8 +1900,8 @@
       "reasoning": "low",
       "webSearch": true,
       "timeoutSecs": 90,
-      "priceInputPerMtok": 2,
-      "priceOutputPerMtok": 10,
+      "priceInputPerMtok": 2.0,
+      "priceOutputPerMtok": 10.0,
       "extraHeaders": [],
       "openaiResponses": true,
       "geminiInteractions": true,
@@ -1933,8 +1984,8 @@
       "reasoning": "",
       "webSearch": true,
       "timeoutSecs": 90,
-      "priceInputPerMtok": 0,
-      "priceOutputPerMtok": 0,
+      "priceInputPerMtok": 0.0,
+      "priceOutputPerMtok": 0.0,
       "extraHeaders": [],
       "openaiResponses": true,
       "geminiInteractions": true,
@@ -1952,10 +2003,10 @@
       "maxOutputTokens": 2048,
       "temperature": null,
       "reasoning": "",
-      "webSearch": false,
+      "webSearch": true,
       "timeoutSecs": 90,
-      "priceInputPerMtok": 0,
-      "priceOutputPerMtok": 0,
+      "priceInputPerMtok": 0.0,
+      "priceOutputPerMtok": 0.0,
       "extraHeaders": [],
       "openaiResponses": true,
       "geminiInteractions": true,
@@ -1973,10 +2024,10 @@
       "maxOutputTokens": 2048,
       "temperature": null,
       "reasoning": "",
-      "webSearch": false,
+      "webSearch": true,
       "timeoutSecs": 90,
-      "priceInputPerMtok": 0,
-      "priceOutputPerMtok": 0,
+      "priceInputPerMtok": 0.0,
+      "priceOutputPerMtok": 0.0,
       "extraHeaders": [],
       "openaiResponses": true,
       "geminiInteractions": true,
@@ -1996,8 +2047,8 @@
       "reasoning": "",
       "webSearch": true,
       "timeoutSecs": 90,
-      "priceInputPerMtok": 0,
-      "priceOutputPerMtok": 0,
+      "priceInputPerMtok": 0.0,
+      "priceOutputPerMtok": 0.0,
       "extraHeaders": [],
       "openaiResponses": true,
       "geminiInteractions": true,
@@ -2015,10 +2066,10 @@
       "maxOutputTokens": 2048,
       "temperature": null,
       "reasoning": "",
-      "webSearch": false,
+      "webSearch": true,
       "timeoutSecs": 90,
-      "priceInputPerMtok": 0,
-      "priceOutputPerMtok": 0,
+      "priceInputPerMtok": 0.0,
+      "priceOutputPerMtok": 0.0,
       "extraHeaders": [],
       "openaiResponses": true,
       "geminiInteractions": true,
@@ -2036,10 +2087,10 @@
       "maxOutputTokens": 2048,
       "temperature": null,
       "reasoning": "",
-      "webSearch": false,
+      "webSearch": true,
       "timeoutSecs": 90,
-      "priceInputPerMtok": 0,
-      "priceOutputPerMtok": 0,
+      "priceInputPerMtok": 0.0,
+      "priceOutputPerMtok": 0.0,
       "extraHeaders": [],
       "openaiResponses": true,
       "geminiInteractions": true,
@@ -2057,10 +2108,31 @@
       "maxOutputTokens": 2048,
       "temperature": null,
       "reasoning": "",
-      "webSearch": false,
+      "webSearch": true,
       "timeoutSecs": 90,
-      "priceInputPerMtok": 0,
-      "priceOutputPerMtok": 0,
+      "priceInputPerMtok": 0.0,
+      "priceOutputPerMtok": 0.0,
+      "extraHeaders": [],
+      "openaiResponses": true,
+      "geminiInteractions": true,
+      "cliPath": ""
+    },
+    {
+      "id": "builtin-ai-codex-cli",
+      "name": "Codex CLI (ChatGPT subscription)",
+      "description": "Uses your locally installed Codex CLI, logged in with your ChatGPT plan; counts against its Codex usage limits.",
+      "builtin": true,
+      "provider": "codexCli",
+      "baseUrl": "",
+      "model": "gpt-6-luna",
+      "keyRef": "",
+      "maxOutputTokens": 2048,
+      "temperature": null,
+      "reasoning": "low",
+      "webSearch": true,
+      "timeoutSecs": 90,
+      "priceInputPerMtok": 0.0,
+      "priceOutputPerMtok": 0.0,
       "extraHeaders": [],
       "openaiResponses": true,
       "geminiInteractions": true,

@@ -4,7 +4,7 @@ import { useI18n } from "vue-i18n";
 import { Loader2, Send, Smile, Star } from "../icons";
 import { useApp } from "../stores/app";
 import { api, errorText } from "../lib/api";
-import { activeToken, applySuggestion, providerLabel, type Suggestion } from "../lib/chatInput";
+import { activeToken, applySuggestion, enterPicks, providerLabel, type Suggestion } from "../lib/chatInput";
 import { useCloseOutside } from "../lib/outside";
 
 // Writing in chat yourself: ":" suggests emotes of every provider and emojis,
@@ -18,6 +18,11 @@ const input = ref<HTMLInputElement>();
 const sending = ref(false);
 const list = ref<Suggestion[]>([]);
 const active = ref(0);
+// The token the list belongs to; whether a suggestion was chosen with the arrow keys.
+const token = ref<ReturnType<typeof activeToken>>(null);
+let chosen = false;
+// Why suggestions may be missing (subscription emotes need a newer Twitch login).
+const status = ref<{ subEmotesMissing: boolean; emotes: number; people: number } | null>(null);
 const history: string[] = [];
 let historyPos = -1;
 let tabCycle: { start: number; end: number; items: Suggestion[]; i: number } | null = null;
@@ -33,16 +38,30 @@ async function refresh() {
   const el = input.value;
   if (!el || !running.value) return;
   const tok = activeToken(text.value, el.selectionStart ?? text.value.length);
+  token.value = tok;
   if (!tok) {
     list.value = [];
     return;
   }
   const mine = ++seq;
-  const r = await api.chatSuggest(tok.query, tok.mode, german.value, 8).catch(() => []);
+  const [r, st] = await Promise.all([
+    api.chatSuggest(tok.query, tok.mode, german.value, 8).catch(() => []),
+    status.value ? Promise.resolve(status.value) : api.chatStatus().catch(() => null),
+  ]);
   if (mine !== seq) return;
+  status.value = st;
   list.value = r;
   active.value = 0;
+  chosen = false;
 }
+// Shown instead of the list when nothing matches, or under it.
+const emptyText = computed(() => {
+  const tok = token.value;
+  if (!tok || list.value.length) return "";
+  if (tok.mode === "mention") return tok.query ? t("common.noMatches") : t("chatInput.nobodyYet");
+  return tok.query ? t("common.noMatches") : "";
+});
+const showSubHint = computed(() => token.value?.mode === "colon" && !!status.value?.subEmotesMissing && (!!emptyText.value || /^[tT]( |$)/.test(token.value.query)));
 function onInput() {
   tabCycle = null;
   historyPos = -1;
@@ -57,6 +76,7 @@ function pick(s: Suggestion) {
   const r = applySuggestion(text.value, tok.start, caret, s);
   text.value = r.text;
   list.value = [];
+  token.value = null;
   void nextTick(() => {
     el.focus();
     el.setSelectionRange(r.caret, r.caret);
@@ -93,12 +113,14 @@ function onKey(e: KeyboardEvent) {
     e.preventDefault();
     const n = list.value.length;
     active.value = (active.value + (e.key === "ArrowDown" ? 1 : n - 1)) % n;
-  } else if (open && (e.key === "Enter" || e.key === "Tab")) {
+    chosen = true;
+  } else if (open && (e.key === "Tab" || (e.key === "Enter" && token.value && enterPicks(token.value, chosen)))) {
     e.preventDefault();
     pick(list.value[active.value]!);
-  } else if (open && e.key === "Escape") {
+  } else if ((open || token.value) && e.key === "Escape") {
     e.preventDefault();
     list.value = [];
+    token.value = null;
   } else if (e.key === "Tab") {
     e.preventDefault();
     void tabComplete(e.shiftKey);
@@ -128,6 +150,7 @@ async function send() {
     if (history.length > 30) history.shift();
     text.value = "";
     list.value = [];
+    token.value = null;
   } catch (e) {
     app.toast(errorText(e), "error", 6000);
   } finally {
@@ -181,9 +204,16 @@ function insertFromPicker(s: Suggestion) {
 watch(running, (v) => {
   if (!v) {
     list.value = [];
+    token.value = null;
     pickerOpen.value = false;
+  } else {
+    status.value = null;
   }
 });
+function reconnect() {
+  token.value = null;
+  app.goto("channels");
+}
 </script>
 
 <template>
@@ -223,8 +253,17 @@ watch(running, (v) => {
           <Star :size="13" />
         </button>
       </li>
+      <li v-if="showSubHint" class="border-t border-line px-3 py-1 text-xs text-amber-600" role="presentation">
+        {{ t("chatInput.subsMissing") }} <button type="button" class="underline" @mousedown.prevent="reconnect">{{ t("chatInput.reconnect") }}</button>
+      </li>
       <li class="border-t border-line px-3 pt-1 text-[10px] text-muted" role="presentation">{{ t("chatInput.suggestHint") }}</li>
     </ul>
+    <div v-else-if="emptyText || showSubHint" class="card absolute right-2 bottom-full left-2 z-20 mb-1 space-y-0.5 px-3 py-1.5 text-xs shadow-xl" role="status">
+      <p v-if="emptyText" class="text-muted">{{ emptyText }}</p>
+      <p v-if="showSubHint" class="text-amber-600">
+        {{ t("chatInput.subsMissing") }} <button type="button" class="underline" @mousedown.prevent="reconnect">{{ t("chatInput.reconnect") }}</button>
+      </p>
+    </div>
 
     <!-- emote picker -->
     <div v-if="pickerOpen" ref="picker" class="card absolute right-2 bottom-full z-20 mb-1 flex h-80 w-[min(26rem,calc(100%-1rem))] flex-col shadow-xl">
@@ -279,7 +318,7 @@ watch(running, (v) => {
         @input="onInput"
         @click="refresh"
         @keydown="onKey"
-        @blur="list = []"
+        @blur="list = []; token = null"
       />
       <span v-if="text.length > 400" class="shrink-0 text-xs tabular-nums" :class="tooLong ? 'text-red-500' : 'text-muted'">{{ [...text].length }}/500</span>
       <button type="button" class="btn-ghost shrink-0 p-1.5" :disabled="!running" :title="t('chatInput.emotes')" :aria-label="t('chatInput.emotes')" :aria-expanded="pickerOpen" @click.stop="pickerOpen = !pickerOpen">

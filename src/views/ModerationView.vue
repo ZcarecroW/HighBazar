@@ -7,6 +7,7 @@ import { modReason, pdesc, pname } from "../i18n";
 import { api, errorText } from "../lib/api";
 import type { ModLogEntry, ModerationProfile } from "../lib/types";
 import ProfileList from "../components/ProfileList.vue";
+import ProfileChannels from "../components/ProfileChannels.vue";
 import BuiltinBanner from "../components/BuiltinBanner.vue";
 import ModNote from "../components/ModNote.vue";
 import ActionPicker from "../components/ActionPicker.vue";
@@ -34,7 +35,6 @@ watch(
 );
 const p = computed<ModerationProfile>(() => cfg.value.moderationProfiles.find((x) => x.id === selectedId.value)!);
 const ro = computed(() => p.value.builtin);
-const isUsed = computed(() => app.activeChannel?.moderationProfileId === p.value.id);
 
 const sections = ["general", "categories", "escalation", "rules", "exemptions", "messages"] as const;
 const sectionIcons = { general: Settings, categories: Tag, escalation: Hammer, rules: Bolt, exemptions: Crown, messages: Chat };
@@ -62,9 +62,6 @@ function remove(id: string) {
   const prof = cfg.value.moderationProfiles.find((x) => x.id === id);
   if (!prof || prof.builtin || !confirm(t("common.confirmDelete", { name: prof.name }))) return;
   cfg.value.moderationProfiles = cfg.value.moderationProfiles.filter((x) => x.id !== id);
-}
-function useIt() {
-  if (app.activeChannel) app.activeChannel.moderationProfileId = p.value.id;
 }
 
 const modeOptions = computed(() => (["off", "log", "suggest", "auto"] as const).map((m) => ({ value: m, label: t(`moderation.modes.${m}`) })));
@@ -154,10 +151,7 @@ function sourceLabel(source: string) {
             <input v-if="!ro" v-model="p.description" class="input" />
             <input v-else :value="pdesc(p)" class="input" disabled />
           </UiField>
-          <div class="self-end">
-            <span v-if="isUsed" class="chip bg-emerald-500/15 py-1 text-emerald-600">{{ t("common.active") }}</span>
-            <button v-else class="btn" @click="useIt">{{ t("common.setActive") }}</button>
-          </div>
+          <ProfileChannels :profile-id="p.id" field="moderationProfileId" fallback-id="builtin-mod-balanced" />
         </div>
 
         <div class="flex flex-wrap gap-1 rounded-xl border border-line bg-panel p-1">

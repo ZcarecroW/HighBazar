@@ -420,6 +420,12 @@ pub fn chat_suggest(st: St<'_>, query: String, mode: crate::chat::Mode, german: 
     crate::chat::suggest_for(&st, &query, mode, german, limit.unwrap_or(10))
 }
 
+/// Why suggestions may be missing (e.g. no permission for subscription emotes).
+#[tauri::command]
+pub fn chat_status(st: St<'_>) -> crate::chat::AssistStatus {
+    st.chat.status()
+}
+
 /// Sends a chat message as the streamer.
 #[tauri::command]
 pub async fn chat_send(st: St<'_>, text: String) -> AppResult<()> {
@@ -470,6 +476,8 @@ const CHANNEL_API: &[(&str, &str)] = &[
     ("POST", "/channel_points/custom_rewards"),
     ("PATCH", "/channel_points/custom_rewards"),
     ("DELETE", "/channel_points/custom_rewards"),
+    ("GET", "/channel_points/custom_rewards/redemptions"),
+    ("PATCH", "/channel_points/custom_rewards/redemptions"),
     ("GET", "/moderation/moderators"),
     ("POST", "/moderation/moderators"),
     ("DELETE", "/moderation/moderators"),

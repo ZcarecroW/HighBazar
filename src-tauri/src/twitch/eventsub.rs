@@ -98,6 +98,10 @@ pub enum TwitchEvent {
     StreamOnline,
     StreamOffline,
     ChannelUpdate { title: String, category: String, language: String },
+    /// A channel point reward was redeemed.
+    Redemption(crate::bot::automation::Redemption),
+    /// An ad break started.
+    AdBreak { duration_secs: u32, automatic: bool },
     SubscriptionFailed { kind: String, error: String },
 }
 
@@ -262,6 +266,17 @@ async fn subscribe_all(cfg: &EventSubConfig, session_id: &str, tx: &mpsc::Sender
                 .await;
         }
     }
+    // Only with the channel manager's expert level (channel points, ads): without
+    // the permission they are simply left out.
+    let optional: [(&str, &str, Value); 2] = [
+        ("channel.channel_points_custom_reward_redemption.add", "1", json!({ "broadcaster_user_id": b })),
+        ("channel.ad_break.begin", "1", json!({ "broadcaster_user_id": b })),
+    ];
+    for (kind, version, condition) in optional {
+        if let Err(e) = cfg.helix.create_subscription(b, kind, version, condition, session_id).await {
+            log::info!("optional EventSub subscription {kind} unavailable: {e}");
+        }
+    }
 }
 
 fn s(v: &Value) -> String {
@@ -334,6 +349,17 @@ pub fn parse_event(kind: &str, e: &Value) -> Option<TwitchEvent> {
             title: s(&e["title"]),
             category: s(&e["category_name"]),
             language: s(&e["language"]),
+        }),
+        "channel.channel_points_custom_reward_redemption.add" => Some(TwitchEvent::Redemption(crate::bot::automation::Redemption {
+            id: s(&e["id"]),
+            reward_id: s(&e["reward"]["id"]),
+            reward_title: s(&e["reward"]["title"]),
+            user_name: s(&e["user_name"]),
+            input: s(&e["user_input"]),
+        })),
+        "channel.ad_break.begin" => Some(TwitchEvent::AdBreak {
+            duration_secs: e["duration_seconds"].as_u64().unwrap_or(0) as u32,
+            automatic: e["is_automatic"].as_bool().unwrap_or(false),
         }),
         _ => None,
     }

@@ -7,6 +7,7 @@
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, OnceLock};
 
 use nucleo_matcher::pattern::{AtomKind, CaseMatching, Normalization, Pattern};
@@ -95,6 +96,14 @@ pub struct Suggestion {
     pub favorite: bool,
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AssistStatus {
+    pub sub_emotes_missing: bool,
+    pub emotes: usize,
+    pub people: usize,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Mode {
@@ -122,6 +131,14 @@ pub struct ChatAssist {
     community: Mutex<HashMap<String, u32>>,
     /// Recent chatters (display name, login), newest last.
     people: Mutex<VecDeque<(String, String)>>,
+    /// Everyone in chat right now according to Twitch (display name, login),
+    /// including people who have not written anything yet.
+    present: Mutex<Vec<(String, String)>>,
+    /// The streamer's login, never suggested for "@".
+    own_login: Mutex<String>,
+    /// The emotes of the streamer's subscriptions could not be loaded because
+    /// the Twitch login lacks `user:read:emotes` (reconnect fixes it).
+    subs_missing: AtomicBool,
     matcher: Mutex<Matcher>,
     path: PathBuf,
 }
@@ -136,6 +153,9 @@ impl ChatAssist {
             usage: Mutex::new(storage::read_json(&path).unwrap_or_default()),
             community: Mutex::new(HashMap::new()),
             people: Mutex::new(VecDeque::new()),
+            present: Mutex::new(Vec::new()),
+            own_login: Mutex::new(String::new()),
+            subs_missing: AtomicBool::new(false),
             matcher: Mutex::new(Matcher::new(config)),
             path,
         }
@@ -164,6 +184,27 @@ impl ChatAssist {
         *self.emotes.write() = Arc::new(Vec::new());
         self.community.lock().clear();
         self.people.lock().clear();
+        self.present.lock().clear();
+        self.subs_missing.store(false, Ordering::Relaxed);
+    }
+
+    /// The people in chat right now (Twitch's chatter list) and the streamer's own login.
+    pub fn set_present(&self, own_login: &str, list: Vec<(String, String)>) {
+        *self.own_login.lock() = own_login.to_lowercase();
+        *self.present.lock() = list;
+    }
+
+    pub fn set_subs_missing(&self, missing: bool) {
+        self.subs_missing.store(missing, Ordering::Relaxed);
+    }
+
+    /// What the input can tell the streamer about missing suggestions.
+    pub fn status(&self) -> AssistStatus {
+        AssistStatus {
+            sub_emotes_missing: self.subs_missing.load(Ordering::Relaxed),
+            emotes: self.emotes.read().len(),
+            people: self.people.lock().len().max(self.present.lock().len()),
+        }
     }
 
     /// A chat message from someone else: remember the person and its emotes.
@@ -371,16 +412,25 @@ impl ChatAssist {
         out
     }
 
+    /// People who wrote recently come first (newest first), then everyone else
+    /// Twitch lists as being in chat. The streamer is never suggested.
     fn people_matching(&self, q: &str, limit: usize, prefix_only: bool) -> Vec<Suggestion> {
         let q = q.trim_start_matches('@');
         let ql = q.to_lowercase();
+        let own = self.own_login.lock().clone();
         let people = self.people.lock();
+        let present = self.present.lock();
         let pattern = Pattern::new(q, CaseMatching::Ignore, Normalization::Smart, AtomKind::Fuzzy);
         let mut m = self.matcher.lock();
         let mut buf = Vec::new();
+        let mut seen: HashSet<&str> = HashSet::new();
         let mut v: Vec<(f64, Suggestion)> = Vec::new();
-        for (i, (display, login)) in people.iter().enumerate().rev() {
-            let recency = i as f64 / people.len().max(1) as f64 * 30.0;
+        let n = people.len().max(1) as f64;
+        let recent = people.iter().enumerate().rev().map(|(i, p)| (p, 20.0 + i as f64 / n * 30.0));
+        for ((display, login), recency) in recent.chain(present.iter().map(|p| (p, 0.0))) {
+            if login == &own || !seen.insert(login.as_str()) {
+                continue;
+            }
             let score = if q.is_empty() {
                 recency
             } else if prefix_only {
@@ -406,7 +456,7 @@ impl ChatAssist {
                 },
             ));
         }
-        v.sort_by(|a, b| b.0.total_cmp(&a.0));
+        v.sort_by(|a, b| b.0.total_cmp(&a.0).then_with(|| a.1.label.to_lowercase().cmp(&b.1.label.to_lowercase())));
         v.into_iter().take(limit).map(|(_, s)| s).collect()
     }
 }
@@ -535,6 +585,21 @@ mod tests {
         assert_eq!(labels(&r), vec!["peepoClap", "Peter"]);
         let r = a.suggest("@ma", Mode::Mention, &[], false, 5);
         assert_eq!(r[0].insert, "@Max");
+    }
+
+    #[test]
+    fn mentions_include_everyone_in_chat() {
+        let a = assist();
+        a.set_present("streamer", vec![("Streamer".into(), "streamer".into()), ("Anna".into(), "anna".into()), ("Max".into(), "max".into())]);
+        // Nobody wrote yet: everyone Twitch lists, without the streamer.
+        let r = a.suggest("", Mode::Mention, &[], false, 10);
+        assert_eq!(labels(&r), vec!["Anna", "Max"]);
+        // Who wrote recently comes first, and only once.
+        a.observe("Max", "max", Vec::new());
+        let r = a.suggest("", Mode::Mention, &[], false, 10);
+        assert_eq!(labels(&r), vec!["Max", "Anna"]);
+        assert_eq!(a.suggest("ann", Mode::Mention, &[], false, 5)[0].label, "Anna");
+        assert!(a.suggest("stre", Mode::Mention, &[], false, 5).is_empty());
     }
 
     #[test]

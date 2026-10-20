@@ -25,7 +25,7 @@ config.accounts = [{ id: "1001", login: "zcarecrow", displayName: "ZcarecroW", p
 config.channels[0]!.name = "ZcarecroW";
 config.channels[0]!.streamerAccountId = "1001";
 config.channels[0]!.aboutStream = "Horror & souls-like games, cozy community called 'Krähen'.";
-config.channels[0]!.translation ??= { enabled: true, languages: ["de", "en"], noteOnDelete: true };
+config.channels[0]!.translation ??= { enabled: true, languages: ["de", "en"], noteOnDelete: true, postToChat: true, chatPrefix: "[HighBazar][Translator]" };
 const params = new URLSearchParams(location.search);
 config.settings.wizardCompleted = !params.has("wizard");
 if (params.get("theme") === "light" || params.get("theme") === "dark") config.settings.theme = params.get("theme") as "light" | "dark";

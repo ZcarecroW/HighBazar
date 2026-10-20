@@ -79,6 +79,11 @@ pub fn sanitize(raw: &str, bot_name: &str, prefix: &str, max_len: usize) -> Opti
     Some(truncate_words(&s, budget))
 }
 
+/// Replaces links with "[Link]" (for text the bot repeats, like translations).
+pub fn strip_links(s: &str) -> String {
+    URL.replace_all(s, "[Link]").into_owned()
+}
+
 pub fn truncate_words(s: &str, max_chars: usize) -> String {
     if s.chars().count() <= max_chars {
         return s.to_string();

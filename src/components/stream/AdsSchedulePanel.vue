@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { Clapperboard, Plus, RefreshCw, Trash2, AlarmClockOff, Calendar } from "../../icons";
+import { openUrl } from "@tauri-apps/plugin-opener";
+import { Clapperboard, Plus, RefreshCw, Trash2, AlarmClockOff, Calendar, ExternalLink } from "../../icons";
 import { useTwitch } from "../../lib/twitch";
 import UiToggle from "../ui/UiToggle.vue";
 import UiNumber from "../ui/UiNumber.vue";
@@ -28,6 +29,8 @@ interface Segment {
 }
 
 const adLength = ref(60);
+const channel = computed(() => app.activeChannel);
+const ADS_MANAGER = "https://dashboard.twitch.tv/monetization/ads";
 const ads = ref<Ads | null>(null);
 const segments = ref<Segment[]>([]);
 const seg = ref({ start: "", duration: 180, title: "", recurring: true });
@@ -106,6 +109,34 @@ onMounted(load);
         {{ t("stream.ads.next") }}: {{ when(ads.next_ad_at) }} · {{ t("stream.ads.last") }}: {{ when(ads.last_ad_at) }} · {{ t("stream.ads.prerollFree", { n: Math.round(ads.preroll_free_time / 60) }) }}
       </p>
       <p v-if="!live" class="hint">{{ t("stream.onlyLive") }}</p>
+    </div>
+
+    <!-- automation (Twitch's Ads Manager settings are not reachable for apps) -->
+    <div v-if="channel?.ads" class="space-y-3 rounded-lg border border-line bg-panel-2 p-3">
+      <div class="flex flex-wrap items-start gap-2">
+        <UiToggle v-model="channel.ads.auto" class="flex-1" :label="t('stream.ads.auto')" :hint="t('stream.ads.autoHint')" />
+        <button type="button" class="btn shrink-0" :title="t('stream.ads.openManagerHint')" @click="openUrl(ADS_MANAGER)"><ExternalLink :size="15" /> {{ t("stream.ads.openManager") }}</button>
+      </div>
+      <template v-if="channel.ads.auto">
+        <UiToggle v-model="channel.ads.prerollGuard" :label="t('stream.ads.prerollGuard')" :hint="t('stream.ads.prerollGuardHint')" />
+        <label v-if="channel.ads.prerollGuard" class="block w-40">
+          <span class="label">{{ t("stream.ads.length") }}</span>
+          <select v-model.number="channel.ads.length" class="input">
+            <option v-for="l in [30, 60, 90, 120, 150, 180]" :key="l" :value="l">{{ l }} s</option>
+          </select>
+        </label>
+        <UiToggle v-model="channel.ads.announce" :label="t('stream.ads.announce')" :hint="t('stream.ads.announceHint')" />
+        <div v-if="channel.ads.announce" class="grid gap-3 sm:grid-cols-[auto_1fr]">
+          <UiNumber v-model="channel.ads.announceSecs" :label="t('stream.ads.announceSecs')" :min="15" :max="300" :suffix="t('stream.seconds')" />
+          <label>
+            <span class="label">{{ t("stream.ads.announceText") }}</span>
+            <input v-model="channel.ads.announceText" maxlength="300" class="input" />
+            <span class="hint">{{ t("stream.ads.announceTextHint") }}</span>
+          </label>
+        </div>
+        <UiToggle v-model="channel.ads.snoozeOnRaid" :label="t('stream.ads.snoozeOnRaid')" :hint="t('stream.ads.snoozeOnRaidHint')" />
+        <UiToggle v-model="channel.ads.quietDuringAds" :label="t('stream.ads.quietDuringAds')" :hint="t('stream.ads.quietDuringAdsHint')" />
+      </template>
     </div>
 
     <hr class="border-line" />

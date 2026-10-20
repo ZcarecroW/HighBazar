@@ -122,6 +122,7 @@ pub fn run() {
             commands::clear_research_cache,
             commands::get_emote_urls,
             commands::chat_suggest,
+            commands::chat_status,
             commands::chat_send,
             commands::twitch_api,
             commands::open_data_dir,

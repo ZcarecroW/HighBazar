@@ -296,6 +296,19 @@ impl Helix {
         Ok(out)
     }
 
+    /// People in the chat right now (display name, login), up to 1000 – also
+    /// those who have not written anything (needs `moderator:read:chatters`).
+    pub async fn chatters(&self, broadcaster_id: &str) -> AppResult<Vec<(String, String)>> {
+        let q = [("broadcaster_id", broadcaster_id), ("moderator_id", broadcaster_id), ("first", "1000")];
+        let v = self.request::<Value>(Method::GET, "/chat/chatters", broadcaster_id, &q, None).await?.unwrap_or(Value::Null);
+        Ok(v["data"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(|c| Some((c["user_name"].as_str()?.to_string(), c["user_login"].as_str()?.to_string())))
+            .collect())
+    }
+
     /// Generic Helix call for the channel manager (path must be allow-listed by the caller).
     pub async fn raw(
         &self,

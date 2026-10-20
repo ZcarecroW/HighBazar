@@ -38,6 +38,56 @@ export interface AppSettings {
   /** HighBazar's own web search for AI providers without a built-in one. */
   webSearch: WebSearchSettings;
   chatInput: ChatInputSettings;
+  automodPresets: AutomodPreset[];
+  rewardTemplates: RewardTemplate[];
+}
+
+/** Twitch AutoMod levels (0–4) per category, saved under a name. */
+export interface AutomodPreset {
+  id: string;
+  name: string;
+  levels: Record<string, number>;
+}
+
+/** What the bot does with a channel point reward. */
+export type RewardActionKind = "" | "ask" | "roast" | "rhyme" | "fact" | "custom" | "emoteOnly";
+
+export interface RewardTemplate {
+  id: string;
+  name: string;
+  cost: number;
+  prompt: string;
+  input: boolean;
+  cooldown: number;
+  color: string;
+  maxPerStream: number;
+  maxPerUser: number;
+  action: RewardActionKind;
+  instructions: string;
+}
+
+export interface RewardAction {
+  rewardId: string;
+  action: RewardActionKind;
+  instructions: string;
+}
+
+export interface AutoShieldSettings {
+  enabled: boolean;
+  attackers: number;
+  windowSecs: number;
+  calmMins: number;
+}
+
+export interface AdSettings {
+  auto: boolean;
+  prerollGuard: boolean;
+  length: number;
+  announce: boolean;
+  announceSecs: number;
+  announceText: string;
+  snoozeOnRaid: boolean;
+  quietDuringAds: boolean;
 }
 
 export interface ChatInputSettings {
@@ -94,6 +144,9 @@ export interface ChannelProfile {
   aboutStream: string;
   dailyBudgetUsd: number;
   translation: TranslationSettings;
+  autoShield: AutoShieldSettings;
+  ads: AdSettings;
+  rewardActions: RewardAction[];
 }
 
 export interface TranslationSettings {
@@ -101,6 +154,9 @@ export interface TranslationSettings {
   /** Languages the streamer understands (ISO 639-1); the first is the translation target. */
   languages: string[];
   noteOnDelete: boolean;
+  /** Also post translations in chat. */
+  postToChat: boolean;
+  chatPrefix: string;
 }
 
 export interface ChatTranslation {

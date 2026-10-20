@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { Plus, RefreshCw, Save, X, Shield } from "../../icons";
+import { Plus, RefreshCw, Save, X, Shield, Info, ShieldAlert } from "../../icons";
 import { useTwitch } from "../../lib/twitch";
 import UiToggle from "../ui/UiToggle.vue";
+import UiNumber from "../ui/UiNumber.vue";
+import type { AutomodPreset } from "../../lib/types";
 
 const { t } = useI18n();
 const { app, id, tw } = useTwitch();
@@ -18,7 +20,18 @@ const CATS = [
   "race_ethnicity_or_religion",
   "sex_based_terms",
 ] as const;
-type Automod = Record<(typeof CATS)[number], number> & { overall_level: number | null };
+type Cat = (typeof CATS)[number];
+type Automod = Record<Cat, number> & { overall_level: number | null };
+
+// Built-in AutoMod presets (levels in the order of CATS).
+const BUILTIN: { id: string; levels: number[] }[] = [
+  { id: "off", levels: [0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: "hateOnly", levels: [3, 0, 3, 3, 0, 0, 3, 0] },
+  { id: "gaming", levels: [2, 1, 2, 2, 1, 0, 2, 1] },
+  { id: "balanced", levels: [3, 2, 3, 3, 2, 0, 3, 2] },
+  { id: "strict", levels: [4, 3, 4, 4, 3, 1, 4, 3] },
+  { id: "family", levels: [4, 4, 4, 4, 4, 4, 4, 4] },
+];
 
 const automod = ref<Automod | null>(null);
 const individual = ref(false);
@@ -26,6 +39,11 @@ const shield = ref<boolean | null>(null);
 const terms = ref<{ id: string; text: string }[]>([]);
 const newTerm = ref("");
 const busy = ref(false);
+const presetName = ref("");
+const naming = ref(false);
+
+const channel = computed(() => app.activeChannel);
+const userPresets = computed<AutomodPreset[]>(() => app.config?.settings.automodPresets ?? []);
 
 const q = () => ({ broadcaster_id: id.value, moderator_id: id.value });
 
@@ -58,6 +76,35 @@ async function saveAutomod() {
   }
 }
 
+// --- presets: built-in ones and your own --------------------------------------
+const current = computed(() => (automod.value ? CATS.map((c) => automod.value![c]) : []));
+const same = (levels: number[]) => individual.value && levels.every((v, i) => v === current.value[i]);
+const userLevels = (p: AutomodPreset) => CATS.map((c) => p.levels[c] ?? 0);
+
+function apply(levels: number[]) {
+  const a = automod.value;
+  if (!a) return;
+  individual.value = true;
+  CATS.forEach((c, i) => (a[c] = levels[i] ?? 0));
+}
+
+function savePreset() {
+  const name = presetName.value.trim();
+  const a = automod.value;
+  if (!name || !a || !app.config) return;
+  const levels = Object.fromEntries(CATS.map((c) => [c, a[c]]));
+  const existing = app.config.settings.automodPresets.find((p) => p.name.toLowerCase() === name.toLowerCase());
+  if (existing) existing.levels = levels;
+  else app.config.settings.automodPresets.push({ id: crypto.randomUUID().slice(0, 12), name, levels });
+  presetName.value = "";
+  naming.value = false;
+}
+
+function removePreset(p: AutomodPreset) {
+  const list = app.config!.settings.automodPresets;
+  list.splice(list.indexOf(p), 1);
+}
+
 async function setShield(on: boolean) {
   const r = await tw<{ data: { is_active: boolean }[] }>("PUT", "/moderation/shield_mode", q(), { is_active: on });
   if (r) shield.value = r.data?.[0]?.is_active ?? on;
@@ -88,23 +135,73 @@ onMounted(load);
       <button class="btn" :title="t('stream.reload')" @click="load"><RefreshCw :size="15" /></button>
     </div>
 
-    <div v-if="shield !== null" class="rounded-lg border border-line bg-panel-2 p-3">
+    <div v-if="shield !== null" class="space-y-3 rounded-lg border border-line bg-panel-2 p-3">
       <UiToggle :model-value="shield" :label="t('stream.safety.shield')" :hint="t('stream.safety.shieldHint')" @update:model-value="setShield" />
+      <template v-if="channel?.autoShield">
+        <UiToggle v-model="channel.autoShield.enabled" :label="t('stream.safety.autoShield')" :hint="t('stream.safety.autoShieldHint')" />
+        <div v-if="channel.autoShield.enabled" class="flex flex-wrap gap-4">
+          <UiNumber v-model="channel.autoShield.attackers" :label="t('stream.safety.attackers')" :min="2" :max="50" />
+          <UiNumber v-model="channel.autoShield.windowSecs" :label="t('stream.safety.window')" :min="30" :max="900" :suffix="t('stream.seconds')" />
+          <UiNumber v-model="channel.autoShield.calmMins" :label="t('stream.safety.calm')" :min="1" :max="120" :suffix="t('stream.minutes')" />
+        </div>
+        <p v-if="channel.autoShield.enabled" class="flex items-start gap-1.5 text-xs text-muted">
+          <ShieldAlert :size="13" class="mt-0.5 shrink-0" />
+          {{ t("stream.safety.autoShieldHow", { n: channel.autoShield.attackers, s: channel.autoShield.windowSecs, m: channel.autoShield.calmMins }) }}
+        </p>
+      </template>
     </div>
 
     <div v-if="automod" class="space-y-3">
       <span class="label">{{ t("stream.safety.automod") }}</span>
+      <div class="flex flex-wrap items-center gap-1.5">
+        <button
+          v-for="p in BUILTIN"
+          :key="p.id"
+          type="button"
+          class="chip cursor-pointer"
+          :class="same(p.levels) ? 'bg-brand-500 text-white' : 'bg-panel-2 hover:bg-brand-500/15'"
+          :title="t(`stream.safety.presets.${p.id}Hint`)"
+          @click="apply(p.levels)"
+        >
+          {{ t(`stream.safety.presets.${p.id}`) }}
+        </button>
+        <span
+          v-for="p in userPresets"
+          :key="p.id"
+          role="button"
+          tabindex="0"
+          class="chip cursor-pointer gap-1"
+          :class="same(userLevels(p)) ? 'bg-brand-500 text-white' : 'bg-panel-2 hover:bg-brand-500/15'"
+          @click="apply(userLevels(p))"
+          @keydown.enter="apply(userLevels(p))"
+        >
+          {{ p.name }}
+          <button type="button" class="opacity-60 hover:opacity-100" :title="t('common.delete')" :aria-label="t('common.delete')" @click.stop="removePreset(p)"><X :size="11" /></button>
+        </span>
+        <template v-if="naming">
+          <input v-model="presetName" maxlength="40" class="input w-40 py-1 text-xs" :placeholder="t('stream.safety.presetName')" @keydown.enter="savePreset" @keydown.esc="naming = false" />
+          <button type="button" class="btn py-1 text-xs" :disabled="!presetName.trim()" @click="savePreset"><Save :size="13" /> {{ t("common.save") }}</button>
+        </template>
+        <button v-else type="button" class="btn-ghost py-1 text-xs" :title="t('stream.safety.savePresetHint')" @click="naming = true"><Plus :size="13" /> {{ t("stream.safety.savePreset") }}</button>
+      </div>
       <UiToggle v-model="individual" :label="t('stream.safety.individual')" />
       <div v-if="!individual">
-        <input v-model.number="automod.overall_level" type="range" min="0" max="4" step="1" class="w-full accent-brand-500" />
+        <input v-model.number="automod.overall_level" type="range" min="0" max="4" step="1" class="w-full accent-brand-500" :aria-label="t('stream.safety.automod')" />
         <p class="hint">{{ t(`stream.safety.levels.${automod.overall_level}`) }}</p>
       </div>
       <div v-else class="grid gap-x-4 gap-y-2 sm:grid-cols-2">
-        <label v-for="c in CATS" :key="c" class="text-xs">
-          <span class="flex justify-between"><span>{{ t(`stream.safety.cats.${c}`) }}</span><span class="tabular-nums">{{ automod[c] }}</span></span>
-          <input v-model.number="automod[c]" type="range" min="0" max="4" step="1" class="w-full accent-brand-500" />
+        <label v-for="c in CATS" :key="c" class="text-xs" :title="t(`stream.safety.catHints.${c}`)">
+          <span class="flex items-center justify-between gap-1">
+            <span class="flex items-center gap-1">
+              {{ t(`stream.safety.cats.${c}`) }}
+              <Info :size="12" class="text-muted" />
+            </span>
+            <span class="tabular-nums text-muted">{{ automod[c] }} · {{ t(`stream.safety.catLevels.${automod[c]}`) }}</span>
+          </span>
+          <input v-model.number="automod[c]" type="range" min="0" max="4" step="1" class="w-full accent-brand-500" :aria-label="t(`stream.safety.cats.${c}`)" />
         </label>
       </div>
+      <p v-if="individual" class="hint">{{ t("stream.safety.levelsHint") }}</p>
       <button class="btn-primary" :disabled="busy" @click="saveAutomod"><Save :size="15" /> {{ t("common.save") }}</button>
     </div>
 

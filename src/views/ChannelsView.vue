@@ -218,6 +218,10 @@ const bot = computed(() => app.account(ch.value?.botAccountId));
           <div class="mt-5 grid gap-4 md:grid-cols-2">
             <UiToggle v-model="ch.translation.enabled" :label="t('translation.enabled')" :hint="t('translation.enabledHint')" />
             <UiToggle v-model="ch.translation.noteOnDelete" :disabled="!ch.translation.enabled" :label="t('translation.noteOnDelete')" :hint="t('translation.noteOnDeleteHint')" />
+            <UiToggle v-model="ch.translation.postToChat" :disabled="!ch.translation.enabled" :label="t('translation.postToChat')" :hint="t('translation.postToChatHint')" />
+            <UiField v-if="ch.translation.postToChat" :label="t('translation.chatPrefix')" :hint="t('translation.chatPrefixHint')">
+              <input v-model="ch.translation.chatPrefix" maxlength="40" class="input" :disabled="!ch.translation.enabled" placeholder="[HighBazar][Translator]" />
+            </UiField>
           </div>
         </section>
 

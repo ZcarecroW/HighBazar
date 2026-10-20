@@ -1,6 +1,6 @@
 [package]
 name = "highbazar"
-version = "1.6.0"
+version = "1.7.0"
 description = "HighBazar – an AI companion and moderation bot for Twitch chat"
 authors = ["ZcarecroW"]
 license = "MIT"

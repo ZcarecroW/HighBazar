@@ -19,11 +19,21 @@ export type SuggestMode = "colon" | "mention" | "tab" | "browse";
  */
 export function activeToken(text: string, caret: number): { mode: SuggestMode; query: string; start: number } | null {
   const before = text.slice(0, caret);
-  const colon = before.match(/(^|\s):((?:[7bfteBFTE] )?[^\s:]*)$/);
+  // Only letters, digits, "_" and "-" after the colon: ":)" and ":D" stay smileys.
+  const colon = before.match(/(^|\s):((?:[7bfteBFTE] )?[\p{L}\p{N}_-]*)$/u);
   if (colon) return { mode: "colon", query: colon[2]!, start: caret - colon[2]!.length - 1 };
   const at = before.match(/(^|\s)@([\p{L}\p{N}_]*)$/u);
   if (at) return { mode: "mention", query: at[2]!, start: caret - at[2]!.length - 1 };
   return null;
+}
+
+/**
+ * Whether Enter takes the highlighted suggestion (instead of sending): not for
+ * a single letter after ":" (":D", ":P" are smileys) unless one was picked
+ * with the arrow keys or the mouse.
+ */
+export function enterPicks(tok: { mode: SuggestMode; query: string }, chosen: boolean): boolean {
+  return chosen || tok.mode !== "colon" || tok.query.length >= 2;
 }
 
 /**

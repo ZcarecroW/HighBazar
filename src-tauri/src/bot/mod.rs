@@ -1,5 +1,6 @@
 //! The bot runtime: one session at a time, bound to a channel profile.
 
+pub mod automation;
 pub mod context;
 mod engine;
 pub mod moderation;
@@ -25,6 +26,8 @@ pub const EVT_PENDING: &str = "hb:pending";
 pub const EVT_MODLOG: &str = "hb:modlog";
 pub const EVT_EMOTES: &str = "hb:emotes";
 pub const EVT_TRANSLATION: &str = "hb:translation";
+/// A channel point reward was redeemed or a redemption was handled.
+pub const EVT_REDEMPTION: &str = "hb:redemption";
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]

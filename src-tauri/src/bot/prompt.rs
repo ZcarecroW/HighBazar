@@ -207,31 +207,52 @@ pub fn user_prompt(ctx: &ContextBlock, task: &str) -> String {
     if !ctx.emotes.is_empty() {
         let _ = writeln!(s, "\n## Emotes you may use\n{}", ctx.emotes.join(" "));
     }
-    if !ctx.bot_recent.is_empty() {
-        let _ = writeln!(s, "\n## Your recent messages (do not repeat these)");
-        for m in &ctx.bot_recent {
+    // Own messages that are still in the chat log below are marked "(you)" there.
+    let older: Vec<&String> = ctx.bot_recent.iter().filter(|m| !ctx.chat.iter().any(|l| l.role == "bot" && &l.text == *m)).collect();
+    if !older.is_empty() {
+        let _ = writeln!(s, "\n## Your earlier messages (do not repeat these)");
+        for m in older {
             let _ = writeln!(s, "- {m}");
         }
     }
-    let _ = writeln!(s, "\n## Recent chat (oldest first)");
+    let _ = writeln!(s, "\n## Recent chat (oldest first, your own lines marked \"(you)\")");
     if ctx.chat.is_empty() {
         let _ = writeln!(s, "(no recent messages)");
     }
-    for l in &ctx.chat {
-        let time = chrono::DateTime::from_timestamp_millis(l.ts)
+    write_chat(&mut s, &ctx.chat);
+    let _ = writeln!(s, "\n## Language\n{}", ctx.language_rule);
+    let _ = writeln!(s, "\n## Task\n{task}");
+    s
+}
+
+/// Chat lines in a compact form: the time only when the minute changes, the
+/// same message of the same person in a row once with a count (emote spam).
+fn write_chat(s: &mut String, chat: &[&Line]) {
+    let mut last_min = String::new();
+    let mut i = 0;
+    while i < chat.len() {
+        let l = chat[i];
+        let mut n = 1;
+        while i + n < chat.len() && chat[i + n].name == l.name && chat[i + n].text == l.text {
+            n += 1;
+        }
+        let min = chrono::DateTime::from_timestamp_millis(l.ts)
             .map(|d| d.with_timezone(&chrono::Local).format("%H:%M").to_string())
             .unwrap_or_default();
+        if min != last_min {
+            let _ = writeln!(s, "[{min}]");
+            last_min = min;
+        }
         let role = match l.role {
             "" => String::new(),
             "bot" => " (you)".into(),
             r => format!(" ({r})"),
         };
-        let text: String = l.text.chars().take(300).collect();
-        let _ = writeln!(s, "[{time}] {}{role}: {text}", l.name);
+        let text: String = l.text.chars().take(240).collect();
+        let times = if n > 1 { format!(" (×{n})") } else { String::new() };
+        let _ = writeln!(s, "{}{role}: {text}{times}", l.name);
+        i += n;
     }
-    let _ = writeln!(s, "\n## Language\n{}", ctx.language_rule);
-    let _ = writeln!(s, "\n## Task\n{task}");
-    s
 }
 
 /// Interval message kinds and their task descriptions.
@@ -335,6 +356,33 @@ mod tests {
         let c = CompanionProfile::default();
         assert!(language_rule(&c, "de").contains("German"));
         assert!(language_rule(&c, "other").contains("English"));
+    }
+
+    #[test]
+    fn chat_log_is_compact() {
+        let line = |ts: i64, name: &str, text: &str, role: &'static str| Line { ts, user_id: String::new(), login: String::new(), name: name.into(), text: text.into(), role };
+        let lines = [
+            line(0, "A", "KEKW", ""),
+            line(1000, "A", "KEKW", ""),
+            line(2000, "A", "KEKW", ""),
+            line(3000, "B", "lol", "sub"),
+            line(120_000, "Bot", "hi", "bot"),
+        ];
+        let refs: Vec<&Line> = lines.iter().collect();
+        let mut s = String::new();
+        write_chat(&mut s, &refs);
+        assert!(s.contains("A: KEKW (×3)\nB (sub): lol\n"), "{s}");
+        assert_eq!(s.matches('[').count(), 2, "one time stamp per minute: {s}");
+        let ctx = ContextBlock {
+            stream: StreamFacts { channel_name: "c", live: true, uptime: None, game: "", title: "", language: "", viewers: None },
+            knowledge: Vec::new(),
+            emotes: Vec::new(),
+            bot_recent: vec!["hi".into(), "older one".into()],
+            chat: refs,
+            language_rule: String::new(),
+        };
+        let p = user_prompt(&ctx, "t");
+        assert!(p.contains("- older one") && !p.contains("- hi"), "messages still in the log are not listed twice: {p}");
     }
 
     #[test]

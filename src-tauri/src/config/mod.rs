@@ -7,6 +7,9 @@ pub use types::*;
 
 use crate::error::AppResult;
 
+/// Version of the config file format; `Config::normalize` migrates older files.
+pub const CONFIG_VERSION: u32 = 2;
+
 // Built-in Twitch application (public client, device code flow). The ID is
 // injected at build time from `HIGHBAZAR_TWITCH_CLIENT_ID` and stored masked,
 // see build.rs. Users can override it in the advanced settings.
@@ -64,6 +67,14 @@ impl Config {
     /// Replaces built-in profiles with their canonical definitions, keeps user
     /// profiles and makes sure every reference points somewhere valid.
     pub fn normalize(&mut self) {
+        if self.version < 2 {
+            // 1.7.0: answering chatters in their own language is off by default –
+            // the streamer can't follow those answers. It was never chosen on purpose.
+            for p in self.companion_profiles.iter_mut() {
+                p.language.reply_in_user_language = false;
+            }
+        }
+        self.version = CONFIG_VERSION;
         fn merge<T: Clone>(user: &mut Vec<T>, builtin: Vec<T>, is_builtin: impl Fn(&T) -> bool) {
             user.retain(|p| !is_builtin(p));
             let mut all = builtin;

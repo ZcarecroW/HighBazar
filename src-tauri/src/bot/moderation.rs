@@ -376,8 +376,79 @@ pub fn human_duration(secs: u32) -> String {
     }
 }
 
+/// Messages that cannot break a rule the AI checks: only emotes, emojis,
+/// punctuation or short numbers (votes). Local rules (spam, caps, emote
+/// limits) still see them; the AI call is saved.
+pub fn trivially_fine(text: &str, is_emote: impl Fn(&str) -> bool) -> bool {
+    let mut any = false;
+    for w in text.split_whitespace() {
+        any = true;
+        let alnum = w.chars().filter(|c| c.is_alphanumeric()).count();
+        let short_number = alnum <= 3 && w.chars().all(|c| !c.is_alphabetic());
+        if !(alnum == 0 || short_number || is_emote(w)) {
+            return false;
+        }
+    }
+    any
+}
+
+/// Short messages the AI found fine recently ("gg", "lol", "hi chat"): the
+/// same text is not checked again for a while.
+#[derive(Default)]
+pub struct VerdictCache {
+    fine: HashMap<String, i64>,
+}
+
+impl VerdictCache {
+    const TTL_MS: i64 = 30 * 60_000;
+    const MAX: usize = 3000;
+
+    fn key(text: &str) -> Option<String> {
+        let k = fold(text).split_whitespace().collect::<Vec<_>>().join(" ");
+        (!k.is_empty() && k.chars().count() <= 60).then_some(k)
+    }
+
+    pub fn is_fine(&self, text: &str, now: i64) -> bool {
+        Self::key(text).and_then(|k| self.fine.get(&k).copied()).is_some_and(|t| now - t < Self::TTL_MS)
+    }
+
+    pub fn mark_fine(&mut self, text: &str, now: i64) {
+        let Some(k) = Self::key(text) else { return };
+        if self.fine.len() >= Self::MAX {
+            self.fine.retain(|_, t| now - *t < Self::TTL_MS);
+            if self.fine.len() >= Self::MAX {
+                self.fine.clear();
+            }
+        }
+        self.fine.insert(k, now);
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn trivially_fine_messages() {
+        let emote = |w: &str| w == "KEKW" || w == "Pog";
+        assert!(super::trivially_fine("KEKW KEKW 😂", emote));
+        assert!(super::trivially_fine("1", emote));
+        assert!(super::trivially_fine("??? !!!", emote));
+        assert!(!super::trivially_fine("kys", emote));
+        assert!(!super::trivially_fine("KEKW idiot", emote));
+        assert!(!super::trivially_fine("0176 1234567", emote), "a phone number is no vote");
+        assert!(!super::trivially_fine("   ", emote));
+    }
+
+    #[test]
+    fn verdict_cache() {
+        let mut c = super::VerdictCache::default();
+        c.mark_fine("GG  wp", 0);
+        assert!(c.is_fine("gg wp", 1000));
+        assert!(!c.is_fine("gg wp", 31 * 60_000));
+        assert!(!c.is_fine("gg", 1000));
+        c.mark_fine(&"long ".repeat(20), 0);
+        assert!(!c.is_fine(&"long ".repeat(20), 1), "long messages are always checked");
+    }
+
     use super::*;
 
     fn msg(text: &str) -> ChatMessage {

@@ -62,7 +62,7 @@ The bot writes with **your streamer account** by default (marked with a configur
 - **Escalation** for repeat offenders, **exemptions** (mods, VIPs, subs, specific users), channel rules in plain language, strictness slider, confidence threshold.
 - **Modes**: off · watch & log · suggest actions (one click to apply) · act automatically. Full **moderation log with undo**.
 - Built-in profiles: **Balanced** (default – acts only on clear cases), Relaxed, Family Friendly, Suggest Only, Watch & Log.
-- **Translation of foreign-language chat**: set the languages you understand, and messages in any other language are translated right below them in the live feed. If such a message breaks the rules, moderation acts as usual and adds a **note with the translation and what is really meant** (slang, coded insults). Your mods see it as the timeout or ban reason on Twitch. Language detection runs locally, so only foreign messages cost AI tokens.
+- **Translation of foreign-language chat**: set the languages you understand, and messages in any other language are translated right below them in the live feed. If such a message breaks the rules, moderation acts as usual and adds a **note with the translation and what is really meant** (slang, coded insults). Your mods see it as the timeout or ban reason on Twitch. Language detection runs locally, so only foreign messages cost AI tokens. By default the translation is also posted in chat ("[HighBazar][Translator] …"), so everyone can follow – never for flagged messages.
 
 ### 🧠 AI providers
 | Provider | Notes |
@@ -91,7 +91,7 @@ You can use a **different, cheaper model for moderation**.
 Change your stream right from HighBazar, in three levels (default: *Simple*):
 - **Simple** — title, category (search with box art), language and tags.
 - **Advanced** — plus content classification labels and branded content, chat settings (emote-only, followers-only, slow mode, subs-only, unique chat, chat delay), announcements, shoutouts, raids, clips (with title and length), stream markers and pinned chat messages.
-- **Expert** — everything Twitch allows: polls (with channel points voting) and predictions, channel point rewards with limits, mods, VIPs, bans and unban requests, suspicious-user monitoring, Twitch AutoMod levels, shield mode and blocked terms, ads (run / snooze), stream schedule, stream delay (partners), channel description and chat color, follower/sub numbers and the Hype Train.
+- **Expert** — everything Twitch allows: polls (with channel points voting) and predictions, channel point rewards with limits, one-click templates and AI actions (the bot answers questions, roasts, rhymes or shares a fun fact; unhandled redemptions are refunded) plus a redemption queue, mods, VIPs, bans and unban requests, suspicious-user monitoring, Twitch AutoMod levels with explanations and presets, shield mode with an optional Auto Shield against hate raids and blocked terms, ads (run / snooze) with an optional ad automation (no pre-rolls for newcomers, announcements in chat, snooze on raids), stream schedule, stream delay (partners), channel description and chat color, follower/sub numbers and the Hype Train.
 
 HighBazar only asks Twitch for the permissions of the level you pick; switching to a higher level asks you to approve the extra ones once.
 

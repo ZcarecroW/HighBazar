@@ -13,6 +13,7 @@ use serde_json::json;
 use tauri::{AppHandle, Emitter};
 use tokio::sync::{mpsc, watch};
 
+use super::automation::{self, AdStep, Ads, Redemption, Shield};
 use super::context::{ChatContext, Line, SeenChatters};
 use super::moderation::{self, Finding, ModLogEntry, RuleState};
 use super::research::{self, Knowledge};
@@ -66,6 +67,8 @@ enum Task {
     Welcome(ChatMessage),
     Event(String, String),
     Command(String, ChatMessage, String),
+    /// A channel point reward the bot answers: (redemption, action, instructions).
+    Reward(Redemption, String, String),
 }
 
 impl Task {
@@ -76,6 +79,7 @@ impl Task {
             Task::Welcome(_) => "welcome",
             Task::Event(..) => "event",
             Task::Command(..) => "command",
+            Task::Reward(..) => "reward",
         }
     }
 }
@@ -83,6 +87,9 @@ impl Task {
 struct Outgoing {
     text: String,
     reason: String,
+    /// Replaces the channel's prefix (translations: "[HighBazar][Translator]");
+    /// such messages stay out of the bot's own conversation context.
+    prefix: Option<String>,
 }
 
 /// A message for AI moderation; foreign ones are translated in the same call.
@@ -136,6 +143,13 @@ pub struct Session {
     mod_rx: Mutex<Option<mpsc::UnboundedReceiver<ModJob>>>,
     tr_tx: mpsc::UnboundedSender<ChatMessage>,
     tr_rx: Mutex<Option<mpsc::UnboundedReceiver<ChatMessage>>>,
+    /// Short messages the AI found fine (not checked again for a while).
+    verdicts: Mutex<moderation::VerdictCache>,
+    translations: Mutex<translate::TranslationCache>,
+    /// Times (ms) of translations posted in chat (rate limit).
+    tr_posts: Mutex<VecDeque<i64>>,
+    shield: Mutex<Shield>,
+    ads: Mutex<Ads>,
 }
 
 impl Session {
@@ -223,6 +237,11 @@ impl Session {
             mod_rx: Mutex::new(Some(mod_rx)),
             tr_tx,
             tr_rx: Mutex::new(Some(tr_rx)),
+            verdicts: Mutex::new(moderation::VerdictCache::default()),
+            translations: Mutex::new(translate::TranslationCache::default()),
+            tr_posts: Mutex::new(VecDeque::new()),
+            shield: Mutex::new(Shield::default()),
+            ads: Mutex::new(Ads::default()),
         }))
     }
 
@@ -424,15 +443,36 @@ impl Session {
                     })
                     .collect();
                 log::info!("{} emotes available to the streamer", subs.len());
+                self.st.chat.set_subs_missing(false);
                 self.st.chat.add_emotes(subs);
             }
-            Err(e) => log::info!("streamer emotes unavailable: {e}"),
+            Err(e) => {
+                log::info!("streamer emotes unavailable: {e}");
+                // Logins from before 1.6.0 lack the permission: the input says so.
+                self.st.chat.set_subs_missing(e.to_string().contains("user:read:emotes"));
+            }
         }
         *self.st.emote_urls.write() = urls.clone();
         let _ = self.app.emit(super::EVT_EMOTES, &*urls);
         self.st.overlay.emotes(&urls);
         log::info!("loaded {n} emotes");
         self.emit_status();
+    }
+
+    /// Who is in chat right now, for the "@" suggestions of the chat input
+    /// (only while an input is switched on).
+    async fn refresh_chatters(self: &Arc<Self>) {
+        let on = {
+            let c = self.st.config.read();
+            c.settings.chat_input.enabled || c.settings.overlay.chat_input
+        };
+        if !on || !self.has_twitch() {
+            return;
+        }
+        match self.st.helix().chatters(&self.broadcaster_id).await {
+            Ok(list) => self.st.chat.set_present(&self.broadcaster_login, list),
+            Err(e) => log::info!("chatter list unavailable: {e}"),
+        }
     }
 
     fn maybe_research(self: &Arc<Self>, game: String) {
@@ -515,6 +555,17 @@ impl Session {
             }
             TwitchEvent::Chat(m) => self.on_chat(m),
             TwitchEvent::Notification(n) => self.on_notification(n),
+            TwitchEvent::Redemption(r) => self.on_redemption(r),
+            TwitchEvent::AdBreak { duration_secs, automatic } => {
+                let now = chrono::Utc::now().timestamp();
+                self.ads.lock().started(duration_secs, now);
+                self.keyed(
+                    "system",
+                    "adBreak",
+                    json!({ "secs": duration_secs, "automatic": automatic }),
+                    format!("Ad break: {duration_secs} s"),
+                );
+            }
             TwitchEvent::Follow { name, .. } => {
                 self.keyed("event", "follow", json!({ "user": name }), format!("{name} followed"));
                 let p = self.profiles();
@@ -654,10 +705,11 @@ impl Session {
                 if acted {
                     return;
                 }
-            } else if p.modp.ai_check == "all"
+            } else if (p.modp.ai_check == "all"
                 // The suspicious-word list only knows German and English, so
                 // foreign messages always get the AI check.
-                || (p.modp.ai_check == "suspicious" && (lang != Foreign::No || moderation::is_suspicious(&m.text)))
+                || (p.modp.ai_check == "suspicious" && (lang != Foreign::No || moderation::is_suspicious(&m.text))))
+                && !self.needs_no_ai_check(&m)
             {
                 sent_to_ai = p.mod_ai.is_some() && self.mod_tx.send(ModJob { m: m.clone(), lang }).is_ok();
             }
@@ -831,13 +883,20 @@ impl Session {
                 intro.replace("{bot}", bot),
                 if list.is_empty() { String::new() } else { format!("{try_} {}", list.join(" | ")) }
             );
-            let _ = self.out_tx.send(Outgoing { text, reason: "command".into() });
+            let _ = self.out_tx.send(Outgoing { text, reason: "command".into(), prefix: None });
             return;
         }
         if name == "ask" && arg.trim().is_empty() {
             return;
         }
         self.spawn_task(Task::Command(name.into(), m.clone(), arg));
+    }
+
+    /// Emote-only messages and short texts the AI just found fine need no AI check.
+    fn needs_no_ai_check(&self, m: &ChatMessage) -> bool {
+        let emotes = self.emotes.read();
+        moderation::trivially_fine(&m.text, |w| m.emotes.iter().any(|e| e == w) || emotes.contains(w))
+            || self.verdicts.lock().is_fine(&m.text, m.ts)
     }
 
     fn on_notification(self: &Arc<Self>, n: ChatNotification) {
@@ -893,6 +952,25 @@ impl Session {
             }),
             if n.system_message.is_empty() { desc.clone() } else { n.system_message.clone() },
         );
+        if n.notice_type == "raid" && self.has_twitch() && !self.sandbox && self.ads.lock().snooze_for_raid(&p.ch.ads, chrono::Utc::now().timestamp()) {
+            let me = self.clone();
+            tokio::spawn(async move {
+                let r = me
+                    .st
+                    .helix()
+                    .raw(reqwest::Method::POST, "/channels/ads/schedule/snooze", &me.broadcaster_id, &[("broadcaster_id", &me.broadcaster_id)], None)
+                    .await;
+                match r {
+                    Ok(v) => {
+                        me.keyed("system", "adSnoozed", json!({}), "Raid: the next ad was pushed back by 5 minutes.".into());
+                        if let Some(sch) = automation::AdSchedule::parse(&v) {
+                            me.ads.lock().update(sch);
+                        }
+                    }
+                    Err(e) => log::info!("snooze failed: {e}"),
+                }
+            });
+        }
         if !p.ch.companion_enabled || !enabled {
             return;
         }
@@ -928,6 +1006,79 @@ impl Session {
         });
     }
 
+    // ------------------------------------------------------------------
+    // Channel point rewards
+    // ------------------------------------------------------------------
+
+    fn on_redemption(self: &Arc<Self>, r: Redemption) {
+        let _ = self.app.emit(super::EVT_REDEMPTION, json!({ "rewardId": r.reward_id, "id": r.id }));
+        self.keyed(
+            "event",
+            "redemption",
+            json!({ "user": r.user_name, "reward": r.reward_title, "input": if r.input.is_empty() { String::new() } else { format!(": {}", r.input) } }),
+            if r.input.is_empty() { format!("{} redeemed {}", r.user_name, r.reward_title) } else { format!("{} redeemed {}: {}", r.user_name, r.reward_title, r.input) },
+        );
+        let p = self.profiles();
+        let Some(action) = p.ch.reward_actions.iter().find(|a| a.reward_id == r.reward_id).cloned() else { return };
+        let me = self.clone();
+        tokio::spawn(async move {
+            let done = if action.action == "emoteOnly" {
+                me.emote_only_minute().await
+            } else {
+                matches!(me.respond(Task::Reward(r.clone(), action.action.clone(), action.instructions.clone())).await, Ok(true))
+            };
+            // Done: off the queue. Not possible (AI off, budget, error): points back.
+            me.finish_redemption(&r, done).await;
+        });
+    }
+
+    /// Emote-only chat for one minute.
+    async fn emote_only_minute(self: &Arc<Self>) -> bool {
+        if self.sandbox || !self.has_twitch() {
+            return true;
+        }
+        if let Err(e) = self.set_emote_mode(true).await {
+            self.error(format!("Emote-only mode failed: {e}"));
+            return false;
+        }
+        let me = self.clone();
+        tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_secs(60)).await;
+            let _ = me.set_emote_mode(false).await;
+        });
+        true
+    }
+
+    async fn set_emote_mode(&self, on: bool) -> AppResult<serde_json::Value> {
+        let b = self.broadcaster_id.as_str();
+        self.st
+            .helix()
+            .raw(reqwest::Method::PATCH, "/chat/settings", b, &[("broadcaster_id", b), ("moderator_id", b)], Some(json!({ "emote_mode": on })))
+            .await
+    }
+
+    async fn finish_redemption(self: &Arc<Self>, r: &Redemption, done: bool) {
+        if self.sandbox || !self.has_twitch() || r.id.is_empty() {
+            return;
+        }
+        let status = if done { "FULFILLED" } else { "CANCELED" };
+        let q = [("broadcaster_id", self.broadcaster_id.as_str()), ("reward_id", r.reward_id.as_str()), ("id", r.id.as_str())];
+        let res = self
+            .st
+            .helix()
+            .raw(reqwest::Method::PATCH, "/channel_points/custom_rewards/redemptions", &self.broadcaster_id, &q, Some(json!({ "status": status })))
+            .await;
+        match res {
+            Ok(_) => {
+                if !done {
+                    self.keyed("system", "redemptionRefunded", json!({ "user": r.user_name, "reward": r.reward_title }), format!("{}'s points for {} were refunded.", r.user_name, r.reward_title));
+                }
+                let _ = self.app.emit(super::EVT_REDEMPTION, json!({ "rewardId": r.reward_id, "id": r.id }));
+            }
+            Err(e) => log::warn!("updating redemption failed: {e}"),
+        }
+    }
+
     fn knowledge_items(&self, n: usize, mark_used: bool) -> Vec<String> {
         let k = self.knowledge.lock();
         let Some(k) = k.as_ref() else {
@@ -953,11 +1104,17 @@ impl Session {
         if c.emote_level == 0 {
             return Vec::new();
         }
+        // Fewer names when emotes are rare anyway (each name costs tokens in every request).
+        let cap: usize = match c.emote_level {
+            1 => 15,
+            2 => 30,
+            _ => 45,
+        };
         let cat = self.emotes.read();
         let allowed: HashSet<&String> = cat.allowed(&c.emotes).into_iter().collect();
         let mut out: Vec<String> = Vec::new();
         if c.emotes.prefer_popular {
-            for e in self.ctx.lock().popular_emotes(20) {
+            for e in self.ctx.lock().popular_emotes(cap.min(20)) {
                 if allowed.contains(&e) {
                     out.push(e);
                 }
@@ -968,7 +1125,7 @@ impl Session {
         rest.sort();
         let mut rng = rand::rng();
         rest.shuffle(&mut rng);
-        for e in rest.into_iter().take(45usize.saturating_sub(out.len())) {
+        for e in rest.into_iter().take(cap.saturating_sub(out.len())) {
             out.push(e.clone());
         }
         if out.is_empty() {
@@ -981,33 +1138,34 @@ impl Session {
         out
     }
 
-    async fn respond(self: &Arc<Self>, task: Task) -> AppResult<()> {
+    /// Generates and delivers a message; true if one went out (or into the preview queue).
+    async fn respond(self: &Arc<Self>, task: Task) -> AppResult<bool> {
         let p = self.profiles();
         let Some(ai_profile) = p.ai.clone() else {
             if !self.no_ai_warned.swap(true, Ordering::Relaxed) {
                 self.keyed("error", "noAi", json!({}), "No AI profile selected for this channel — choose one under Channels.".into());
             }
-            return Ok(());
+            return Ok(false);
         };
         if !self.budget_ok(&p) {
-            return Ok(());
+            return Ok(false);
         }
         // Wait for a free slot instead of silently dropping replies when busy.
         let Ok(Ok(permit)) = tokio::time::timeout(Duration::from_secs(60), self.inflight.acquire()).await else {
             log::warn!("AI busy, dropped {}", task.label());
-            return Ok(());
+            return Ok(false);
         };
         let result = self.respond_inner(&p, &ai_profile, &task).await;
         drop(permit);
         let text = result?;
         let Some(text) = text else {
-            return Ok(());
+            return Ok(false);
         };
         if let Task::Interval(kind) = &task {
             self.ctx.lock().note_kind(kind);
         }
         self.deliver(&p, text, task.label());
-        Ok(())
+        Ok(true)
     }
 
     async fn respond_inner(&self, p: &Profiles, ai_profile: &AiProfile, task: &Task) -> AppResult<Option<String>> {
@@ -1020,12 +1178,18 @@ impl Session {
         let knowledge_n = match task {
             Task::Interval(k) if k == "game_fact" || k == "game_tip" => 6,
             Task::Command(name, ..) if name == "fact" => 6,
+            Task::Reward(_, action, _) if action == "fact" => 6,
             Task::Mention(..) | Task::Command(..) => 4,
+            Task::Reward(_, action, _) if action == "ask" => 4,
             _ => 0,
         };
-        let mark_used = matches!(task, Task::Interval(_)) || matches!(task, Task::Command(n, ..) if n == "fact");
+        let mark_used = matches!(task, Task::Interval(_))
+            || matches!(task, Task::Command(n, ..) if n == "fact")
+            || matches!(task, Task::Reward(_, a, _) if a == "fact");
         // Questions from chat may need current facts.
-        let question = matches!(task, Task::Mention(..)) || matches!(task, Task::Command(n, ..) if n != "fact" && n != "joke");
+        let question = matches!(task, Task::Mention(..))
+            || matches!(task, Task::Command(n, ..) if n != "fact" && n != "joke")
+            || matches!(task, Task::Reward(_, a, _) if a == "ask");
         let web_search = question && c.research.answer_search && ai_profile.web_search;
         let knowledge = self.knowledge_items(knowledge_n, mark_used);
 
@@ -1062,6 +1226,10 @@ impl Session {
                     "@{n} asks you: \"{arg}\"\nAnswer briefly and correctly, starting with @{n}. If you don't know or can't know, say so honestly and playfully.",
                     n = m.display_name
                 ),
+            },
+            Task::Reward(r, action, instructions) => match automation::reward_task(action, r, instructions, &game) {
+                Some(t) => t,
+                None => return Ok(None),
             },
         };
 
@@ -1131,7 +1299,7 @@ impl Session {
                 self.emit_pending();
             }
             _ => {
-                let _ = self.out_tx.send(Outgoing { text, reason: reason.into() });
+                let _ = self.out_tx.send(Outgoing { text, reason: reason.into(), prefix: None });
             }
         }
     }
@@ -1142,6 +1310,9 @@ impl Session {
 
     /// Applies a finding. Returns true if the message was removed.
     fn handle_finding(self: &Arc<Self>, p: &Profiles, m: &ChatMessage, f: Finding) -> bool {
+        if f.verdict == "violation" && automation::is_attack(&f.category) && self.shield.lock().on_attack(&p.ch.auto_shield, &m.user_id, m.ts) {
+            self.set_shield(true);
+        }
         let window = p.modp.escalation.window_mins.max(1) as i64 * 60_000;
         let prior = {
             let mut s = self.strikes.lock();
@@ -1236,6 +1407,46 @@ impl Session {
         self.feed(item);
     }
 
+    /// Turns Shield Mode on (attack) or off again (calm).
+    fn set_shield(self: &Arc<Self>, on: bool) {
+        self.shield.lock().busy = true;
+        let me = self.clone();
+        tokio::spawn(async move {
+            let res = if me.sandbox || !me.has_twitch() {
+                Ok(serde_json::Value::Null)
+            } else {
+                me.st
+                    .helix()
+                    .raw(
+                        reqwest::Method::PUT,
+                        "/moderation/shield_mode",
+                        &me.broadcaster_id,
+                        &[("broadcaster_id", &me.broadcaster_id), ("moderator_id", &me.broadcaster_id)],
+                        Some(json!({ "is_active": on })),
+                    )
+                    .await
+            };
+            let mut sh = me.shield.lock();
+            sh.busy = false;
+            match res {
+                Ok(_) if on => {
+                    sh.activated();
+                    drop(sh);
+                    me.keyed("error", "shieldOn", json!({}), "Chat is under attack: Shield Mode is now on.".into());
+                }
+                Ok(_) => {
+                    sh.ours = false;
+                    drop(sh);
+                    me.keyed("system", "shieldOff", json!({}), "Chat is calm again: Shield Mode is off.".into());
+                }
+                Err(e) => {
+                    drop(sh);
+                    me.error(format!("Shield Mode could not be switched (needs the channel manager's expert level): {e}"));
+                }
+            }
+        });
+    }
+
     async fn execute_mod(self: &Arc<Self>, mut entry: ModLogEntry, template: &str, announce: bool) {
         let reason = template.replace("{reason}", if entry.reason.is_empty() { &entry.category } else { &entry.reason });
         // Translated messages: the translation goes to the mods as the reason of a
@@ -1295,7 +1506,7 @@ impl Session {
                     entry.display_name,
                     moderation::public_reason(&entry.source, &entry.reason, &entry.category, de)
                 );
-                let _ = self.out_tx.send(Outgoing { text, reason: "moderation".into() });
+                let _ = self.out_tx.send(Outgoing { text, reason: "moderation".into(), prefix: None });
             }
         }
         self.record_mod(entry);
@@ -1328,10 +1539,29 @@ impl Session {
         Ok(())
     }
 
-    /// Shows a translation under the chat message in the feed.
-    fn publish_translation(&self, m: &ChatMessage, t: &Translation) {
+    /// Shows a translation under the chat message in the feed and, if wanted,
+    /// posts it in chat (`share` = false for flagged messages).
+    fn publish_translation(&self, m: &ChatMessage, t: &Translation, share: bool) {
         self.st.overlay.translation(&m.id, &t.lang, &t.text);
         let _ = self.app.emit(EVT_TRANSLATION, json!({ "messageId": m.id, "lang": t.lang, "text": t.text }));
+        let tr = self.profiles().ch.translation;
+        if !share || !tr.post_to_chat || t.text.trim().is_empty() {
+            return;
+        }
+        // At most 8 a minute, so a multilingual chat is not flooded.
+        let now = now_ms();
+        {
+            let mut posts = self.tr_posts.lock();
+            while posts.front().is_some_and(|t| now - t > 60_000) {
+                posts.pop_front();
+            }
+            if posts.len() >= 8 {
+                return;
+            }
+            posts.push_back(now);
+        }
+        let text = translate::chat_line("", &m.display_name, t);
+        let _ = self.out_tx.send(Outgoing { text, reason: "translation".into(), prefix: Some(tr.chat_prefix.clone()) });
     }
 
     async fn moderation_worker(self: Arc<Self>, mut rx: mpsc::UnboundedReceiver<ModJob>, mut shutdown: watch::Receiver<bool>) {
@@ -1392,7 +1622,17 @@ impl Session {
             };
             let mut system = prompt::moderation_system(p.modp.strictness, &p.modp.channel_rules, &lang);
             let tr = &p.ch.translation;
-            let translating = tr.active() && batch.iter().any(|j| j.lang != Foreign::No);
+            // Messages translated before only need the verdict.
+            let known: HashMap<usize, Translation> = {
+                let cache = self.translations.lock();
+                batch
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, j)| j.lang != Foreign::No)
+                    .filter_map(|(i, j)| cache.get(&j.m.text, now).map(|t| (i, t)))
+                    .collect()
+            };
+            let translating = tr.active() && batch.iter().enumerate().any(|(i, j)| j.lang != Foreign::No && !known.contains_key(&i));
             if translating {
                 let target = prompt::language_name(tr.target());
                 system.push_str(&translate::moderation_section(&translate::names(&tr.languages), target));
@@ -1421,7 +1661,7 @@ impl Session {
                 }
                 u.push_str("\nMessages to judge:\n");
                 for (i, j) in batch.iter().enumerate() {
-                    let mark = if translating && j.lang != Foreign::No { " (translate)" } else { "" };
+                    let mark = if translating && j.lang != Foreign::No && !known.contains_key(&i) { " (translate)" } else { "" };
                     u.push_str(&format!("[{i}]{mark} {}: {}\n", j.m.display_name, j.m.text.chars().take(400).collect::<String>()));
                 }
                 u
@@ -1432,16 +1672,37 @@ impl Session {
                     let mut translations: HashMap<usize, Translation> = if translating {
                         translate::parse(&text, batch.len())
                             .into_iter()
-                            .filter(|(i, _)| batch[*i].lang != Foreign::No)
+                            .filter(|(i, _)| batch[*i].lang != Foreign::No && !known.contains_key(i))
                             .map(|(i, t)| (i, translate::without_name(t, &batch[i].m.display_name)))
                             .collect()
                     } else {
                         HashMap::new()
                     };
-                    for (i, t) in &translations {
-                        self.publish_translation(&batch[*i].m, t);
+                    {
+                        let mut cache = self.translations.lock();
+                        for (i, t) in &translations {
+                            cache.put(&batch[*i].m.text, t, now);
+                        }
                     }
-                    for (i, mut f) in moderation::parse_ai_findings(&text, batch.len()) {
+                    for (i, t) in known {
+                        translations.entry(i).or_insert(t);
+                    }
+                    let findings = moderation::parse_ai_findings(&text, batch.len());
+                    {
+                        // What the AI found fine is not checked again for a while.
+                        let mut v = self.verdicts.lock();
+                        for (i, j) in batch.iter().enumerate() {
+                            if !findings.iter().any(|(k, _)| *k == i) {
+                                v.mark_fine(&j.m.text, now);
+                            }
+                        }
+                    }
+                    // Translations of flagged messages stay out of chat.
+                    for (i, t) in &translations {
+                        let flagged = findings.iter().any(|(k, _)| k == i);
+                        self.publish_translation(&batch[*i].m, t, !flagged);
+                    }
+                    for (i, mut f) in findings {
                         f.translation = translations.remove(&i);
                         let p = self.profiles();
                         self.handle_finding(&p, &batch[i].m, f);
@@ -1473,8 +1734,23 @@ impl Session {
             }
             let p = self.profiles();
             let tr = &p.ch.translation;
+            if !tr.active() {
+                continue;
+            }
+            // Known texts come from the cache.
+            let now = now_ms();
+            batch.retain(|m| {
+                let cached = self.translations.lock().get(&m.text, now);
+                if let Some(t) = &cached {
+                    self.publish_translation(m, t, true);
+                }
+                cached.is_none()
+            });
+            if batch.is_empty() {
+                continue;
+            }
             let Some(ai_profile) = p.mod_ai.clone() else { continue };
-            if !tr.active() || !self.budget_ok(&p) {
+            if !self.budget_ok(&p) {
                 continue;
             }
             let now = now_ms();
@@ -1494,7 +1770,9 @@ impl Session {
             match self.ai_call(&ai_profile, req).await {
                 Ok(text) => {
                     for (i, t) in translate::parse(&text, batch.len()) {
-                        self.publish_translation(&batch[i], &translate::without_name(t, &batch[i].display_name));
+                        let t = translate::without_name(t, &batch[i].display_name);
+                        self.translations.lock().put(&batch[i].text, &t, now);
+                        self.publish_translation(&batch[i], &t, true);
                     }
                 }
                 Err(e) => log::warn!("translation failed: {e}"),
@@ -1519,7 +1797,10 @@ impl Session {
                 tokio::time::sleep(Duration::from_millis(wait as u64)).await;
             }
             let p = self.profiles();
-            let full = output::with_prefix(&msg.text, p.ch.prefix_enabled, &p.ch.prefix);
+            let full = match &msg.prefix {
+                Some(pre) => output::with_prefix(&msg.text, true, pre),
+                None => output::with_prefix(&msg.text, p.ch.prefix_enabled, &p.ch.prefix),
+            };
             let full = output::truncate_words(&full, output::TWITCH_MAX);
             let ts = now_ms();
             self.ctx.lock().expect_own(&full, ts);
@@ -1537,6 +1818,18 @@ impl Session {
             };
             last_sent = now_ms();
             match result {
+                Ok(id) if msg.prefix.is_some() => {
+                    // Translations: shown in the feed, but not part of the bot's conversation.
+                    if let Some(id) = &id {
+                        self.ctx.lock().note_sent_id(id.clone());
+                    }
+                    let mut item = FeedItem::new("bot", full.clone());
+                    item.user = p.ch.bot_name.clone();
+                    item.login = self.sender_login.clone();
+                    item.message_id = id.unwrap_or_default();
+                    item.meta = json!({ "reason": msg.reason, "sandbox": self.sandbox, "fullText": full });
+                    self.feed(item);
+                }
                 Ok(id) => {
                     self.ctx.lock().push_bot(
                         Line {
@@ -1587,7 +1880,7 @@ impl Session {
         };
         if !due.is_empty() {
             for m in due {
-                let _ = self.out_tx.send(Outgoing { text: m.text, reason: m.reason });
+                let _ = self.out_tx.send(Outgoing { text: m.text, reason: m.reason, prefix: None });
             }
             self.emit_pending();
         }
@@ -1609,6 +1902,9 @@ impl Session {
         }
 
         self.interval_check(&p, now);
+        if n.is_multiple_of(5) {
+            self.automation_tick(&p, n, now);
+        }
 
         if n.is_multiple_of(5) {
             self.emit_status();
@@ -1619,7 +1915,10 @@ impl Session {
         }
         if n > 0 && n.is_multiple_of(120) {
             let me = self.clone();
-            tokio::spawn(async move { me.refresh_stream().await });
+            tokio::spawn(async move {
+                me.refresh_stream().await;
+                me.refresh_chatters().await;
+            });
         }
         if n > 0 && n.is_multiple_of(1800) {
             let me = self.clone();
@@ -1670,6 +1969,12 @@ impl Session {
             self.schedule_next(c, 0.5);
             return;
         }
+        // Nobody sees chat during an ad break.
+        if p.ch.ads.quiet_during_ads && self.ads.lock().ad_running(now / 1000) {
+            set_paused("ad");
+            self.schedule_next(c, 0.3);
+            return;
+        }
         let (rate, unanswered) = {
             let mut ctx = self.ctx.lock();
             (ctx.rate_per_min(now), ctx.unanswered)
@@ -1696,6 +2001,53 @@ impl Session {
             prompt::pick_interval_kind(c, &recent, !game.is_empty() && !research::is_non_game(&game))
         };
         self.spawn_task(Task::Interval(kind));
+    }
+
+    /// Shield Mode off after a calm period; ad schedule, announcements and the pre-roll guard.
+    fn automation_tick(self: &Arc<Self>, p: &Profiles, n: u64, now: i64) {
+        if self.shield.lock().calm(&p.ch.auto_shield, now) {
+            self.set_shield(false);
+        }
+        let live = self.stream.lock().live;
+        if !p.ch.ads.auto || !live || self.sandbox || !self.has_twitch() {
+            return;
+        }
+        let secs = now / 1000;
+        // Twitch's schedule once a minute (and right away when switched on).
+        if n.is_multiple_of(60) || self.ads.lock().schedule.is_none() {
+            let me = self.clone();
+            tokio::spawn(async move {
+                match me.st.helix().raw(reqwest::Method::GET, "/channels/ads", &me.broadcaster_id, &[("broadcaster_id", &me.broadcaster_id)], None).await {
+                    Ok(v) => {
+                        if let Some(s) = automation::AdSchedule::parse(&v) {
+                            me.ads.lock().update(s);
+                        }
+                    }
+                    Err(e) => log::info!("ad schedule unavailable: {e}"),
+                }
+            });
+            return;
+        }
+        let steps = self.ads.lock().plan(&p.ch.ads, secs);
+        for step in steps {
+            match step {
+                AdStep::Announce(in_secs) => {
+                    let de = prompt::fixed_text_lang(&p.comp, &self.stream.lock().language) == "de";
+                    let text = automation::ad_announcement(&p.ch.ads, de, in_secs);
+                    let _ = self.out_tx.send(Outgoing { text, reason: "ads".into(), prefix: None });
+                }
+                AdStep::Run(length) => {
+                    let me = self.clone();
+                    tokio::spawn(async move {
+                        let body = json!({ "broadcaster_id": me.broadcaster_id, "length": length });
+                        match me.st.helix().raw(reqwest::Method::POST, "/channels/commercial", &me.broadcaster_id, &[], Some(body)).await {
+                            Ok(_) => me.keyed("system", "adStarted", json!({ "secs": length }), format!("Ad started ({length} s) to keep pre-rolls away.")),
+                            Err(e) => me.error(format!("Starting an ad failed: {e}")),
+                        }
+                    });
+                }
+            }
+        }
     }
 
     fn save_seen(&self) {
@@ -1729,7 +2081,7 @@ impl Session {
                     pos.map(|i| pending.remove(i))
                 };
                 if let Some(m) = m {
-                    let _ = self.out_tx.send(Outgoing { text: m.text, reason: m.reason });
+                    let _ = self.out_tx.send(Outgoing { text: m.text, reason: m.reason, prefix: None });
                 }
                 self.emit_pending();
             }
@@ -1905,6 +2257,7 @@ pub async fn run(session: Arc<Session>, mut ctrl: mpsc::UnboundedReceiver<Contro
             let game = me.stream.lock().game.clone();
             me.maybe_research(game);
             me.refresh_emotes().await;
+            me.refresh_chatters().await;
         });
     }
     if !s.sandbox {

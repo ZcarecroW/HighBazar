@@ -71,6 +71,14 @@ impl ChatContext {
         self.push(line);
     }
 
+    /// A message the bot sent that is not part of its conversation (translations).
+    pub fn note_sent_id(&mut self, id: String) {
+        self.sent_ids.push_back(id);
+        while self.sent_ids.len() > 200 {
+            self.sent_ids.pop_front();
+        }
+    }
+
     fn push(&mut self, line: Line) {
         self.lines.push_back(line);
         while self.lines.len() > MAX_LINES {

@@ -136,6 +136,10 @@ fn web_tools(req: &AiRequest) -> &'static str {
 
 async fn run(exe: &std::path::Path, p: &AiProfile, req: &AiRequest, prompt_file: &std::path::Path, modern: bool) -> AppResult<AiResponse> {
     let mut cmd = command_for(exe);
+    // Every `claude -p` call is a new session whose prompt prefix differs, so a
+    // cache entry is never read again – writing it only costs extra (measured
+    // with CLI 2.1.304: ~900 tokens written per call, 0 read).
+    cmd.env("DISABLE_PROMPT_CACHING", "1");
     let tools = web_tools(req);
     cmd.arg("-p")
         .arg("--output-format")

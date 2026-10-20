@@ -37,6 +37,7 @@ export const api = {
   codexCliStatus: (path?: string) => invoke<CliStatus>("codex_cli_status", { path }),
   chatSuggest: (query: string, mode: SuggestMode, german: boolean, limit = 10) => invoke<Suggestion[]>("chat_suggest", { query, mode, german, limit }),
   chatSend: (text: string) => invoke<void>("chat_send", { text }),
+  chatStatus: () => invoke<{ subEmotesMissing: boolean; emotes: number; people: number }>("chat_status"),
   webSearchTest: (settings: WebSearchSettings, query: string) => invoke<SearchHit[]>("web_search_test", { settings, query }),
   twitchLoginStart: (kind: "streamer" | "bot", level?: string) => invoke<LoginStart>("twitch_login_start", { kind, level }),
   twitchLoginCancel: (loginId: string) => invoke<void>("twitch_login_cancel", { loginId }),

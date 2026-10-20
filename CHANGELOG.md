@@ -4,6 +4,27 @@ All notable changes to HighBazar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.7.0] – 2026-10-20
+
+Chat fixes, Auto Shield, AutoMod presets, channel points the bot answers, ad automation, translations in chat and fewer AI tokens. Tested with Claude Code (chat input and its suggestions in the app and in the overlay page in a real browser, "@" with the live Twitch chatter list, Auto Shield and translations in chat with the Claude Code CLI in test mode, AI tokens measured before and after with the same test-mode chat, the new Stream panels without writing to Twitch). Windows build.
+
+### Added
+- **Auto Shield** (Stream → *Safety*, off by default): turns Twitch's Shield Mode on when several different accounts post hate, harassment, threats or sexual harassment within a short time (as found by moderation), and off again after a calm period. Accounts, time window and calm period are adjustable.
+- **Twitch AutoMod explained and with presets**: every category has a tooltip with what it covers, every level a name (0 off … 4 anything suspicious). Six built-in presets (Off, Hate only, Gaming relaxed, Balanced, Strict, Family friendly) plus presets of your own.
+- **Channel points the bot answers**: rewards can be linked to an AI action – answer a question, a friendly roast, a rhyme about the viewer, a game fun fact or your own instruction – or to one minute of emote-only chat. Done redemptions leave the queue; ones that can't be done (bot off, budget, error) are refunded automatically. Seven one-click templates plus templates of your own, and a queue to mark redemptions done or refund them.
+- **Ad automation** (Stream → *Ads*, off by default): Twitch doesn't let apps change the Ads Manager settings, so HighBazar steers ads itself – runs a mid-roll in time so newcomers don't get a pre-roll, announces ads in chat, pushes the next ad back when a raid comes in and pauses timed bot messages during ad breaks. Plus a button that opens the Ads Manager.
+- **Translations in chat**: translations of foreign messages are now also posted in chat by default, e.g. "[HighBazar][Translator] Anna (Spanish): Hello everyone!" (prefix adjustable, can be switched off). Messages flagged by moderation are never posted translated; at most 8 a minute.
+- **Profiles ↔ channels both ways**: on the Companion and Moderation pages, tick the channels a profile is used in.
+- **"@" suggests everyone in chat**, including people who haven't written yet (Twitch's chatter list), recent chatters first.
+
+### Changed
+- **Fewer AI tokens without losing anything**: emote-only messages and short messages the AI just found fine ("gg", "lol") are no longer sent to AI moderation; the same foreign message is translated only once; the chat log in companion prompts is more compact (one time stamp per minute, repeated spam once with a count, the bot's own messages listed only once); fewer emote names when the bot rarely uses emotes. The Claude Code CLI no longer writes ~900 tokens into a prompt cache on every call that could never be read again (measured with CLI 2.1.304).
+- "Reply to chatters in their language" is now off by default (also for existing profiles) – you couldn't read those answers yourself; the translator covers foreign messages instead.
+
+### Fixed
+- The chat input shows why suggestions are missing: "no matches", "nobody in chat yet" or – for logins from before 1.6.0 – that the emotes of your subscriptions need a reconnect.
+- ":D", ":P" and other one-letter smileys are sent with Enter instead of being replaced by the first suggestion; ":)" no longer opens suggestions at all.
+
 ## [1.6.0] – 2026-10-20
 
 Web search, Codex CLI, fuzzy search and your own chat input. Tested with Claude Code (web search with the Claude Code CLI and through HighBazar's own search, the Codex CLI against its real binary with a stand-in OpenAI server, raid suggestions with the live Twitch channel search, chat input and emote suggestions in the app and in the overlay page in a real browser – sent in test mode only –, security checks of the overlay's send route, suggestion speed measured on the release build). Windows build.

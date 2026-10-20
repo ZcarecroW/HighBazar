@@ -6,6 +6,7 @@ import { useApp } from "../stores/app";
 import { pdesc, pname } from "../i18n";
 import type { CommandConfig, CompanionProfile } from "../lib/types";
 import ProfileList from "../components/ProfileList.vue";
+import ProfileChannels from "../components/ProfileChannels.vue";
 import BuiltinBanner from "../components/BuiltinBanner.vue";
 import UiToggle from "../components/ui/UiToggle.vue";
 import UiField from "../components/ui/UiField.vue";
@@ -29,7 +30,6 @@ watch(
 );
 const p = computed<CompanionProfile>(() => cfg.value.companionProfiles.find((x) => x.id === selectedId.value)!);
 const ro = computed(() => p.value.builtin);
-const isUsed = computed(() => app.activeChannel?.companionProfileId === p.value.id);
 
 const sections = ["personality", "timing", "content", "language", "emotes", "interactions", "commands", "research"] as const;
 const sectionIcons = { personality: Smile, timing: Clock, content: Tag, language: Globe, emotes: Heart, interactions: Bell, commands: Chat, research: Brain };
@@ -50,9 +50,6 @@ function remove(id: string) {
   const prof = cfg.value.companionProfiles.find((x) => x.id === id);
   if (!prof || prof.builtin || !confirm(t("common.confirmDelete", { name: prof.name }))) return;
   cfg.value.companionProfiles = cfg.value.companionProfiles.filter((x) => x.id !== id);
-}
-function useIt() {
-  if (app.activeChannel) app.activeChannel.companionProfileId = p.value.id;
 }
 
 const mixKeys = ["chatReaction", "gameFact", "gameTip", "trivia", "joke", "question", "hype", "streamMoment"] as const;
@@ -101,10 +98,7 @@ const emoteLevels = computed(() => tm("companion.emoteLevels") as unknown as str
             <input v-if="!ro" v-model="p.description" class="input" />
             <input v-else :value="pdesc(p)" class="input" disabled />
           </UiField>
-          <div class="self-end">
-            <span v-if="isUsed" class="chip bg-emerald-500/15 py-1 text-emerald-600">{{ t("common.active") }}</span>
-            <button v-else class="btn" @click="useIt">{{ t("common.setActive") }}</button>
-          </div>
+          <ProfileChannels :profile-id="p.id" field="companionProfileId" fallback-id="builtin-companion-balanced" />
         </div>
 
         <!-- Section tabs -->
@@ -195,7 +189,7 @@ const emoteLevels = computed(() => tm("companion.emoteLevels") as unknown as str
             <UiField :label="t('companion.fixedLanguage')">
               <UiCombobox v-model="p.language.fixed" :options="languageOptions(languages, locale)" :disabled="ro" :label="t('companion.fixedLanguage')" />
             </UiField>
-            <UiToggle v-model="p.language.replyInUserLanguage" :label="t('companion.replyInUserLanguage')" :disabled="ro" />
+            <UiToggle v-model="p.language.replyInUserLanguage" :label="t('companion.replyInUserLanguage')" :hint="t('companion.replyInUserLanguageHint')" :disabled="ro" />
             <UiToggle v-model="p.language.allowSlang" :label="t('companion.allowSlang')" :disabled="ro" />
           </div>
 
