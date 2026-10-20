@@ -799,7 +799,7 @@ const de: typeof en = {
   },
   chatInput: {
     label: "Nachricht an den Chat",
-    placeholder: "Nachricht … ( : Emotes, @ Leute, Tab ergänzt)",
+    placeholder: "Nachricht … ( : Emotes, {'@'} Leute, Tab ergänzt)",
     placeholderTest: "Testmodus – wird nur hier angezeigt, nicht an Twitch gesendet",
     notRunning: "Starte den Bot, um selbst zu chatten",
     send: "Senden (Enter)",
@@ -846,7 +846,7 @@ const de: typeof en = {
     smoothScroll: "Neue Nachrichten sanft einrollen",
     smoothScrollHint: "Der Chat gleitet nach oben, statt zu springen – so verlierst du beim Lesen nicht die Zeile. Ist in Windows „Animationen anzeigen“ ausgeschaltet, rollt der Chat nie.",
     chatInput: "Selbst im Chat schreiben",
-    chatInputHint: "Ein Eingabefeld unter dem Live-Chat. „:“ schlägt Emotes aller Anbieter und Emojis vor, „@“ Leute aus dem Chat, Tab vervollständigt das Wort, ↑ holt deine letzte Nachricht zurück.",
+    chatInputHint: "Ein Eingabefeld unter dem Live-Chat. „:“ schlägt Emotes aller Anbieter und Emojis vor, „{'@'}“ Leute aus dem Chat, Tab vervollständigt das Wort, ↑ holt deine letzte Nachricht zurück.",
     scrollDuration: "Geschwindigkeit",
     scrollDurationHint: "Wie lange eine neue Nachricht zum Einrollen braucht. Kürzer wirkt reaktionsschneller, länger ruhiger. 350–600 ms sind für die meisten angenehm. Kommen Nachrichten schneller, als sie einrollen, gleitet der Chat ohne Ruck weiter.",
     scrollEasing: "Anfahren und Bremsen",

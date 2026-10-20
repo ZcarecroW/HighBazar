@@ -4,7 +4,9 @@ All notable changes to HighBazar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.6.0] – 2026-10-20
+
+Web search, Codex CLI, fuzzy search and your own chat input. Tested with Claude Code (web search with the Claude Code CLI and through HighBazar's own search, the Codex CLI against its real binary with a stand-in OpenAI server, raid suggestions with the live Twitch channel search, chat input and emote suggestions in the app and in the overlay page in a real browser – sent in test mode only –, security checks of the overlay's send route, suggestion speed measured on the release build). Windows build.
 
 ### Added
 - **Write in chat yourself** – under the live feed (Settings → *Chat & size*, on by default) and optionally in the overlay page (Settings → *Steam overlay* → *Chat input in the overlay*, off by default): Shift+Tab into the Steam overlay, type, Enter, back to the game. Messages go out as the streamer; in test mode they only appear in the feed. A spam guard stops more than 20 messages in 30 seconds.

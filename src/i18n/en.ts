@@ -797,7 +797,7 @@ export default {
   },
   chatInput: {
     label: "Message to chat",
-    placeholder: "Message … ( : emotes, @ people, Tab completes)",
+    placeholder: "Message … ( : emotes, {'@'} people, Tab completes)",
     placeholderTest: "Test mode – only shown here, not sent to Twitch",
     notRunning: "Start the bot to chat yourself",
     send: "Send (Enter)",
@@ -844,7 +844,7 @@ export default {
     smoothScroll: "Let new messages glide in",
     smoothScrollHint: "The chat glides up instead of jumping, so you don't lose your line while reading. If animations are turned off in your system settings, the chat never glides.",
     chatInput: "Write in chat yourself",
-    chatInputHint: "An input field under the live chat. “:” suggests emotes of every provider and emojis, “@” people from chat, Tab completes the word, ↑ brings back your last message.",
+    chatInputHint: "An input field under the live chat. “:” suggests emotes of every provider and emojis, “{'@'}” people from chat, Tab completes the word, ↑ brings back your last message.",
     scrollDuration: "Speed",
     scrollDurationHint: "How long a new message takes to glide in. Shorter feels snappier, longer calmer. 350–600 ms suits most people. If messages arrive faster than they glide in, the chat keeps moving without a jerk.",
     scrollEasing: "Acceleration and braking",
