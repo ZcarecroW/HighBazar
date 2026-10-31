@@ -55,7 +55,8 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "HighBazar ${{ github.ref_name }}"
-          releaseBody: "See the assets below to download and install this version. Full notes: https://github.com/ZcarecroW/HighBazar/blob/main/CHANGELOG.md"
+          # Also the "notes" in latest.json, which the in-app update dialog shows.
+          releaseBody: "See https://github.com/ZcarecroW/HighBazar/releases/tag/${{ github.ref_name }}"
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
