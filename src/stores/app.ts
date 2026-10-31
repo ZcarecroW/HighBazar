@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { computed, ref, shallowRef, watch } from "vue";
 import { onEvent } from "../lib/events";
-import { pname } from "../i18n";
+import { pname, setLocale } from "../i18n";
 import { api, clone, errorText, newId } from "../lib/api";
 import type {
   AiProfile,
@@ -11,6 +11,7 @@ import type {
   ChatTranslation,
   CompanionProfile,
   Config,
+  EmoteMap,
   FeedItem,
   ModLogEntry,
   ModerationProfile,
@@ -66,6 +67,12 @@ export const useApp = defineStore("app", () => {
   const modEntries = ref<Map<string, ModLogEntry>>(new Map());
   /** Emote name → image URL of the channel the bot loaded (Twitch, BTTV, FFZ, 7TV). */
   const emoteUrls = shallowRef<Record<string, string>>({});
+  /** Emotes drawn over the emote before them (7TV zero-width, BTTV hats). */
+  const zeroWidth = shallowRef<ReadonlySet<string>>(new Set());
+  function setEmotes(m: EmoteMap | null) {
+    emoteUrls.value = m?.urls ?? {};
+    zeroWidth.value = new Set(m?.zeroWidth ?? []);
+  }
   // Translations of chat messages, by message id (shown under the message in the feed).
   const translations = shallowRef<Map<string, ChatTranslation>>(new Map());
   const toasts = ref<Toast[]>([]);
@@ -101,6 +108,8 @@ export const useApp = defineStore("app", () => {
   async function load() {
     try {
       applyBootstrap(await api.bootstrap());
+      // The chosen language before the first page shows (no flash of the other one).
+      await setLocale(config.value!.settings.language ?? "auto");
       // The bot outlives a reload of the window.
       running.value = await api.botRunning().catch(() => null);
       if (running.value) {
@@ -111,7 +120,7 @@ export const useApp = defineStore("app", () => {
           translations.value = new Map(recent.translations.map((t) => [t.messageId, { lang: t.lang, text: t.text }]));
         }
       }
-      emoteUrls.value = await api.emoteUrls().catch(() => ({}));
+      setEmotes(await api.emoteMap().catch(() => null));
       ready.value = true;
       if (!config.value!.settings.wizardCompleted) wizardOpen.value = true;
       if (import.meta.env.DEV) {
@@ -297,7 +306,7 @@ export const useApp = defineStore("app", () => {
       else if (!running.value) running.value = { channelId: p.channelId, sandbox: p.sandbox };
     });
     await onEvent<PendingMessage[]>("hb:pending", (p) => (pending.value = p));
-    await onEvent<Record<string, string>>("hb:emotes", (p) => (emoteUrls.value = p));
+    await onEvent<EmoteMap>("hb:emotes", setEmotes);
     await onEvent<ChatTranslation & { messageId: string }>("hb:translation", (p) => {
       const m = new Map(translations.value);
       m.set(p.messageId, { lang: p.lang, text: p.text });
@@ -333,6 +342,7 @@ export const useApp = defineStore("app", () => {
     pending,
     modEntries,
     emoteUrls,
+    zeroWidth,
     translations,
     toasts,
     saving,

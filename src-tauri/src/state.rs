@@ -22,8 +22,8 @@ pub struct AppState {
     pub usage: parking_lot::Mutex<crate::bot::usage::UsageBook>,
     /// Device-code logins in progress (id → cancelled flag).
     pub logins: parking_lot::Mutex<std::collections::HashMap<String, Arc<std::sync::atomic::AtomicBool>>>,
-    /// Emote name → image URL of the channel the bot last loaded (for the UI).
-    pub emote_urls: RwLock<Arc<std::collections::HashMap<String, String>>>,
+    /// Emote images of the channel the bot last loaded (for the UI and the overlay).
+    pub emote_map: RwLock<Arc<crate::twitch::emotes::EmoteMap>>,
     /// Live feed fan-out (Steam overlay page, reopened windows).
     pub overlay: crate::overlay::Hub,
     /// Suggestions for the streamer's own chat input.
@@ -55,7 +55,7 @@ impl AppState {
             tokens,
             bot: BotManager::default(),
             logins: Default::default(),
-            emote_urls: Default::default(),
+            emote_map: Default::default(),
             overlay: Default::default(),
             chat: crate::chat::ChatAssist::new(&chat_dir),
             overlay_server: Default::default(),

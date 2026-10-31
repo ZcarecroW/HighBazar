@@ -8,11 +8,11 @@ import type { BotStatus, Config, FeedItem, ModLogEntry, PendingMessage, Provider
 
 const providers: ProviderInfo[] = [
   { id: "anthropic", name: "Anthropic (Claude)", baseUrl: "https://api.anthropic.com", needsKey: true, webSearch: true, keyUrl: "https://platform.claude.com/settings/keys", local: false, reasoningOptions: ["", "low", "medium", "high", "xhigh", "max"] },
-  { id: "openai", name: "OpenAI", baseUrl: "https://api.openai.com/v1", needsKey: true, webSearch: true, keyUrl: "https://platform.openai.com/api-keys", local: false, reasoningOptions: ["", "minimal", "low", "medium", "high"] },
+  { id: "openai", name: "OpenAI", baseUrl: "https://api.openai.com/v1", needsKey: true, webSearch: true, keyUrl: "https://platform.openai.com/api-keys", local: false, reasoningOptions: ["", "none", "low", "medium", "high", "xhigh", "max"] },
   { id: "gemini", name: "Google Gemini", baseUrl: "https://generativelanguage.googleapis.com/v1beta", needsKey: true, webSearch: true, keyUrl: "https://aistudio.google.com/apikey", local: false, reasoningOptions: ["", "minimal", "low", "medium", "high"] },
   { id: "openrouter", name: "OpenRouter", baseUrl: "https://openrouter.ai/api/v1", needsKey: true, webSearch: true, keyUrl: "https://openrouter.ai/settings/keys", local: false, reasoningOptions: ["", "low", "medium", "high"] },
   { id: "mistral", name: "Mistral AI", baseUrl: "https://api.mistral.ai/v1", needsKey: true, webSearch: false, keyUrl: "", local: false, reasoningOptions: [""] },
-  { id: "deepseek", name: "DeepSeek", baseUrl: "https://api.deepseek.com/v1", needsKey: true, webSearch: false, keyUrl: "", local: false, reasoningOptions: [""] },
+  { id: "deepseek", name: "DeepSeek", baseUrl: "https://api.deepseek.com/v1", needsKey: true, webSearch: false, keyUrl: "", local: false, reasoningOptions: ["", "none", "low", "high", "max"] },
   { id: "perplexity", name: "Perplexity", baseUrl: "https://api.perplexity.ai", needsKey: true, webSearch: true, keyUrl: "", local: false, reasoningOptions: [""] },
   { id: "ollama", name: "Ollama (local)", baseUrl: "http://localhost:11434/v1", needsKey: false, webSearch: false, keyUrl: "", local: true, reasoningOptions: [""] },
   { id: "lmstudio", name: "LM Studio (local)", baseUrl: "http://localhost:1234/v1", needsKey: false, webSearch: false, keyUrl: "", local: true, reasoningOptions: [""] },
@@ -158,7 +158,7 @@ export async function mockInvoke(cmd: string, args: any): Promise<any> {
     case "get_modlog":
       return [];
     case "get_emote_urls":
-      return {};
+      return { urls: {}, zeroWidth: [] };
     case "twitch_api":
       return mockTwitch(args.method as string, args.path as string);
     case "get_usage":

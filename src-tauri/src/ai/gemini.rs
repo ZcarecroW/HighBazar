@@ -24,7 +24,7 @@ pub async fn complete(http: &reqwest::Client, p: &AiProfile, key: &str, req: &Ai
 async fn interactions(http: &reqwest::Client, p: &AiProfile, key: &str, req: &AiRequest) -> AppResult<AiResponse> {
     let mut gen_cfg = json!({ "max_output_tokens": max_tokens(p, req) });
     if !p.reasoning.is_empty() {
-        gen_cfg["thinking_level"] = json!(p.reasoning);
+        gen_cfg["thinking_level"] = json!(thinking_level(p));
     }
     let mut b = json!({
         "model": p.model,
@@ -52,6 +52,12 @@ async fn interactions(http: &reqwest::Client, p: &AiProfile, key: &str, req: &Ai
     Ok(parse_interaction(&v))
 }
 
+/// Gemini 4 (Argon) and 3.8 Flash think at least "low"; "minimal" is an error there.
+fn thinking_level(p: &AiProfile) -> &str {
+    let model = p.model.trim_start_matches("models/");
+    if p.reasoning == "minimal" && (model.starts_with("gemini-4") || model.starts_with("gemini-3.8")) { "low" } else { &p.reasoning }
+}
+
 pub fn parse_interaction(v: &Value) -> AiResponse {
     let mut text = String::new();
     if let Some(steps) = v["steps"].as_array() {
@@ -74,6 +80,8 @@ pub fn parse_interaction(v: &Value) -> AiResponse {
     AiResponse {
         text,
         input_tokens: u["total_input_tokens"].as_u64().unwrap_or(0),
+        cache_read_tokens: 0,
+        cache_write_tokens: 0,
         output_tokens: u["total_output_tokens"].as_u64().unwrap_or(0) + u["total_thought_tokens"].as_u64().unwrap_or(0),
         reported_cost_usd: None,
         tool_cost_usd: 0.0,
@@ -85,12 +93,15 @@ pub fn parse_interaction(v: &Value) -> AiResponse {
 async fn generate_content(http: &reqwest::Client, p: &AiProfile, key: &str, req: &AiRequest) -> AppResult<AiResponse> {
     let mut gen_cfg = json!({ "maxOutputTokens": max_tokens(p, req) });
     if !p.reasoning.is_empty() {
-        gen_cfg["thinkingConfig"] = json!({ "thinkingLevel": p.reasoning });
+        gen_cfg["thinkingConfig"] = json!({ "thinkingLevel": thinking_level(p) });
     }
     let mut b = json!({
         "systemInstruction": { "parts": [{ "text": req.system }] },
         "contents": [{ "role": "user", "parts": [{ "text": req.user }] }],
         "generationConfig": gen_cfg,
+        // New paid projects store requests by default since 2026-10-26: chat
+        // messages of viewers stay out of Google's logs.
+        "store": false,
     });
     if req.web_search {
         b["tools"] = json!([{ "google_search": {} }]);
@@ -135,6 +146,8 @@ pub fn parse_generate(v: &Value) -> AppResult<AiResponse> {
     Ok(AiResponse {
         text,
         input_tokens: u["promptTokenCount"].as_u64().unwrap_or(0),
+        cache_read_tokens: 0,
+        cache_write_tokens: 0,
         output_tokens: u["candidatesTokenCount"].as_u64().unwrap_or(0) + u["thoughtsTokenCount"].as_u64().unwrap_or(0),
         reported_cost_usd: None,
         tool_cost_usd: searches as f64 * 0.014,

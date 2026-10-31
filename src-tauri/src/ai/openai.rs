@@ -2,7 +2,7 @@
 
 use serde_json::{Value, json};
 
-use super::{AiRequest, AiResponse, apply_headers, base_url, error_from, max_tokens, timeout};
+use super::{AiRequest, AiResponse, apply_headers, base_url, error_from, max_tokens, openai_reasoning_model, timeout};
 use crate::config::AiProfile;
 use crate::error::{AppError, AppResult};
 
@@ -15,9 +15,9 @@ pub async fn complete(http: &reqwest::Client, p: &AiProfile, key: &str, req: &Ai
         "store": false,
     });
     if !p.reasoning.is_empty() {
-        b["reasoning"] = json!({ "effort": p.reasoning });
+        b["reasoning"] = json!({ "effort": effort(&p.model, &p.reasoning) });
     }
-    if let Some(t) = p.temperature {
+    if let Some(t) = p.temperature.filter(|_| !openai_reasoning_model(&p.model)) {
         b["temperature"] = json!(t);
     }
     if req.web_search {
@@ -37,6 +37,12 @@ pub async fn complete(http: &reqwest::Client, p: &AiProfile, key: &str, req: &Ai
     }
     let v: Value = resp.json().await?;
     parse(&v)
+}
+
+/// GPT-6 models know "none" … "max"; "minimal" (GPT-5 era, saved in older
+/// profiles) would be rejected there.
+fn effort<'a>(model: &str, effort: &'a str) -> &'a str {
+    if effort == "minimal" && model.starts_with("gpt-6") { "none" } else { effort }
 }
 
 pub fn parse(v: &Value) -> AppResult<AiResponse> {
@@ -66,10 +72,15 @@ pub fn parse(v: &Value) -> AppResult<AiResponse> {
             }
         }
     }
+    if text.trim().is_empty() && v["incomplete_details"]["reason"].as_str() == Some("max_output_tokens") {
+        return Err(AppError::msg("The model used up “Max. output tokens” before writing an answer. Raise it in the AI profile or choose a lower effort."));
+    }
     let u = &v["usage"];
     Ok(AiResponse {
         text,
         input_tokens: u["input_tokens"].as_u64().unwrap_or(0),
+        cache_read_tokens: u["input_tokens_details"]["cached_tokens"].as_u64().unwrap_or(0),
+        cache_write_tokens: 0,
         output_tokens: u["output_tokens"].as_u64().unwrap_or(0),
         reported_cost_usd: None,
         tool_cost_usd: searches as f64 * 0.01,
@@ -95,5 +106,23 @@ mod tests {
         let r = parse(&v).unwrap();
         assert_eq!(r.text, "GG chat");
         assert_eq!(r.output_tokens, 4);
+    }
+
+    #[test]
+    fn cached_input_and_truncated_answers() {
+        let v = json!({
+            "output": [{"type": "message", "content": [{"type": "output_text", "text": "hi"}]}],
+            "usage": {"input_tokens": 3000, "input_tokens_details": {"cached_tokens": 2048}, "output_tokens": 2}
+        });
+        assert_eq!(parse(&v).unwrap().cache_read_tokens, 2048);
+        let cut = json!({"status": "incomplete", "incomplete_details": {"reason": "max_output_tokens"}, "output": [{"type": "reasoning"}], "usage": {}});
+        assert!(parse(&cut).is_err());
+    }
+
+    #[test]
+    fn maps_old_effort_names() {
+        assert_eq!(effort("gpt-6-luna", "minimal"), "none");
+        assert_eq!(effort("gpt-6.1-terra", "low"), "low");
+        assert_eq!(effort("gpt-5-mini", "minimal"), "minimal");
     }
 }

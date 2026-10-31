@@ -10,6 +10,7 @@
 
   let settings = { showBot: true, showEvents: true, showTranslations: true, hideAfterSecs: 0, background: 0.55, showEmotes: true, chatZoom: 1, chatScroll: { smooth: true, durationMs: 450, easing: "easeInOut" }, language: "auto", chatInput: false };
   let emotes = {};
+  let zeroWidth = new Set();
   const translations = new Map();
 
   // ---------------------------------------------------------------- texts
@@ -45,22 +46,50 @@
   }
 
   // ---------------------------------------------------------------- render
+  function setEmotes(m) {
+    emotes = (m && m.urls) || {};
+    zeroWidth = new Set((m && m.zeroWidth) || []);
+  }
+  function emoteImg(name, url) {
+    const img = document.createElement("img");
+    img.className = "emote";
+    img.src = url;
+    img.alt = name;
+    img.title = name;
+    img.decoding = "async";
+    return img;
+  }
+  // Same rules as the app (src/lib/emoteParts.ts): zero-width emotes are drawn
+  // over the emote before them; only own keys count ("constructor" is a word).
   function appendText(el, text, msgEmotes) {
     const parts = String(text).split(/(\s+)/);
     let buf = "";
+    let last = null; // the previous emote, while only whitespace follows it
     for (const p of parts) {
-      const url = settings.showEmotes && p.trim() ? (msgEmotes && msgEmotes[p]) || emotes[p] : null;
-      if (url) {
-        if (buf) el.appendChild(document.createTextNode(buf));
+      const native = settings.showEmotes && msgEmotes && Object.hasOwn(msgEmotes, p) ? msgEmotes[p] : null;
+      const url = native || (settings.showEmotes && p.trim() && Object.hasOwn(emotes, p) ? emotes[p] : null);
+      if (!url) {
+        buf += p;
+        if (p.trim()) last = null;
+        continue;
+      }
+      if (!native && last && zeroWidth.has(p)) {
+        if (last.tagName === "IMG") {
+          const stack = document.createElement("span");
+          stack.className = "stack";
+          last.replaceWith(stack);
+          stack.appendChild(last);
+          last = stack;
+        }
+        last.appendChild(emoteImg(p, url));
+        last.title = [...last.children].map((i) => i.alt).join(" ");
         buf = "";
-        const img = document.createElement("img");
-        img.className = "emote";
-        img.src = url;
-        img.alt = p;
-        img.title = p;
-        img.decoding = "async";
-        el.appendChild(img);
-      } else buf += p;
+        continue;
+      }
+      if (buf) el.appendChild(document.createTextNode(buf));
+      buf = "";
+      last = emoteImg(p, url);
+      el.appendChild(last);
     }
     if (buf) el.appendChild(document.createTextNode(buf));
   }
@@ -182,7 +211,7 @@
   // ---------------------------------------------------------------- events
   function reset(state) {
     settings = Object.assign(settings, state.settings || {});
-    emotes = state.emotes || {};
+    setEmotes(state.emotes);
     translations.clear();
     for (const t of state.translations || []) translations.set(t.messageId, t);
     applySettings();
@@ -367,6 +396,10 @@
     histPos = -1;
     refreshSug();
   });
+  // Moving the caret into or out of a ":" / "@" word updates the list.
+  sayIn.addEventListener("keyup", (e) => {
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "Home" || e.key === "End") refreshSug();
+  });
   sayIn.addEventListener("blur", () => {
     items = [];
     renderSug();
@@ -436,7 +469,7 @@
         if ((r.messageId && l.dataset.mid === r.messageId) || (r.userId && l.dataset.uid === r.userId && l.classList.contains("chat"))) l.remove();
       }
     });
-    on("emotes", (e) => (emotes = e || {}));
+    on("emotes", setEmotes);
     on("settings", (s) => {
       const rerender = s.showBot !== settings.showBot || s.showEvents !== settings.showEvents || s.showEmotes !== settings.showEmotes || s.showTranslations !== settings.showTranslations;
       Object.assign(settings, s);

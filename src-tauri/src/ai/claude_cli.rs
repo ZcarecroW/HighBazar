@@ -215,6 +215,8 @@ pub fn parse(v: &Value) -> AppResult<AiResponse> {
         input_tokens: u["input_tokens"].as_u64().unwrap_or(0)
             + u["cache_read_input_tokens"].as_u64().unwrap_or(0)
             + u["cache_creation_input_tokens"].as_u64().unwrap_or(0),
+        cache_read_tokens: u["cache_read_input_tokens"].as_u64().unwrap_or(0),
+        cache_write_tokens: u["cache_creation_input_tokens"].as_u64().unwrap_or(0),
         output_tokens: u["output_tokens"].as_u64().unwrap_or(0),
         // Covered by the subscription – does not count against the API budget.
         reported_cost_usd: Some(0.0),

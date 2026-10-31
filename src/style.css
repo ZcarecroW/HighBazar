@@ -232,6 +232,13 @@ select,
   .section-title {
     @apply mb-3 text-sm font-semibold text-fg;
   }
+  /* "i" next to a setting; the explanation is drawn by TipLayer. */
+  .tip-btn {
+    @apply ml-1 inline-grid -translate-y-px cursor-help place-items-center rounded-full align-middle text-muted normal-case transition outline-none hover:text-brand-500 focus-visible:text-brand-500 focus-visible:ring-2 focus-visible:ring-brand-500/40;
+  }
+  .tip-box {
+    @apply pointer-events-none fixed z-[70] max-w-xs rounded-lg border border-line bg-panel px-3 py-2 text-xs leading-relaxed font-normal tracking-normal whitespace-pre-line text-fg normal-case shadow-lg;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -248,6 +255,17 @@ select,
   width: auto;
   margin: -0.4em 0.05em;
   vertical-align: middle;
+}
+/* Zero-width emotes (7TV, BTTV hats) drawn on top of the emote before them. */
+.emote-stack {
+  display: inline-grid;
+  margin: -0.4em 0.05em;
+  vertical-align: middle;
+}
+.emote-stack > .emote {
+  grid-area: 1 / 1;
+  place-self: center;
+  margin: 0;
 }
 
 /* New live feed entries fade in while the feed glides up (see lib/smoothFollow.ts). */

@@ -13,6 +13,7 @@ import ModNote from "../components/ModNote.vue";
 import ActionPicker from "../components/ActionPicker.vue";
 import UiToggle from "../components/ui/UiToggle.vue";
 import UiField from "../components/ui/UiField.vue";
+import UiTip from "../components/ui/UiTip.vue";
 import UiSlider from "../components/ui/UiSlider.vue";
 import UiNumber from "../components/ui/UiNumber.vue";
 import UiTags from "../components/ui/UiTags.vue";
@@ -170,22 +171,23 @@ function sourceLabel(source: string) {
         <fieldset :disabled="ro" class="card-pad min-w-0">
           <!-- General -->
           <div v-if="section === 'general'" class="space-y-5">
-            <UiSegmented v-model="p.mode" :label="t('moderation.mode')" :options="modeOptions" :disabled="ro" />
-            <UiSegmented v-model="p.aiCheck" :label="t('moderation.aiCheck')" :options="aiOptions" :disabled="ro" />
+            <UiSegmented v-model="p.mode" :label="t('moderation.mode')" :tip="t('tips.moderation.mode')" :options="modeOptions" :disabled="ro" />
+            <UiSegmented v-model="p.aiCheck" :label="t('moderation.aiCheck')" :tip="t('tips.moderation.aiCheck')" :options="aiOptions" :disabled="ro" />
             <div class="grid gap-5 md:grid-cols-2">
-              <UiSlider v-model="p.strictness" :label="t('moderation.strictness')" :hint="t('moderation.strictnessHint')" :disabled="ro" />
+              <UiSlider v-model="p.strictness" :label="t('moderation.strictness')" :hint="t('moderation.strictnessHint')" :tip="t('tips.moderation.strictness')" :disabled="ro" />
               <UiSlider
                 v-model="p.minConfidence"
                 :label="t('moderation.minConfidence')"
+                :tip="t('tips.moderation.minConfidence')"
                 :min="0.5"
                 :max="1"
                 :step="0.05"
                 :display="Math.round(p.minConfidence * 100) + '%'"
                 :disabled="ro"
               />
-              <UiNumber v-model="p.maxAiCallsPerMin" :label="t('moderation.maxCalls')" :min="1" :max="120" :disabled="ro" />
+              <UiNumber v-model="p.maxAiCallsPerMin" :label="t('moderation.maxCalls')" :tip="t('tips.moderation.maxCalls')" :min="1" :max="120" :disabled="ro" />
             </div>
-            <UiField :label="t('moderation.channelRules')" :hint="t('moderation.channelRulesHint')">
+            <UiField :label="t('moderation.channelRules')" :hint="t('moderation.channelRulesHint')" :tip="t('tips.moderation.channelRules')">
               <textarea v-model="p.channelRules" rows="3" class="input" />
             </UiField>
           </div>
@@ -196,7 +198,7 @@ function sourceLabel(source: string) {
               <thead>
                 <tr class="text-left text-xs text-muted uppercase">
                   <th class="py-2 pr-3 font-semibold"></th>
-                  <th class="py-2 pr-3 font-semibold">{{ t("moderation.category") }}</th>
+                  <th class="py-2 pr-3 font-semibold">{{ t("moderation.category") }}<UiTip :text="t('tips.moderation.categories')" /></th>
                   <th class="py-2 pr-3 font-semibold">{{ t("moderation.clear") }}</th>
                   <th class="py-2 font-semibold">{{ t("moderation.borderline") }}</th>
                 </tr>
@@ -214,7 +216,7 @@ function sourceLabel(source: string) {
 
           <!-- Escalation -->
           <div v-else-if="section === 'escalation'" class="space-y-5">
-            <UiToggle v-model="p.escalation.enabled" :label="t('moderation.escalationEnabled')" :disabled="ro" />
+            <UiToggle v-model="p.escalation.enabled" :label="t('moderation.escalationEnabled')" :tip="t('tips.moderation.escalation')" :disabled="ro" />
             <UiNumber v-model="p.escalation.windowMins" :label="t('moderation.window')" :suffix="t('common.minutes')" :min="1" :max="10080" :disabled="ro" />
             <div class="space-y-2">
               <div v-for="(step, i) in p.escalation.steps" :key="i" class="flex items-center gap-3">
@@ -230,7 +232,7 @@ function sourceLabel(source: string) {
           <!-- Local rules -->
           <div v-else-if="section === 'rules'" class="space-y-6">
             <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-              <UiTags v-model="p.rules.blockedTerms" :label="t('moderation.blockedTerms')" :hint="t('moderation.blockedTermsHint')" :disabled="ro" />
+              <UiTags v-model="p.rules.blockedTerms" :label="t('moderation.blockedTerms')" :hint="t('moderation.blockedTermsHint')" :tip="t('tips.moderation.blockedTerms')" :disabled="ro" />
               <UiField :label="t('moderation.action')"><ActionPicker v-model="p.rules.blockedTermsAction" :disabled="ro" /></UiField>
             </div>
             <hr class="border-line" />
@@ -243,7 +245,7 @@ function sourceLabel(source: string) {
             </div>
             <hr class="border-line" />
             <div class="grid gap-4 md:grid-cols-3">
-              <UiField :label="t('moderation.links')">
+              <UiField :label="t('moderation.links')" :tip="t('tips.moderation.links')">
                 <select v-model="p.rules.links" class="input">
                   <option value="allow">{{ t("moderation.linkModes.allow") }}</option>
                   <option value="block">{{ t("moderation.linkModes.block") }}</option>
@@ -254,25 +256,25 @@ function sourceLabel(source: string) {
             </div>
             <hr class="border-line" />
             <div class="grid gap-4 md:grid-cols-4 md:items-end">
-              <UiToggle v-model="p.rules.capsEnabled" :label="t('moderation.caps')" :disabled="ro" />
+              <UiToggle v-model="p.rules.capsEnabled" :label="t('moderation.caps')" :tip="t('tips.moderation.caps')" :disabled="ro" />
               <UiNumber v-model="p.rules.capsMinLength" :label="t('moderation.capsMin')" :min="5" :max="500" :disabled="ro || !p.rules.capsEnabled" />
               <UiSlider v-model="p.rules.capsRatio" :label="t('moderation.capsRatio')" :min="0.5" :max="1" :step="0.05" :display="Math.round(p.rules.capsRatio * 100) + '%'" :disabled="ro || !p.rules.capsEnabled" />
               <UiField :label="t('moderation.action')"><ActionPicker v-model="p.rules.capsAction" :disabled="ro || !p.rules.capsEnabled" /></UiField>
             </div>
             <div class="grid gap-4 md:grid-cols-4 md:items-end">
-              <UiToggle v-model="p.rules.repeatEnabled" :label="t('moderation.repeat')" :disabled="ro" />
+              <UiToggle v-model="p.rules.repeatEnabled" :label="t('moderation.repeat')" :tip="t('tips.moderation.repeat')" :disabled="ro" />
               <UiNumber v-model="p.rules.repeatCount" :label="t('moderation.repeatCount')" :min="2" :max="20" :disabled="ro || !p.rules.repeatEnabled" />
               <span />
               <UiField :label="t('moderation.action')"><ActionPicker v-model="p.rules.repeatAction" :disabled="ro || !p.rules.repeatEnabled" /></UiField>
             </div>
             <div class="grid gap-4 md:grid-cols-4 md:items-end">
-              <UiToggle v-model="p.rules.emoteSpamEnabled" :label="t('moderation.emoteSpam')" :disabled="ro" />
+              <UiToggle v-model="p.rules.emoteSpamEnabled" :label="t('moderation.emoteSpam')" :tip="t('tips.moderation.emoteSpam')" :disabled="ro" />
               <UiNumber v-model="p.rules.maxEmotes" :label="t('moderation.maxEmotes')" :min="1" :max="200" :disabled="ro || !p.rules.emoteSpamEnabled" />
               <span />
               <UiField :label="t('moderation.action')"><ActionPicker v-model="p.rules.emoteSpamAction" :disabled="ro || !p.rules.emoteSpamEnabled" /></UiField>
             </div>
             <div class="grid gap-4 md:grid-cols-4 md:items-end">
-              <UiNumber v-model="p.rules.maxLength" :label="t('moderation.maxLength')" :min="0" :max="500" :disabled="ro" />
+              <UiNumber v-model="p.rules.maxLength" :label="t('moderation.maxLength')" :tip="t('tips.moderation.maxLength')" :min="0" :max="500" :disabled="ro" />
               <span />
               <span />
               <UiField :label="t('moderation.action')"><ActionPicker v-model="p.rules.lengthAction" :disabled="ro || !p.rules.maxLength" /></UiField>
@@ -281,21 +283,21 @@ function sourceLabel(source: string) {
 
           <!-- Exemptions -->
           <div v-else-if="section === 'exemptions'" class="space-y-5">
-            <p class="hint mt-0">{{ t("moderation.exemptHint") }}</p>
+            <p class="hint mt-0">{{ t("moderation.exemptHint") }}<UiTip :text="t('tips.moderation.exemptions')" /></p>
             <div class="grid gap-4 sm:grid-cols-3">
               <UiToggle v-model="p.exempt.moderators" :label="t('moderation.exemptMods')" :disabled="ro" />
               <UiToggle v-model="p.exempt.vips" :label="t('moderation.exemptVips')" :disabled="ro" />
               <UiToggle v-model="p.exempt.subscribers" :label="t('moderation.exemptSubs')" :disabled="ro" />
             </div>
-            <UiTags v-model="p.exempt.users" :label="t('moderation.exemptUsers')" :disabled="ro" />
+            <UiTags v-model="p.exempt.users" :label="t('moderation.exemptUsers')" :tip="t('tips.moderation.exemptUsers')" :disabled="ro" />
           </div>
 
           <!-- Messages -->
           <div v-else-if="section === 'messages'" class="space-y-5">
-            <UiField :label="t('moderation.reasonTemplate')" hint="{reason}">
+            <UiField :label="t('moderation.reasonTemplate')" hint="{reason}" :tip="t('tips.moderation.reasonTemplate')">
               <input v-model="p.reasonTemplate" class="input" />
             </UiField>
-            <UiToggle v-model="p.announceActions" :label="t('moderation.announce')" :disabled="ro" />
+            <UiToggle v-model="p.announceActions" :label="t('moderation.announce')" :tip="t('tips.moderation.announce')" :disabled="ro" />
           </div>
         </fieldset>
       </div>

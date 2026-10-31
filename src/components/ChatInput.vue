@@ -67,6 +67,11 @@ function onInput() {
   historyPos = -1;
   void refresh();
 }
+// Moving the caret into or out of a ":" / "@" word updates the list.
+const CARET_KEYS = new Set(["ArrowLeft", "ArrowRight", "Home", "End"]);
+function onKeyUp(e: KeyboardEvent) {
+  if (CARET_KEYS.has(e.key)) void refresh();
+}
 
 function pick(s: Suggestion) {
   const el = input.value!;
@@ -318,6 +323,7 @@ function reconnect() {
         @input="onInput"
         @click="refresh"
         @keydown="onKey"
+        @keyup="onKeyUp"
         @blur="list = []; token = null"
       />
       <span v-if="text.length > 400" class="shrink-0 text-xs tabular-nums" :class="tooLong ? 'text-red-500' : 'text-muted'">{{ [...text].length }}/500</span>

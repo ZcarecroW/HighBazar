@@ -4,6 +4,38 @@ All notable changes to HighBazar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.8.0] – 2026-10-31
+
+Smoother chat and emotes, explanations for every setting, current AI models and a faster start. Tested with Claude Code (Rust and frontend tests, suggestion speed measured before and after on an optimized build, live 7TV, BetterTTV and FrankerFaceZ data and 7TV's event stream checked against the real services, the release build started in test mode). Windows build.
+
+### Added
+- **Explanations everywhere**: a small ⓘ next to 143 settings and features (and on the main buttons) explains them in plain words – including Twitch terms like raids, VIPs, shoutouts, AutoMod, channel points, pre-rolls or follower-only mode – so newcomers don't have to look anything up. Hover, keyboard focus or a click shows it; it also works in the read-only built-in profiles.
+- **7TV live**: emotes the streamer or an editor adds, removes or renames in the channel's 7TV set appear right away in the live feed, the suggestions and the overlay (with a note in the feed), instead of with the next 30-minute refresh. Switching the active 7TV set is noticed too.
+- **Zero-width emotes** (7TV's RainTime, SteerR …, BTTV's hats) are drawn on top of the emote before them in the live feed and the overlay, like in the browser extensions.
+- AI preset **OpenAI GPT-6.1 Terra** (efficient, strong at writing, half the price of Sol). Reasoning effort "Off" for OpenAI and DeepSeek.
+
+### Changed
+- Emote suggestions are about twice as fast for `:` (0.67 ms instead of 1.31 ms per keystroke with ~6,400 emotes), Tab completion six times as fast, the emote picker seven times.
+- The window starts with 39 % less JavaScript: only the dashboard and the language in use are loaded at first, the other pages on their first visit.
+- The bot prefers your channel's own emotes when picking which emotes to use, instead of a random mix dominated by hundreds of global Twitch emotes.
+- AI costs count cached prompt tokens at their real price (a tenth for cache reads), so the daily budget no longer runs out early with Claude and OpenAI.
+- Game research with Claude may open the pages it found (web fetch, capped per page).
+- Requests to Gemini's generateContent API are no longer stored by Google (new paid projects store them by default since 2026-10-26); OpenRouter caches the system prompt for Claude models.
+- Emoji data updated to emojibase 18 (CLDR 49 names and keywords); the 9 new Emoji 18 emojis are held back until systems can draw them.
+- Updated: Tauri 2.12.5, tokio 1.54, parking_lot 0.13, Vite 8.3.5 and more; CI also runs the frontend tests.
+
+### Fixed
+- **The same emote was suggested several times** when more than one provider had it (e.g. "AngelThump" on 7TV and BTTV, "BibleThump" on Twitch, 7TV and FFZ), or when a set listed it twice. Each name is now suggested once – the one chat shows; `:b`, `:7` … still show a provider's own emote. The live feed also shows the right image for such names (a channel's emote beats a global one of another provider).
+- A failed request to one emote provider no longer makes its emotes disappear until the next refresh.
+- Follower emotes of other channels (only usable there) are no longer suggested.
+- BTTV's emote modifiers ("w!", "h!", "z!" …) are no longer treated as emotes.
+- "@" suggestions use the login for people whose display name is in another script, so the mention reaches them.
+- Words like "constructor" in chat were drawn as a broken emote image.
+- Suggestions follow the caret when it moves with the arrow keys, Home or End.
+- The DeepSeek preset used `deepseek-chat`, which DeepSeek retired on 2026-07-24; it now uses `deepseek-flash`, and profiles with the old names keep working.
+- OpenAI's GPT-6 models rejected "Minimal" effort and a custom temperature; Gemini 3.8 Flash and Gemini 4 rejected "Minimal" thinking. Both are mapped to what the model accepts.
+- When thinking used up "Max. output tokens" before any text, the bot got an empty answer silently; it now says so.
+
 ## [1.7.0] – 2026-10-20
 
 Chat fixes, Auto Shield, AutoMod presets, channel points the bot answers, ad automation, translations in chat and fewer AI tokens. Tested with Claude Code (chat input and its suggestions in the app and in the overlay page in a real browser, "@" with the live Twitch chatter list, Auto Shield and translations in chat with the Claude Code CLI in test mode, AI tokens measured before and after with the same test-mode chat, the new Stream panels without writing to Twitch). Windows build.

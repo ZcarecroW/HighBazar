@@ -66,19 +66,19 @@ onMounted(load);
     <h2 class="section-title mb-0 flex items-center gap-2"><Chat :size="17" class="text-brand-500" /> {{ t("stream.chat.title") }}</h2>
     <p v-if="!s" class="text-sm text-muted">{{ t("common.loading") }}</p>
     <template v-else>
-      <UiToggle v-model="s.emote_mode" :label="t('stream.chat.emoteOnly')" />
-      <UiToggle v-model="s.subscriber_mode" :label="t('stream.chat.subOnly')" />
-      <UiToggle v-model="s.unique_chat_mode" :label="t('stream.chat.unique')" :hint="t('stream.chat.uniqueHint')" />
+      <UiToggle v-model="s.emote_mode" :label="t('stream.chat.emoteOnly')" :tip="t('tips.stream.emoteOnly')" />
+      <UiToggle v-model="s.subscriber_mode" :label="t('stream.chat.subOnly')" :tip="t('tips.stream.subOnly')" />
+      <UiToggle v-model="s.unique_chat_mode" :label="t('stream.chat.unique')" :hint="t('stream.chat.uniqueHint')" :tip="t('tips.stream.unique')" />
       <div class="flex flex-wrap items-end gap-4">
-        <UiToggle v-model="s.follower_mode" :label="t('stream.chat.followerOnly')" class="flex-1" />
+        <UiToggle v-model="s.follower_mode" :label="t('stream.chat.followerOnly')" :tip="t('tips.stream.followerOnly')" class="flex-1" />
         <UiNumber v-if="s.follower_mode" v-model="s.follower_mode_duration!" :min="0" :max="129600" :suffix="t('stream.chat.minutesFollowed')" />
       </div>
       <div class="flex flex-wrap items-end gap-4">
-        <UiToggle v-model="s.slow_mode" :label="t('stream.chat.slow')" class="flex-1" />
+        <UiToggle v-model="s.slow_mode" :label="t('stream.chat.slow')" :tip="t('tips.stream.slow')" class="flex-1" />
         <UiNumber v-if="s.slow_mode" v-model="s.slow_mode_wait_time!" :min="3" :max="120" :suffix="t('stream.seconds')" />
       </div>
       <div class="flex flex-wrap items-end gap-4">
-        <UiToggle v-model="s.non_moderator_chat_delay" :label="t('stream.chat.delay')" :hint="t('stream.chat.delayHint')" class="flex-1" />
+        <UiToggle v-model="s.non_moderator_chat_delay" :label="t('stream.chat.delay')" :hint="t('stream.chat.delayHint')" :tip="t('tips.stream.chatDelay')" class="flex-1" />
         <select v-if="s.non_moderator_chat_delay" v-model.number="s.non_moderator_chat_delay_duration" class="input w-28">
           <option :value="2">2 s</option>
           <option :value="4">4 s</option>

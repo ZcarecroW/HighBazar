@@ -14,6 +14,7 @@ import type {
   ModelInfo,
   FeedItem,
   ChatTranslation,
+  EmoteMap,
   OverlayStatus,
   Bootstrap,
   Config,
@@ -53,7 +54,7 @@ export const api = {
   usage: () => invoke<Record<string, Record<string, UsageStats>>>("get_usage"),
   clearResearchCache: () => invoke<void>("clear_research_cache"),
   openDataDir: () => invoke<void>("open_data_dir"),
-  emoteUrls: () => invoke<Record<string, string>>("get_emote_urls"),
+  emoteMap: () => invoke<EmoteMap>("get_emote_urls"),
   twitchApi: <T = any>(accountId: string, method: string, path: string, query?: [string, string][], body?: unknown) =>
     invoke<T>("twitch_api", { accountId, method, path, query, body }),
 };

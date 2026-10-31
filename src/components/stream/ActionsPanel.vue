@@ -5,6 +5,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { Megaphone, Heart, Swords, Scissors, Bookmark, X, Bolt, Pin } from "../../icons";
 import { useTwitch } from "../../lib/twitch";
 import TwitchUserPicker from "../TwitchUserPicker.vue";
+import UiTip from "../ui/UiTip.vue";
 
 defineProps<{ live: boolean }>();
 const { t } = useI18n();
@@ -122,7 +123,7 @@ onMounted(loadPinned);
     <h2 class="section-title mb-0 flex items-center gap-2"><Bolt :size="17" class="text-brand-500" /> {{ t("stream.actions.title") }}</h2>
 
     <div>
-      <span class="label">{{ t("stream.actions.announcement") }}</span>
+      <span class="label">{{ t("stream.actions.announcement") }}<UiTip :text="t('tips.stream.announcement')" /></span>
       <textarea v-model="announcement" rows="2" maxlength="500" class="input mb-2" :placeholder="t('stream.actions.announcementPh')" />
       <div class="flex flex-wrap items-center gap-2">
         <select v-model="color" class="input w-36">
@@ -133,7 +134,7 @@ onMounted(loadPinned);
     </div>
 
     <div id="jump-shoutout" class="scroll-mt-4">
-      <span class="label">{{ t("stream.actions.shoutout") }}</span>
+      <span class="label">{{ t("stream.actions.shoutout") }}<UiTip :text="t('tips.stream.shoutout')" /></span>
       <div class="flex gap-2">
         <TwitchUserPicker v-model="shoutoutLogin" mode="shoutout" :placeholder="t('picker.channelPh')" :label="t('stream.actions.shoutout')" @submit="shoutoutLogin.trim() && live && shoutout()" />
         <button class="btn shrink-0" :disabled="!shoutoutLogin.trim() || !live || busy === 'shoutout'" @click="shoutout"><Heart :size="15" /> {{ t("stream.actions.shoutoutBtn") }}</button>
@@ -142,7 +143,7 @@ onMounted(loadPinned);
     </div>
 
     <div id="jump-raid" class="scroll-mt-4">
-      <span class="label">{{ t("stream.actions.raid") }}</span>
+      <span class="label">{{ t("stream.actions.raid") }}<UiTip :text="t('tips.stream.raid')" /></span>
       <div class="flex gap-2">
         <TwitchUserPicker v-model="raidLogin" mode="raid" :placeholder="t('picker.raidPh')" :label="t('stream.actions.raid')" @submit="raidLogin.trim() && raid()" />
         <button v-if="!raiding" class="btn shrink-0" :disabled="!raidLogin.trim() || busy === 'raid'" @click="raid"><Swords :size="15" /> {{ t("stream.actions.raidBtn") }}</button>
@@ -152,7 +153,7 @@ onMounted(loadPinned);
 
     <div class="grid gap-4 md:grid-cols-2">
       <div>
-        <span class="label">{{ t("stream.actions.clip") }}</span>
+        <span class="label">{{ t("stream.actions.clip") }}<UiTip :text="t('tips.stream.clip')" /></span>
         <input v-model="clipTitle" maxlength="100" class="input mb-2" :placeholder="t('stream.actions.clipTitlePh')" />
         <div class="flex items-center gap-2">
           <input v-model.number="clipDuration" type="range" min="5" max="60" step="5" class="min-w-0 flex-1 accent-brand-500" :title="t('stream.actions.clipDuration')" />
@@ -161,7 +162,7 @@ onMounted(loadPinned);
         </div>
       </div>
       <div>
-        <span class="label">{{ t("stream.actions.marker") }}</span>
+        <span class="label">{{ t("stream.actions.marker") }}<UiTip :text="t('tips.stream.marker')" /></span>
         <div class="flex gap-2">
           <input v-model="markerText" maxlength="140" class="input" :placeholder="t('stream.actions.markerPh')" />
           <button class="btn shrink-0" :disabled="!live || busy === 'marker'" :title="t('stream.actions.markerBtn')" @click="marker"><Bookmark :size="15" /></button>
@@ -169,7 +170,7 @@ onMounted(loadPinned);
       </div>
     </div>
     <div>
-      <span class="label">{{ t("stream.actions.pinned") }}</span>
+      <span class="label">{{ t("stream.actions.pinned") }}<UiTip :text="t('tips.stream.pinned')" /></span>
       <div v-if="pinned" class="flex items-start gap-2 rounded-lg border border-line bg-panel-2 p-2.5 text-sm">
         <Pin :size="15" class="mt-0.5 shrink-0 text-brand-500" />
         <span class="selectable min-w-0 flex-1 break-words">

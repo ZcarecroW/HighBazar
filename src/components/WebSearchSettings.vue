@@ -8,6 +8,7 @@ import { api, errorText } from "../lib/api";
 import type { SearchHit, WebSearchSource } from "../lib/types";
 import ApiKeyInput from "./ApiKeyInput.vue";
 import UiField from "./ui/UiField.vue";
+import UiTip from "./ui/UiTip.vue";
 import UiNumber from "./ui/UiNumber.vue";
 
 // HighBazar's own web search, for AI providers without a built-in one.
@@ -54,7 +55,7 @@ async function test() {
 <template>
   <div class="space-y-4">
     <section class="card-pad space-y-4">
-      <h2 class="section-title mb-0 flex items-center gap-2"><Globe :size="17" class="text-brand-500" /> {{ t("webSearch.title") }}</h2>
+      <h2 class="section-title mb-0 flex items-center gap-2"><Globe :size="17" class="text-brand-500" /> {{ t("webSearch.title") }}<UiTip :text="t('tips.webSearch.source')" /></h2>
       <p class="text-sm text-muted">{{ t("webSearch.intro") }}</p>
       <p v-if="usedBy.length" class="text-xs text-muted">{{ t("webSearch.usedBy", { names: usedBy.join(", ") }) }}</p>
 

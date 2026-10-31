@@ -4,7 +4,7 @@
 
 use serde_json::{Value, json};
 
-use super::{AiRequest, AiResponse, apply_headers, base_url, error_from, max_tokens, timeout};
+use super::{AiRequest, AiResponse, apply_headers, base_url, error_from, max_tokens, openai_reasoning_model, timeout};
 use crate::config::AiProfile;
 use crate::error::{AppError, AppResult};
 
@@ -13,10 +13,11 @@ pub async fn complete(http: &reqwest::Client, p: &AiProfile, key: &str, req: &Ai
     if base.is_empty() {
         return Err(AppError::msg("This AI profile needs a base URL."));
     }
+    let (model, effort) = deepseek_compat(p);
     let mut b = json!({
-        "model": p.model,
+        "model": model,
         "messages": [
-            { "role": "system", "content": req.system },
+            { "role": "system", "content": system_content(p, &req.system) },
             { "role": "user", "content": req.user },
         ],
     });
@@ -26,14 +27,17 @@ pub async fn complete(http: &reqwest::Client, p: &AiProfile, key: &str, req: &Ai
     } else {
         b["max_tokens"] = json!(tokens);
     }
-    if let Some(t) = p.temperature {
+    // OpenAI's reasoning models (also through OpenRouter) reject a custom temperature.
+    if let Some(t) = p.temperature.filter(|_| !matches!(p.provider.as_str(), "openai" | "openrouter") || !openai_reasoning_model(model)) {
         b["temperature"] = json!(t);
     }
-    if !p.reasoning.is_empty() {
+    if p.provider == "deepseek" && effort == "none" {
+        b["thinking"] = json!({ "type": "disabled" });
+    } else if !effort.is_empty() {
         if p.provider == "openrouter" {
-            b["reasoning"] = json!({ "effort": p.reasoning });
+            b["reasoning"] = json!({ "effort": effort });
         } else {
-            b["reasoning_effort"] = json!(p.reasoning);
+            b["reasoning_effort"] = json!(effort);
         }
     }
     if p.provider == "openrouter" {
@@ -97,12 +101,36 @@ pub fn parse(v: &Value) -> AppResult<AiResponse> {
     Ok(AiResponse {
         text,
         input_tokens: u["prompt_tokens"].as_u64().unwrap_or(0),
+        cache_read_tokens: 0,
+        cache_write_tokens: 0,
         output_tokens: u["completion_tokens"].as_u64().unwrap_or(0),
         reported_cost_usd: u["cost"].as_f64(),
         tool_cost_usd: groq_searches as f64 * 0.005,
         searches: searches as u32,
         model: v["model"].as_str().unwrap_or_default().to_string(),
     })
+}
+
+/// OpenRouter only caches Claude models with an explicit breakpoint (Gemini and
+/// OpenAI honour it too). The system prompt is the same for every call of a
+/// profile, the chat context comes after it.
+fn system_content(p: &AiProfile, system: &str) -> serde_json::Value {
+    if p.provider == "openrouter" {
+        json!([{ "type": "text", "text": system, "cache_control": { "type": "ephemeral" } }])
+    } else {
+        json!(system)
+    }
+}
+
+/// DeepSeek retired "deepseek-chat" and "deepseek-reasoner" on 2026-07-24;
+/// they were the thinking-off and thinking-on modes of today's Flash model.
+/// Profiles that still name them keep working. Returns (model, effort).
+fn deepseek_compat(p: &AiProfile) -> (&str, &str) {
+    match (p.provider.as_str(), p.model.trim()) {
+        ("deepseek", "deepseek-chat") => ("deepseek-flash", "none"),
+        ("deepseek", "deepseek-reasoner") => ("deepseek-flash", p.reasoning.as_str()),
+        _ => (p.model.as_str(), p.reasoning.as_str()),
+    }
 }
 
 fn strip_think(s: &str) -> String {
@@ -169,6 +197,16 @@ mod tests {
         assert_eq!(m[0].price_out, Some(5.0));
         assert_eq!(m[1].name, "");
         assert_eq!(m[1].price_in, None);
+    }
+
+    #[test]
+    fn retired_deepseek_names_still_work() {
+        let p = |model: &str, reasoning: &str| AiProfile { provider: "deepseek".into(), model: model.into(), reasoning: reasoning.into(), ..Default::default() };
+        assert_eq!(deepseek_compat(&p("deepseek-chat", "")), ("deepseek-flash", "none"));
+        assert_eq!(deepseek_compat(&p("deepseek-reasoner", "high")), ("deepseek-flash", "high"));
+        assert_eq!(deepseek_compat(&p("deepseek-v4-pro", "max")), ("deepseek-v4-pro", "max"));
+        let other = AiProfile { provider: "openrouter".into(), model: "deepseek-chat".into(), ..Default::default() };
+        assert_eq!(deepseek_compat(&other).0, "deepseek-chat");
     }
 
     #[test]

@@ -9,6 +9,7 @@ import { pdesc, pname } from "../i18n";
 import TwitchLogin from "../components/TwitchLogin.vue";
 import ApiKeyInput from "../components/ApiKeyInput.vue";
 import UiToggle from "../components/ui/UiToggle.vue";
+import UiTip from "../components/ui/UiTip.vue";
 import UiSegmented from "../components/ui/UiSegmented.vue";
 import ThemePicker from "../components/ThemePicker.vue";
 import LanguagePicker from "../components/LanguagePicker.vue";
@@ -157,7 +158,7 @@ const recommendedModAi = "builtin-ai-claude-haiku";
               </template>
             </div>
             <div class="space-y-2">
-              <UiToggle v-model="ch.prefixEnabled" :label="t('wizard.usePrefix')" />
+              <UiToggle v-model="ch.prefixEnabled" :label="t('wizard.usePrefix')" :tip="t('tips.channels.prefix')" />
               <input v-model="ch.prefix" class="input max-w-xs" :disabled="!ch.prefixEnabled" />
             </div>
           </div>
@@ -188,7 +189,7 @@ const recommendedModAi = "builtin-ai-claude-haiku";
               <div v-else-if="selectedAi.provider === 'codexCli'" class="text-xs text-muted">{{ t("ai.codexInfo") }}</div>
               <div v-if="aiInfo?.needsKey">
                 <div class="mb-1 flex items-center">
-                  <span class="label mb-0">{{ t("wizard.aiKey", { provider: aiInfo.name }) }}</span>
+                  <span class="label mb-0">{{ t("wizard.aiKey", { provider: aiInfo.name }) }}<UiTip :text="t('tips.wizard.aiKey')" /></span>
                   <button class="btn-ghost ml-auto text-xs" @click="openUrl(aiInfo.keyUrl)"><ExternalLink :size="13" /> {{ t("ai.getKey") }}</button>
                 </div>
                 <ApiKeyInput :key-ref="app.keyRefOf(selectedAi)" />
@@ -224,7 +225,7 @@ const recommendedModAi = "builtin-ai-claude-haiku";
               </button>
             </div>
             <div>
-              <span class="label">{{ t("channels.aboutStream") }}</span>
+              <span class="label">{{ t("channels.aboutStream") }}<UiTip :text="t('tips.channels.aboutStream')" /></span>
               <textarea v-model="ch.aboutStream" rows="3" class="input" :placeholder="t('channels.aboutStreamHint')" />
             </div>
           </div>
@@ -232,7 +233,7 @@ const recommendedModAi = "builtin-ai-claude-haiku";
           <!-- Moderation -->
           <div v-else-if="step === 'moderation'" class="space-y-5">
             <p class="text-sm leading-relaxed text-muted">{{ t("wizard.moderationText") }}</p>
-            <UiToggle v-model="ch.moderationEnabled" :label="t('channels.moderationEnabled')" />
+            <UiToggle v-model="ch.moderationEnabled" :label="t('channels.moderationEnabled')" :tip="t('tips.channels.moderation')" />
             <div class="grid gap-2 sm:grid-cols-2" :class="!ch.moderationEnabled && 'pointer-events-none opacity-50'">
               <button
                 v-for="m in cfg.moderationProfiles"
@@ -249,7 +250,7 @@ const recommendedModAi = "builtin-ai-claude-haiku";
               </button>
             </div>
             <div v-if="ch.moderationEnabled">
-              <span class="label">{{ t("channels.moderationAiProfile") }}</span>
+              <span class="label">{{ t("channels.moderationAiProfile") }}<UiTip :text="t('tips.channels.moderationAi')" /></span>
               <UiCombobox
                 v-model="ch.moderationAiProfileId"
                 class="max-w-md"

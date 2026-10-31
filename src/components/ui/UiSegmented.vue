@@ -1,11 +1,12 @@
 <script setup lang="ts">
-defineProps<{ options: { value: string; label: string }[]; disabled?: boolean; label?: string }>();
+import UiTip from "./UiTip.vue";
+defineProps<{ options: { value: string; label: string }[]; disabled?: boolean; label?: string; tip?: string }>();
 const model = defineModel<string>({ required: true });
 </script>
 
 <template>
   <div class="min-w-0">
-    <span v-if="label" class="label">{{ label }}</span>
+    <span v-if="label" class="label">{{ label }}<UiTip v-if="tip" :text="tip" /></span>
     <div class="inline-flex flex-wrap gap-1 rounded-lg border border-line bg-panel-2 p-1" :class="disabled && 'opacity-60'">
       <button
         v-for="o in options"

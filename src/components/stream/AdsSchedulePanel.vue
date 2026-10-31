@@ -6,6 +6,7 @@ import { Clapperboard, Plus, RefreshCw, Trash2, AlarmClockOff, Calendar, Externa
 import { useTwitch } from "../../lib/twitch";
 import UiToggle from "../ui/UiToggle.vue";
 import UiNumber from "../ui/UiNumber.vue";
+import UiTip from "../ui/UiTip.vue";
 
 defineProps<{ live: boolean }>();
 const { t, locale } = useI18n();
@@ -93,7 +94,7 @@ onMounted(load);
 <template>
   <section class="card-pad space-y-5">
     <div class="flex items-center gap-2">
-      <h2 class="section-title mb-0 flex items-center gap-2 flex-1"><Calendar :size="17" class="text-brand-500" /> {{ t("stream.ads.title") }}</h2>
+      <h2 class="section-title mb-0 flex items-center gap-2 flex-1"><Calendar :size="17" class="text-brand-500" /> {{ t("stream.ads.title") }}<UiTip :text="t('tips.stream.ads')" /></h2>
       <button class="btn" :title="t('stream.reload')" @click="load"><RefreshCw :size="15" /></button>
     </div>
 
@@ -118,7 +119,7 @@ onMounted(load);
         <button type="button" class="btn shrink-0" :title="t('stream.ads.openManagerHint')" @click="openUrl(ADS_MANAGER)"><ExternalLink :size="15" /> {{ t("stream.ads.openManager") }}</button>
       </div>
       <template v-if="channel.ads.auto">
-        <UiToggle v-model="channel.ads.prerollGuard" :label="t('stream.ads.prerollGuard')" :hint="t('stream.ads.prerollGuardHint')" />
+        <UiToggle v-model="channel.ads.prerollGuard" :label="t('stream.ads.prerollGuard')" :hint="t('stream.ads.prerollGuardHint')" :tip="t('tips.stream.preroll')" />
         <label v-if="channel.ads.prerollGuard" class="block w-40">
           <span class="label">{{ t("stream.ads.length") }}</span>
           <select v-model.number="channel.ads.length" class="input">
@@ -142,7 +143,7 @@ onMounted(load);
     <hr class="border-line" />
 
     <div class="space-y-3">
-      <span class="label">{{ t("stream.schedule.title") }}</span>
+      <span class="label">{{ t("stream.schedule.title") }}<UiTip :text="t('tips.stream.schedule')" /></span>
       <ul class="divide-y divide-line rounded-lg border border-line">
         <li v-for="s in segments" :key="s.id" class="flex items-center gap-2 px-3 py-1.5 text-sm">
           <span class="min-w-0 flex-1">

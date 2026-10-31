@@ -89,8 +89,8 @@ impl Hub {
         self.send("remove", &json!({ "messageId": message_id, "userId": if whole_user { user_id } else { "" } }));
     }
 
-    pub fn emotes(&self, urls: &HashMap<String, String>) {
-        self.send("emotes", &json!(urls));
+    pub fn emotes(&self, map: &crate::twitch::emotes::EmoteMap) {
+        self.send("emotes", &json!(map));
     }
 
     pub fn settings(&self, s: &AppSettings) {
@@ -115,7 +115,7 @@ impl Hub {
     fn snapshot(&self, st: &AppState) -> Value {
         let settings = page_settings(&st.config.read().settings);
         let items: Vec<Value> = self.recent.lock().iter().filter(|i| shown(&i.kind)).map(line).collect();
-        let emotes = st.emote_urls.read().clone();
+        let emotes = st.emote_map.read().clone();
         json!({ "settings": settings, "emotes": *emotes, "items": items, "translations": self.recent_translations() })
     }
 }

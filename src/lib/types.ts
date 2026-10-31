@@ -164,6 +164,13 @@ export interface ChatTranslation {
   text: string;
 }
 
+/** Emotes of the channel the bot loaded: the image of the emote that wins each name. */
+export interface EmoteMap {
+  urls: Record<string, string>;
+  /** Names drawn over the emote before them (7TV zero-width, BTTV hats, FFZ modifiers). */
+  zeroWidth: string[];
+}
+
 export interface ContentMix {
   chatReaction: number;
   gameFact: number;

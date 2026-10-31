@@ -3,6 +3,7 @@ import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { Save, UserAdd } from "../../icons";
 import { useTwitch } from "../../lib/twitch";
+import UiTip from "../ui/UiTip.vue";
 
 const { t } = useI18n();
 const { app, id, tw } = useTwitch();
@@ -72,12 +73,12 @@ onMounted(load);
       </div>
     </div>
     <div>
-      <span class="label">{{ t("stream.profile.description") }}</span>
+      <span class="label">{{ t("stream.profile.description") }}<UiTip :text="t('tips.stream.channelDescription')" /></span>
       <textarea v-model="description" rows="3" maxlength="300" class="input mb-2" />
       <button class="btn" :disabled="busy" @click="saveDescription"><Save :size="15" /> {{ t("common.save") }}</button>
     </div>
     <div>
-      <span class="label">{{ t("stream.profile.chatColor") }}</span>
+      <span class="label">{{ t("stream.profile.chatColor") }}<UiTip :text="t('tips.stream.chatColor')" /></span>
       <div class="flex flex-wrap gap-1.5">
         <button
           v-for="(c, name) in COLORS"

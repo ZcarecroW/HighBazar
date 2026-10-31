@@ -6,6 +6,7 @@ import { useTwitch } from "../../lib/twitch";
 import { onEvent } from "../../lib/events";
 import UiToggle from "../ui/UiToggle.vue";
 import UiNumber from "../ui/UiNumber.vue";
+import UiTip from "../ui/UiTip.vue";
 import type { RewardActionKind, RewardTemplate } from "../../lib/types";
 
 const { t, locale } = useI18n();
@@ -236,7 +237,7 @@ onUnmounted(() => {
 <template>
   <section class="card-pad space-y-4">
     <div class="flex items-center gap-2">
-      <h2 class="section-title mb-0 flex items-center gap-2 flex-1"><Gift :size="17" class="text-brand-500" /> {{ t("stream.rewards.title") }}</h2>
+      <h2 class="section-title mb-0 flex items-center gap-2 flex-1"><Gift :size="17" class="text-brand-500" /> {{ t("stream.rewards.title") }}<UiTip :text="t('tips.stream.channelPoints')" /></h2>
       <button class="btn" :title="t('stream.reload')" @click="load"><RefreshCw :size="15" /></button>
     </div>
     <p class="hint -mt-2">{{ t("stream.rewards.hint") }}</p>
@@ -297,14 +298,14 @@ onUnmounted(() => {
         <label><span class="label">{{ t("stream.rewards.name") }}</span><input v-model="draft.title" maxlength="45" class="input" /></label>
         <UiNumber v-model="draft.cost" :label="t('stream.rewards.cost')" :min="1" :max="10000000" />
         <label><span class="label">{{ t("stream.rewards.prompt") }}</span><input v-model="draft.prompt" maxlength="200" class="input" /></label>
-        <UiNumber v-model="draft.cooldown" :label="t('stream.rewards.cooldown')" :min="0" :max="604800" :suffix="t('stream.seconds')" />
+        <UiNumber v-model="draft.cooldown" :label="t('stream.rewards.cooldown')" :tip="t('tips.stream.rewardCooldown')" :min="0" :max="604800" :suffix="t('stream.seconds')" />
         <label><span class="label">{{ t("stream.rewards.color") }}</span><input v-model="draft.color" type="color" class="h-9 w-12 rounded border border-line bg-panel-2" /></label>
       </div>
       <div class="flex flex-wrap items-end gap-4">
         <UiNumber v-model="draft.maxPerStream" :label="t('stream.rewards.maxPerStream')" :hint="t('stream.rewards.zeroNoLimit')" :min="0" :max="100000" />
         <UiNumber v-model="draft.maxPerUser" :label="t('stream.rewards.maxPerUser')" :hint="t('stream.rewards.zeroNoLimit')" :min="0" :max="100000" />
         <label class="min-w-48">
-          <span class="label">{{ t("stream.rewards.action") }}</span>
+          <span class="label">{{ t("stream.rewards.action") }}<UiTip :text="t('tips.stream.rewardAction')" /></span>
           <select v-model="draft.action" class="input">
             <option v-for="a in ACTIONS" :key="a" :value="a">{{ t(`stream.rewards.actions.${a || "none"}`) }}</option>
           </select>
@@ -320,9 +321,10 @@ onUnmounted(() => {
           :model-value="draft.input || needsInput"
           :disabled="needsInput"
           :label="t('stream.rewards.input')"
+          :tip="t('tips.stream.rewardInput')"
           @update:model-value="(v: boolean) => (draft.input = v)"
         />
-        <UiToggle v-if="!draft.action" v-model="draft.skipQueue" :label="t('stream.rewards.skipQueue')" />
+        <UiToggle v-if="!draft.action" v-model="draft.skipQueue" :label="t('stream.rewards.skipQueue')" :tip="t('tips.stream.skipQueue')" />
         <div class="ml-auto flex items-center gap-2">
           <template v-if="naming">
             <input

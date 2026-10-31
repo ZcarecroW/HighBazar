@@ -36,7 +36,12 @@ pub struct AiRequest {
 #[serde(rename_all = "camelCase")]
 pub struct AiResponse {
     pub text: String,
+    /// All input tokens, cached ones included.
     pub input_tokens: u64,
+    /// Part of `input_tokens` read from the prompt cache (about a tenth of the price).
+    pub cache_read_tokens: u64,
+    /// Part of `input_tokens` written to the prompt cache (a quarter more).
+    pub cache_write_tokens: u64,
     pub output_tokens: u64,
     /// Exact cost if the provider reports it.
     pub reported_cost_usd: Option<f64>,
@@ -52,9 +57,11 @@ impl AiResponse {
         if let Some(c) = self.reported_cost_usd {
             return c;
         }
-        self.input_tokens as f64 * p.price_input_per_mtok / 1e6
-            + self.output_tokens as f64 * p.price_output_per_mtok / 1e6
-            + self.tool_cost_usd
+        // Cached system prompts are billed at a fraction of the input price;
+        // counting them at full price made the daily budget run out early.
+        let fresh = self.input_tokens.saturating_sub(self.cache_read_tokens + self.cache_write_tokens);
+        let input = fresh as f64 + self.cache_write_tokens as f64 * 1.25 + self.cache_read_tokens as f64 * 0.1;
+        input * p.price_input_per_mtok / 1e6 + self.output_tokens as f64 * p.price_output_per_mtok / 1e6 + self.tool_cost_usd
     }
 }
 
@@ -77,13 +84,15 @@ pub fn providers() -> Vec<ProviderInfo> {
     const EFFORT: &[&str] = &["", "low", "medium", "high"];
     vec![
         ProviderInfo { id: "anthropic", name: "Anthropic (Claude)", base_url: "https://api.anthropic.com", needs_key: true, web_search: true, key_url: "https://platform.claude.com/settings/keys", local: false, reasoning_options: &["", "low", "medium", "high", "xhigh", "max"] },
-        ProviderInfo { id: "openai", name: "OpenAI", base_url: "https://api.openai.com/v1", needs_key: true, web_search: true, key_url: "https://platform.openai.com/api-keys", local: false, reasoning_options: &["", "minimal", "low", "medium", "high"] },
+        // GPT-6: "none" … "max" ("minimal" of older models is mapped to "none").
+        ProviderInfo { id: "openai", name: "OpenAI", base_url: "https://api.openai.com/v1", needs_key: true, web_search: true, key_url: "https://platform.openai.com/api-keys", local: false, reasoning_options: &["", "none", "low", "medium", "high", "xhigh", "max"] },
         ProviderInfo { id: "gemini", name: "Google Gemini", base_url: "https://generativelanguage.googleapis.com/v1beta", needs_key: true, web_search: true, key_url: "https://aistudio.google.com/apikey", local: false, reasoning_options: &["", "minimal", "low", "medium", "high"] },
         ProviderInfo { id: "openrouter", name: "OpenRouter", base_url: "https://openrouter.ai/api/v1", needs_key: true, web_search: true, key_url: "https://openrouter.ai/settings/keys", local: false, reasoning_options: EFFORT },
         ProviderInfo { id: "mistral", name: "Mistral AI", base_url: "https://api.mistral.ai/v1", needs_key: true, web_search: false, key_url: "https://console.mistral.ai/api-keys", local: false, reasoning_options: &[""] },
         ProviderInfo { id: "groq", name: "Groq", base_url: "https://api.groq.com/openai/v1", needs_key: true, web_search: false, key_url: "https://console.groq.com/keys", local: false, reasoning_options: EFFORT },
         ProviderInfo { id: "xai", name: "xAI (Grok)", base_url: "https://api.x.ai/v1", needs_key: true, web_search: true, key_url: "https://console.x.ai", local: false, reasoning_options: EFFORT },
-        ProviderInfo { id: "deepseek", name: "DeepSeek", base_url: "https://api.deepseek.com/v1", needs_key: true, web_search: false, key_url: "https://platform.deepseek.com/api_keys", local: false, reasoning_options: &[""] },
+        // V4 models think by default; "none" switches thinking off.
+        ProviderInfo { id: "deepseek", name: "DeepSeek", base_url: "https://api.deepseek.com/v1", needs_key: true, web_search: false, key_url: "https://platform.deepseek.com/api_keys", local: false, reasoning_options: &["", "none", "low", "high", "max"] },
         ProviderInfo { id: "perplexity", name: "Perplexity", base_url: "https://api.perplexity.ai", needs_key: true, web_search: true, key_url: "https://www.perplexity.ai/account/api/keys", local: false, reasoning_options: &[""] },
         ProviderInfo { id: "together", name: "Together AI", base_url: "https://api.together.xyz/v1", needs_key: true, web_search: false, key_url: "https://api.together.ai/settings/api-keys", local: false, reasoning_options: &[""] },
         ProviderInfo { id: "ollama", name: "Ollama (local)", base_url: "http://localhost:11434/v1", needs_key: false, web_search: false, key_url: "https://ollama.com/download", local: true, reasoning_options: &[""] },
@@ -170,6 +179,8 @@ pub async fn complete_searching(
     let second = complete(http, p, key, &AiRequest { user, ..plain }).await?;
     Ok(AiResponse {
         input_tokens: first.input_tokens + second.input_tokens,
+        cache_read_tokens: first.cache_read_tokens + second.cache_read_tokens,
+        cache_write_tokens: first.cache_write_tokens + second.cache_write_tokens,
         output_tokens: first.output_tokens + second.output_tokens,
         reported_cost_usd: match (first.reported_cost_usd, second.reported_cost_usd) {
             (Some(a), Some(b)) => Some(a + b),
@@ -264,6 +275,16 @@ fn dedup(models: Vec<ModelInfo>) -> Vec<ModelInfo> {
     models.into_iter().filter(|m| !m.id.is_empty() && seen.insert(m.id.clone())).collect()
 }
 
+/// OpenAI reasoning models (gpt-5 and later, o-series) reject a custom
+/// temperature. Matched by generation number, so gpt-6.1-terra counts too.
+pub(crate) fn openai_reasoning_model(model: &str) -> bool {
+    let m = model.trim().rsplit('/').next().unwrap_or_default();
+    if let Some(rest) = m.strip_prefix("gpt-") {
+        return rest.split(['.', '-']).next().and_then(|g| g.parse::<u32>().ok()).is_some_and(|g| g >= 5);
+    }
+    m.len() > 1 && m.starts_with('o') && m.as_bytes()[1].is_ascii_digit()
+}
+
 pub(crate) fn timeout(p: &AiProfile) -> Duration {
     Duration::from_secs(p.timeout_secs.clamp(10, 600) as u64)
 }
@@ -308,6 +329,28 @@ mod tests {
         assert_eq!(search_request("@max The patch came out yesterday!"), None);
         assert_eq!(search_request("SEARCH:"), None);
         assert_eq!(search_request("Süß"), None);
+    }
+
+    #[test]
+    fn knows_openai_reasoning_models() {
+        for m in ["gpt-6.1-terra", "gpt-6-luna", "gpt-5-mini", "o3", "o4-mini", "openai/gpt-6.1-sol", "gpt-10"] {
+            assert!(openai_reasoning_model(m), "{m}");
+        }
+        for m in ["gpt-4.1", "gpt-4o-mini", "chat-latest", "llama3", "o"] {
+            assert!(!openai_reasoning_model(m), "{m}");
+        }
+    }
+
+    #[test]
+    fn cached_input_costs_less() {
+        let p = AiProfile { price_input_per_mtok: 4.0, price_output_per_mtok: 20.0, ..Default::default() };
+        let plain = AiResponse { input_tokens: 1_000_000, output_tokens: 0, ..Default::default() };
+        assert!((plain.cost(&p) - 4.0).abs() < 1e-9);
+        // 800k read from the cache (0.1×), 100k written (1.25×), 100k fresh.
+        let cached = AiResponse { input_tokens: 1_000_000, cache_read_tokens: 800_000, cache_write_tokens: 100_000, ..Default::default() };
+        assert!((cached.cost(&p) - (0.4 + 0.32 + 0.5)).abs() < 1e-9, "{}", cached.cost(&p));
+        let reported = AiResponse { reported_cost_usd: Some(0.01), ..cached };
+        assert_eq!(reported.cost(&p), 0.01);
     }
 
     #[test]

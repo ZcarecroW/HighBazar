@@ -11,6 +11,7 @@ import ProfileList from "../components/ProfileList.vue";
 import BuiltinBanner from "../components/BuiltinBanner.vue";
 import UiToggle from "../components/ui/UiToggle.vue";
 import UiField from "../components/ui/UiField.vue";
+import UiTip from "../components/ui/UiTip.vue";
 import UiNumber from "../components/ui/UiNumber.vue";
 import UiSegmented from "../components/ui/UiSegmented.vue";
 import ApiKeyInput from "../components/ApiKeyInput.vue";
@@ -216,7 +217,7 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
         <fieldset :disabled="ro" class="card-pad min-w-0 space-y-5">
           <div class="grid gap-5 md:grid-cols-2">
             <UiField :label="t('common.name')"><input v-if="!ro" v-model="p.name" class="input" /><input v-else :value="pname(p)" class="input" /></UiField>
-            <UiField :label="t('ai.provider')">
+            <UiField :label="t('ai.provider')" :tip="t('tips.ai.provider')">
               <UiCombobox v-model="p.provider" :options="providerOptions" :disabled="ro" :label="t('ai.provider')" />
             </UiField>
           </div>
@@ -233,10 +234,10 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
           </div>
 
           <div class="grid gap-5 md:grid-cols-2">
-            <UiField :label="t('ai.model')">
+            <UiField :label="t('ai.model')" :tip="t('tips.ai.model')">
               <ModelPicker v-model="p.model" :profile="p" :disabled="ro" @picked="onPicked" />
             </UiField>
-            <UiField v-if="!isCli" :label="t('ai.baseUrl')" :hint="t('ai.baseUrlHint')">
+            <UiField v-if="!isCli" :label="t('ai.baseUrl')" :hint="t('ai.baseUrlHint')" :tip="t('tips.ai.baseUrl')">
               <input v-model="p.baseUrl" class="input font-mono" :placeholder="info?.baseUrl" spellcheck="false" />
             </UiField>
             <UiField v-else :label="p.provider === 'codexCli' ? t('ai.codexPath') : t('ai.cliPath')">
@@ -266,15 +267,15 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
           </div>
 
           <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-            <UiField v-if="(info?.reasoningOptions.length ?? 0) > 1" :label="t('ai.reasoning')" :hint="t('ai.reasoningHint')">
+            <UiField v-if="(info?.reasoningOptions.length ?? 0) > 1" :label="t('ai.reasoning')" :hint="t('ai.reasoningHint')" :tip="t('tips.ai.reasoning')">
               <select v-model="p.reasoning" class="input">
                 <option v-for="r in info!.reasoningOptions" :key="r" :value="r">{{ r ? (te(`ai.reasoningLevels.${r}`) ? t(`ai.reasoningLevels.${r}`) : r) : t("ai.reasoningDefault") }}</option>
               </select>
             </UiField>
-            <UiNumber v-if="!isCli" v-model="p.maxOutputTokens" :label="t('ai.maxTokens')" :min="64" :max="64000" :step="64" :disabled="ro" />
-            <UiNumber v-model="p.timeoutSecs" :label="t('ai.timeout')" :min="10" :max="600" :suffix="t('common.seconds')" :disabled="ro" />
+            <UiNumber v-if="!isCli" v-model="p.maxOutputTokens" :label="t('ai.maxTokens')" :tip="t('tips.ai.maxTokens')" :min="64" :max="64000" :step="64" :disabled="ro" />
+            <UiNumber v-model="p.timeoutSecs" :label="t('ai.timeout')" :tip="t('tips.ai.timeout')" :min="10" :max="600" :suffix="t('common.seconds')" :disabled="ro" />
             <div v-if="!isCli">
-              <UiToggle v-model="customTemp" :label="t('ai.temperature')" :disabled="ro" />
+              <UiToggle v-model="customTemp" :label="t('ai.temperature')" :tip="t('tips.ai.temperature')" :disabled="ro" />
               <input v-if="p.temperature !== null" v-model.number="p.temperature" type="number" step="0.1" min="0" max="2" class="input mt-2 w-24" />
               <p v-else class="hint">{{ t("ai.temperatureDefault") }}</p>
             </div>
@@ -282,7 +283,7 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
 
           <div class="grid gap-4 md:grid-cols-2">
             <div>
-              <UiToggle v-model="p.webSearch" :label="t('ai.webSearch')" :disabled="ro" />
+              <UiToggle v-model="p.webSearch" :label="t('ai.webSearch')" :tip="t('tips.ai.webSearch')" :disabled="ro" />
               <p class="hint">
                 <template v-if="p.provider === 'groq' && !native">{{ t("ai.webSearchGroq", { source: searchSourceName }) }}</template>
                 <template v-else-if="native">{{ isCli ? t("ai.webSearchSubscription") : t("ai.webSearchNative") }}</template>
@@ -295,7 +296,7 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
           </div>
 
           <div v-if="showPrices">
-            <span class="label">{{ t("ai.prices") }}</span>
+            <span class="label">{{ t("ai.prices") }}<UiTip :text="t('tips.ai.prices')" /></span>
             <div class="flex flex-wrap gap-5">
               <UiNumber v-model="p.priceInputPerMtok" :label="t('ai.priceIn')" :min="0" :max="1000" :step="0.01" suffix="$" :disabled="ro" />
               <UiNumber v-model="p.priceOutputPerMtok" :label="t('ai.priceOut')" :min="0" :max="1000" :step="0.01" suffix="$" :disabled="ro" />
@@ -304,7 +305,7 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
           </div>
 
           <div v-if="!info?.local || p.provider === 'openaiCompatible'">
-            <span class="label">{{ t("ai.headers") }}</span>
+            <span class="label">{{ t("ai.headers") }}<UiTip :text="t('tips.ai.headers')" /></span>
             <div v-for="(h, i) in p.extraHeaders" :key="i" class="mb-2 flex gap-2">
               <input v-model="h.name" class="input font-mono" placeholder="Header-Name" />
               <input v-model="h.value" class="input font-mono" placeholder="value" />
@@ -317,7 +318,7 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
           <!-- Key -->
         <div v-if="info?.needsKey || p.provider === 'openaiCompatible'" class="card-pad">
           <div class="mb-2 flex flex-wrap items-center gap-3">
-            <span class="label mb-0">{{ t("ai.keyMode") }}</span>
+            <span class="label mb-0">{{ t("ai.keyMode") }}<UiTip :text="t('tips.ai.apiKey')" /></span>
             <span v-if="app.hasKey(p)" class="chip bg-emerald-500/15 text-emerald-600"><CircleCheck :size="12" /> {{ t("ai.keySet") }}</span>
             <span v-else class="chip bg-amber-500/15 text-amber-600"><CircleAlert :size="12" /> {{ t("ai.keyMissing") }}</span>
             <button v-if="info?.keyUrl" type="button" class="btn-ghost ml-auto text-xs" @click="openUrl(info.keyUrl)"><ExternalLink :size="13" /> {{ t("ai.getKey") }}</button>
@@ -330,7 +331,7 @@ const ownKeyProfiles = computed(() => cfg.value.aiProfiles.filter((x) => x.keyRe
 
         <!-- Test (works for built-in profiles too) -->
         <section class="card-pad space-y-3">
-          <h2 class="section-title mb-0 flex items-center gap-2"><FlaskConical :size="17" class="text-brand-500" /> {{ t("common.test") }}</h2>
+          <h2 class="section-title mb-0 flex items-center gap-2"><FlaskConical :size="17" class="text-brand-500" /> {{ t("common.test") }}<UiTip :text="t('tips.ai.test')" /></h2>
           <div class="flex flex-wrap gap-2">
             <input v-model="testPrompt" class="input min-w-0 flex-1" :placeholder="testSearch ? t('ai.testPromptSearch') : t('ai.testPrompt')" @keydown.enter="runTest" />
             <button class="btn-primary shrink-0" :disabled="testing" @click="runTest">

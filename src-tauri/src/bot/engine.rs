@@ -27,7 +27,8 @@ use crate::config::{AiProfile, ChannelProfile, CompanionProfile, ModAction, Mode
 use crate::error::{AppError, AppResult};
 use crate::state::AppState;
 use crate::storage;
-use crate::twitch::emotes::{self, EmoteCatalog};
+use crate::twitch::emotes::{self, EmoteCatalog, Sources, StvChange};
+use crate::twitch::seventv;
 use crate::twitch::eventsub::{self, ChatMessage, ChatNotification, TwitchEvent, role_requirement};
 
 /// Well-known bot accounts the companion never reacts to.
@@ -113,6 +114,10 @@ pub struct Session {
     ctx: Mutex<ChatContext>,
     stream: Mutex<StreamState>,
     emotes: RwLock<EmoteCatalog>,
+    /// The lists the catalog is built from (kept for 7TV live updates and failed refreshes).
+    emote_sources: Mutex<Sources>,
+    /// A 7TV live update changed the sources: publish with the next tick.
+    emotes_dirty: AtomicBool,
     knowledge: Mutex<Option<Knowledge>>,
     researching: AtomicBool,
     researched_game: Mutex<String>,
@@ -209,6 +214,8 @@ impl Session {
             ctx: Mutex::new(ChatContext::default()),
             stream: Mutex::new(StreamState::default()),
             emotes: RwLock::new(EmoteCatalog::default()),
+            emote_sources: Mutex::new(Sources::default()),
+            emotes_dirty: AtomicBool::new(false),
             knowledge: Mutex::new(None),
             researching: AtomicBool::new(false),
             researched_game: Mutex::new(String::new()),
@@ -421,42 +428,101 @@ impl Session {
         self.emit_status();
     }
 
+    /// Loads every provider's emotes at once. A provider that fails keeps its
+    /// last list, so a hiccup doesn't make its emotes vanish for 30 minutes.
     async fn refresh_emotes(self: &Arc<Self>) {
         if !self.has_twitch() {
             return;
         }
-        let cat = emotes::fetch(&self.st.helix(), &self.broadcaster_id).await;
-        let n = cat.total();
-        let urls = Arc::new(cat.urls.clone());
-        self.st.chat.set_emotes(cat.infos.clone());
+        let fetched = emotes::fetch(&self.st.helix(), &self.broadcaster_id).await;
+        self.emote_sources.lock().merge(fetched);
+        self.publish_emotes();
+    }
+
+    /// Builds the catalog from the sources and hands it to the bot, the chat
+    /// input, the UI and the overlay.
+    fn publish_emotes(&self) {
+        let (mut cat, subs_missing) = {
+            let s = self.emote_sources.lock();
+            (EmoteCatalog::build(&s), s.user_emotes_missing)
+        };
+        self.st.chat.set_emotes(std::mem::take(&mut cat.infos));
+        self.st.chat.set_subs_missing(subs_missing);
+        let map = Arc::new(std::mem::take(&mut cat.map));
+        *self.st.emote_map.write() = map.clone();
+        let _ = self.app.emit(super::EVT_EMOTES, &*map);
+        self.st.overlay.emotes(&map);
+        log::info!("{} emotes ({} with an image)", cat.total(), map.urls.len());
         *self.emotes.write() = cat;
-        // Emotes of channels the streamer is subscribed to (needs user:read:emotes).
-        match self.st.helix().user_emotes(&self.broadcaster_id).await {
-            Ok(list) => {
-                let subs: Vec<crate::chat::EmoteInfo> = list
-                    .into_iter()
-                    .map(|e| crate::chat::EmoteInfo {
-                        url: emotes::twitch_emote_url(&e.id),
-                        name: e.name,
-                        provider: "twitch",
-                        scope: crate::chat::Scope::Sub,
-                    })
-                    .collect();
-                log::info!("{} emotes available to the streamer", subs.len());
-                self.st.chat.set_subs_missing(false);
-                self.st.chat.add_emotes(subs);
+        self.emit_status();
+    }
+
+    /// Follows the channel's 7TV emote set live while the bot runs.
+    async fn seventv_live(self: Arc<Self>, mut shutdown: watch::Receiver<bool>) {
+        let mut pause = 2u64;
+        loop {
+            let (loaded, user_id, set_id) = {
+                let s = self.emote_sources.lock();
+                (s.stv_channel.is_some(), s.stv_user_id.clone(), s.stv_set_id.clone())
+            };
+            if set_id.is_empty() {
+                // No 7TV set (or 7TV didn't answer yet: the 30-minute refresh retries).
+                if loaded {
+                    return;
+                }
+                pause = 300;
+            } else {
+                let url = seventv::url(&user_id, &set_id);
+                let stop = seventv::listen(&self.st.http, &url, &mut shutdown, |body| self.on_7tv_update(&set_id, body)).await;
+                match stop {
+                    seventv::Stop::Shutdown => return,
+                    seventv::Stop::SetChanged => {
+                        if let Some((user, set, list)) = emotes::fetch_7tv_channel(&self.st.http, &self.broadcaster_id).await {
+                            let mut s = self.emote_sources.lock();
+                            (s.stv_user_id, s.stv_set_id, s.stv_channel) = (user, set, Some(list));
+                        }
+                        self.emotes_dirty.store(true, Ordering::Relaxed);
+                        pause = 2;
+                        continue;
+                    }
+                    seventv::Stop::Lost => {}
+                }
             }
-            Err(e) => {
-                log::info!("streamer emotes unavailable: {e}");
-                // Logins from before 1.6.0 lack the permission: the input says so.
-                self.st.chat.set_subs_missing(e.to_string().contains("user:read:emotes"));
+            tokio::select! {
+                _ = tokio::time::sleep(Duration::from_secs(pause)) => {}
+                _ = shutdown.changed() => return,
+            }
+            pause = (pause * 2).clamp(2, 300);
+        }
+    }
+
+    fn on_7tv_update(&self, set_id: &str, body: &serde_json::Value) {
+        if body["id"].as_str() != Some(set_id) {
+            return;
+        }
+        let changes = self.emote_sources.lock().apply_7tv(body);
+        if changes.is_empty() {
+            return;
+        }
+        self.emotes_dirty.store(true, Ordering::Relaxed);
+        let actor = body["actor"]["display_name"].as_str().unwrap_or_default().to_string();
+        let names = |f: fn(&StvChange) -> Option<String>| {
+            let v: Vec<String> = changes.iter().filter_map(f).collect();
+            let n = v.len();
+            let mut list = v.into_iter().take(5).collect::<Vec<_>>().join(", ");
+            if n > 5 {
+                list.push_str(&format!(" … (+{})", n - 5));
+            }
+            list
+        };
+        let added = names(|c| if let StvChange::Added(n) = c { Some(n.clone()) } else { None });
+        let removed = names(|c| if let StvChange::Removed(n) = c { Some(n.clone()) } else { None });
+        let renamed = names(|c| if let StvChange::Renamed(a, b) = c { Some(format!("{a} → {b}")) } else { None });
+        for (key, list, verb) in [("stvAdded", added, "added"), ("stvRemoved", removed, "removed"), ("stvRenamed", renamed, "renamed")] {
+            if !list.is_empty() {
+                self.keyed("system", key, json!({ "emotes": list, "actor": actor }), format!("7TV emotes {verb}: {list}"));
             }
         }
-        *self.st.emote_urls.write() = urls.clone();
-        let _ = self.app.emit(super::EVT_EMOTES, &*urls);
-        self.st.overlay.emotes(&urls);
-        log::info!("loaded {n} emotes");
-        self.emit_status();
     }
 
     /// Who is in chat right now, for the "@" suggestions of the chat input
@@ -1120,12 +1186,16 @@ impl Session {
                 }
             }
         }
-        // Channel emotes come first in each list; take a sample of the rest.
-        let mut rest: Vec<&String> = allowed.into_iter().filter(|e| !out.contains(e)).collect();
-        rest.sort();
+        // Then a sample of the channel's own emotes (they make the community),
+        // then of the global ones – there are hundreds of Twitch globals alone.
+        let (mut channel, mut global): (Vec<&String>, Vec<&String>) =
+            allowed.into_iter().filter(|e| !out.contains(e)).partition(|e| cat.is_channel(e));
         let mut rng = rand::rng();
-        rest.shuffle(&mut rng);
-        for e in rest.into_iter().take(cap.saturating_sub(out.len())) {
+        for list in [&mut channel, &mut global] {
+            list.sort();
+            list.shuffle(&mut rng);
+        }
+        for e in channel.into_iter().chain(global).take(cap.saturating_sub(out.len())) {
             out.push(e.clone());
         }
         if out.is_empty() {
@@ -1909,6 +1979,10 @@ impl Session {
         if n.is_multiple_of(5) {
             self.emit_status();
         }
+        // 7TV live updates, at most once a second (an editor may add many at once).
+        if self.emotes_dirty.swap(false, Ordering::Relaxed) {
+            self.publish_emotes();
+        }
         if n.is_multiple_of(60) {
             self.save_seen();
             self.st.usage.lock().save_if_dirty();
@@ -2252,12 +2326,14 @@ pub async fn run(session: Arc<Session>, mut ctrl: mpsc::UnboundedReceiver<Contro
     if s.has_twitch() {
         // Stream info and emotes first so the first messages have context.
         let me = s.clone();
+        let stop = shutdown.clone();
         tokio::spawn(async move {
             me.refresh_stream().await;
             let game = me.stream.lock().game.clone();
             me.maybe_research(game);
             me.refresh_emotes().await;
             me.refresh_chatters().await;
+            me.seventv_live(stop).await;
         });
     }
     if !s.sandbox {

@@ -433,8 +433,8 @@ pub async fn chat_send(st: St<'_>, text: String) -> AppResult<()> {
 }
 
 #[tauri::command]
-pub fn get_emote_urls(st: St<'_>) -> HashMap<String, String> {
-    (**st.emote_urls.read()).clone()
+pub fn get_emote_urls(st: St<'_>) -> crate::twitch::emotes::EmoteMap {
+    (**st.emote_map.read()).clone()
 }
 
 // ---------------------------------------------------------------------------

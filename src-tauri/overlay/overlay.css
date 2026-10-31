@@ -77,6 +77,17 @@ body {
   margin: -0.4em 0.05em;
   vertical-align: middle;
 }
+/* Zero-width emotes (7TV, BTTV hats) drawn on top of the emote before them. */
+.stack {
+  display: inline-grid;
+  margin: -0.4em 0.05em;
+  vertical-align: middle;
+}
+.stack > .emote {
+  grid-area: 1 / 1;
+  place-self: center;
+  margin: 0;
+}
 /* Chat input (optional): one line at the bottom, suggestions above it. */
 body.typing #feed {
   bottom: 46px;

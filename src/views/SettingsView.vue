@@ -8,6 +8,7 @@ import { api, errorText } from "../lib/api";
 import { checkForUpdate } from "../lib/updater";
 import UiToggle from "../components/ui/UiToggle.vue";
 import UiField from "../components/ui/UiField.vue";
+import UiTip from "../components/ui/UiTip.vue";
 import UiNumber from "../components/ui/UiNumber.vue";
 import UiSegmented from "../components/ui/UiSegmented.vue";
 import ThemePicker from "../components/ThemePicker.vue";
@@ -169,14 +170,14 @@ function resetChatDisplay() {
     <section id="jump-startup" class="card-pad scroll-mt-4 space-y-4">
       <h2 class="section-title mb-0 flex items-center gap-2"><Bolt :size="17" class="text-brand-500" /> {{ t("settings.startup") }}</h2>
       <div class="flex flex-wrap items-center gap-4">
-        <UiToggle v-model="s.checkUpdatesOnStart" :label="t('settings.checkUpdates')" class="flex-1" />
+        <UiToggle v-model="s.checkUpdatesOnStart" :label="t('settings.checkUpdates')" :tip="t('tips.settings.checkUpdates')" class="flex-1" />
         <button class="btn" :disabled="checking" @click="checkNow">
           <Loader2 v-if="checking" :size="15" class="animate-spin" />
           <RefreshCw v-else :size="15" />
           {{ t("settings.checkNow") }}
         </button>
       </div>
-      <UiToggle v-model="s.startBotOnLaunch" :label="t('settings.startBotOnLaunch')" />
+      <UiToggle v-model="s.startBotOnLaunch" :label="t('settings.startBotOnLaunch')" :tip="t('tips.settings.startBotOnLaunch')" />
       <div class="flex flex-wrap items-center gap-3 pt-1">
         <button class="btn" @click="app.wizardOpen = true"><Sparkles :size="15" /> {{ t("settings.openWizard") }}</button>
       </div>
@@ -190,17 +191,17 @@ function resetChatDisplay() {
       </div>
       <p class="selectable text-xs text-muted">{{ app.dataDir }}</p>
       <p class="text-sm">
-        <span class="label">{{ t("settings.secrets") }}</span>
+        <span class="label">{{ t("settings.secrets") }}<UiTip :text="t('tips.settings.secrets')" /></span>
         {{ app.secretsBackend === "os" ? t("settings.secretsOs") : t("settings.secretsFile") }}
       </p>
     </section>
 
     <section id="jump-advanced" class="card-pad scroll-mt-4 space-y-4">
       <h2 class="section-title mb-0 flex items-center gap-2"><Key :size="17" class="text-brand-500" /> {{ t("settings.advanced") }}</h2>
-      <UiField :label="t('settings.clientId')" :hint="t('settings.clientIdHint')">
+      <UiField :label="t('settings.clientId')" :hint="t('settings.clientIdHint')" :tip="t('tips.settings.clientId')">
         <input v-model="s.twitchClientId" class="input font-mono" spellcheck="false" autocomplete="off" />
       </UiField>
-      <UiNumber v-model="s.feedLimit" :label="t('settings.feedLimit')" :min="50" :max="5000" :step="50" />
+      <UiNumber v-model="s.feedLimit" :label="t('settings.feedLimit')" :tip="t('tips.settings.feedLimit')" :min="50" :max="5000" :step="50" />
     </section>
 
     <section id="jump-about" class="card-pad scroll-mt-4 space-y-3">

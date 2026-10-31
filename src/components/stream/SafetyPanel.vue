@@ -5,6 +5,7 @@ import { Plus, RefreshCw, Save, X, Shield, Info, ShieldAlert } from "../../icons
 import { useTwitch } from "../../lib/twitch";
 import UiToggle from "../ui/UiToggle.vue";
 import UiNumber from "../ui/UiNumber.vue";
+import UiTip from "../ui/UiTip.vue";
 import type { AutomodPreset } from "../../lib/types";
 
 const { t } = useI18n();
@@ -136,7 +137,7 @@ onMounted(load);
     </div>
 
     <div v-if="shield !== null" class="space-y-3 rounded-lg border border-line bg-panel-2 p-3">
-      <UiToggle :model-value="shield" :label="t('stream.safety.shield')" :hint="t('stream.safety.shieldHint')" @update:model-value="setShield" />
+      <UiToggle :model-value="shield" :label="t('stream.safety.shield')" :hint="t('stream.safety.shieldHint')" :tip="t('tips.stream.shield')" @update:model-value="setShield" />
       <template v-if="channel?.autoShield">
         <UiToggle v-model="channel.autoShield.enabled" :label="t('stream.safety.autoShield')" :hint="t('stream.safety.autoShieldHint')" />
         <div v-if="channel.autoShield.enabled" class="flex flex-wrap gap-4">
@@ -152,7 +153,7 @@ onMounted(load);
     </div>
 
     <div v-if="automod" class="space-y-3">
-      <span class="label">{{ t("stream.safety.automod") }}</span>
+      <span class="label">{{ t("stream.safety.automod") }}<UiTip :text="t('tips.stream.automod')" /></span>
       <div class="flex flex-wrap items-center gap-1.5">
         <button
           v-for="p in BUILTIN"

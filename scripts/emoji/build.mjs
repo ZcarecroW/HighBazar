@@ -17,15 +17,20 @@ const de = new Map(load("de/compact.json").map((e) => [e.hexcode, e]));
 const enCodes = [load("en/shortcodes/github.json"), load("en/shortcodes/emojibase.json")];
 const deCodes = [load("de/shortcodes/cldr.json")];
 const version = JSON.parse(readFileSync(require.resolve("emojibase-data/package.json"), "utf8")).version;
+// Systems draw new emojis only about a year after Unicode releases them (Emoji 18:
+// September 2026); until then most viewers would see an empty box. Raise once
+// Windows, Android and iOS have caught up.
+const MAX_EMOJI_VERSION = 17;
+const emojiVersion = new Map(load("en/data.json").map((e) => [e.hexcode, e.version ?? 0]));
 
 const COMPONENT = 2; // skin tones and hair styles on their own
 const codes = (maps, hex) => maps.flatMap((m) => [m[hex] ?? []].flat());
 const clean = (s) => s.replace(/[\t\n]/g, " ").trim();
 const words = (...parts) => [...new Set(parts.flat().filter(Boolean).map((w) => clean(String(w)).toLowerCase()))].join(" ");
 
-const lines = [`# emojibase-data ${version} (MIT, https://emojibase.dev) – unicode\ten name\ten words\tde name\tde words`];
+const lines = [`# emojibase-data ${version} (MIT, https://emojibase.dev), up to Emoji ${MAX_EMOJI_VERSION} – unicode\ten name\ten words\tde name\tde words`];
 for (const e of en.sort((a, b) => (a.order ?? 1e9) - (b.order ?? 1e9))) {
-  if (e.group === COMPONENT || e.order == null) continue;
+  if (e.group === COMPONENT || e.order == null || (emojiVersion.get(e.hexcode) ?? 0) > MAX_EMOJI_VERSION) continue;
   const d = de.get(e.hexcode);
   lines.push(
     [

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { X } from "../../icons";
+import UiTip from "./UiTip.vue";
 
-defineProps<{ label?: string; hint?: string; placeholder?: string; disabled?: boolean }>();
+defineProps<{ label?: string; hint?: string; tip?: string; placeholder?: string; disabled?: boolean }>();
 const model = defineModel<string[]>({ required: true });
 const draft = ref("");
 
@@ -21,7 +22,7 @@ function remove(i: number) {
 
 <template>
   <div class="min-w-0">
-    <span v-if="label" class="label">{{ label }}</span>
+    <span v-if="label" class="label">{{ label }}<UiTip v-if="tip" :text="tip" /></span>
     <div class="flex flex-wrap items-center gap-1.5 rounded-lg border border-line bg-panel-2 p-1.5" :class="disabled && 'opacity-60'">
       <span v-for="(t, i) in model" :key="t + i" class="chip bg-brand-500/15 text-brand-700 dark:text-brand-200">
         {{ t }}

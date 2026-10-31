@@ -7,6 +7,7 @@ import { useApp } from "../stores/app";
 import { api } from "../lib/api";
 import type { OverlayStatus } from "../lib/types";
 import UiToggle from "./ui/UiToggle.vue";
+import UiTip from "./ui/UiTip.vue";
 import UiSlider from "./ui/UiSlider.vue";
 import UiNumber from "./ui/UiNumber.vue";
 
@@ -65,13 +66,13 @@ const bgPct = computed({
 
 <template>
   <section class="card-pad space-y-5">
-    <h2 class="section-title mb-0 flex items-center gap-2"><MonitorPlay :size="17" class="text-brand-500" /> {{ t("overlay.title") }}</h2>
+    <h2 class="section-title mb-0 flex items-center gap-2"><MonitorPlay :size="17" class="text-brand-500" /> {{ t("overlay.title") }}<UiTip :text="t('tips.overlay.what')" /></h2>
     <p class="max-w-3xl text-sm text-muted">{{ t("overlay.intro") }}</p>
     <UiToggle v-model="o.enabled" :label="t('overlay.enabled')" :hint="t('overlay.enabledHint')" />
 
     <template v-if="o.enabled">
       <div>
-        <span class="label">{{ t("overlay.link") }}</span>
+        <span class="label">{{ t("overlay.link") }}<UiTip :text="t('tips.overlay.link')" /></span>
         <div class="flex flex-wrap gap-2">
           <input :value="status?.url || ''" readonly class="input min-w-0 flex-1 font-mono text-xs" :placeholder="t('overlay.starting')" @focus="($event.target as HTMLInputElement).select()" />
           <button class="btn" :disabled="!status?.url" @click="copy"><Copy :size="15" /> {{ copied ? t("overlay.copied") : t("overlay.copy") }}</button>

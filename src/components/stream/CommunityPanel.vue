@@ -7,6 +7,7 @@ import { fuzzySearch } from "../../lib/fuzzy";
 import TwitchUserPicker from "../TwitchUserPicker.vue";
 import FuzzyText from "../ui/FuzzyText.vue";
 import UiSegmented from "../ui/UiSegmented.vue";
+import UiTip from "../ui/UiTip.vue";
 
 const { t, locale } = useI18n();
 const { app, id, tw, userByLogin } = useTwitch();
@@ -37,6 +38,8 @@ const tabs = computed(() =>
     label: v === "requests" && requests.value.length ? `${t(`stream.community.${v}`)} (${requests.value.length})` : t(`stream.community.${v}`),
   })),
 );
+// Explains the tab for people new to Twitch roles.
+const TAB_TIPS: Partial<Record<string, string>> = { mods: "tips.stream.mods", vips: "tips.stream.vips", banned: "tips.stream.banned", requests: "tips.stream.unbanRequests" };
 const mods = ref<Person[]>([]);
 const vips = ref<Person[]>([]);
 const banned = ref<Person[]>([]);
@@ -163,7 +166,7 @@ onMounted(load);
       <h2 class="section-title mb-0 flex flex-1 items-center gap-2"><Users :size="17" class="text-brand-500" /> {{ t("stream.community.title") }}</h2>
       <button class="btn" :title="t('stream.reload')" @click="load"><RefreshCw :size="15" /></button>
     </div>
-    <UiSegmented v-model="tab" :options="tabs" />
+    <div class="flex items-center gap-1"><UiSegmented v-model="tab" :options="tabs" /><UiTip v-if="TAB_TIPS[tab]" :text="t(TAB_TIPS[tab]!)" /></div>
 
     <!-- Numbers -->
     <div v-if="tab === 'stats'" class="grid grid-cols-2 gap-3 text-sm">
@@ -172,11 +175,11 @@ onMounted(load);
         <div class="text-lg font-semibold tabular-nums">{{ followers?.toLocaleString(locale) ?? "—" }}</div>
       </div>
       <div class="rounded-lg bg-panel-2 p-3">
-        <div class="text-xs text-muted">{{ t("stream.community.subs") }}</div>
+        <div class="text-xs text-muted">{{ t("stream.community.subs") }}<UiTip :text="t('tips.stream.subPoints')" /></div>
         <div class="text-lg font-semibold tabular-nums">{{ subs ? `${subs.total} · ${subs.points} P` : "—" }}</div>
       </div>
       <div class="col-span-2 rounded-lg bg-panel-2 p-3">
-        <div class="mb-1 flex items-center gap-1.5 text-xs text-muted"><Train :size="13" /> {{ t("stream.community.hypeTrain") }}</div>
+        <div class="mb-1 flex items-center gap-1.5 text-xs text-muted"><Train :size="13" /> {{ t("stream.community.hypeTrain") }}<UiTip :text="t('tips.stream.hypeTrain')" /></div>
         <div v-if="hype?.current">
           {{ t("stream.community.hypeActive", { level: hype.current.level, pct: Math.round((hype.current.total / Math.max(1, hype.current.goal)) * 100) }) }}
         </div>
@@ -184,7 +187,7 @@ onMounted(load);
         <div v-if="hype?.all_time_high" class="text-xs text-muted">{{ t("stream.community.hypeRecord", { level: hype.all_time_high.level }) }}</div>
       </div>
       <div class="col-span-2 rounded-lg bg-panel-2 p-3">
-        <div class="mb-1 text-xs text-muted">{{ t("stream.community.editors") }}</div>
+        <div class="mb-1 text-xs text-muted">{{ t("stream.community.editors") }}<UiTip :text="t('tips.stream.editors')" /></div>
         <div>{{ editors.map((e) => e.user_name).join(", ") || "—" }}</div>
       </div>
     </div>

@@ -10,6 +10,7 @@ import ProfileChannels from "../components/ProfileChannels.vue";
 import BuiltinBanner from "../components/BuiltinBanner.vue";
 import UiToggle from "../components/ui/UiToggle.vue";
 import UiField from "../components/ui/UiField.vue";
+import UiTip from "../components/ui/UiTip.vue";
 import UiSlider from "../components/ui/UiSlider.vue";
 import UiNumber from "../components/ui/UiNumber.vue";
 import UiTags from "../components/ui/UiTags.vue";
@@ -118,30 +119,31 @@ const emoteLevels = computed(() => tm("companion.emoteLevels") as unknown as str
         <fieldset :disabled="ro" class="card-pad min-w-0">
           <!-- Personality -->
           <div v-if="section === 'personality'" class="space-y-5">
-            <UiField :label="t('companion.persona')" :hint="t('companion.personaHint')">
+            <UiField :label="t('companion.persona')" :hint="t('companion.personaHint')" :tip="t('tips.companion.persona')">
               <textarea v-model="p.persona" rows="3" class="input" />
             </UiField>
             <div class="grid gap-5 md:grid-cols-3">
-              <UiSlider v-model="p.humor" :label="t('companion.humor')" :disabled="ro" />
-              <UiSlider v-model="p.energy" :label="t('companion.energy')" :disabled="ro" />
-              <UiSlider v-model="p.snark" :label="t('companion.snark')" :disabled="ro" />
+              <UiSlider v-model="p.humor" :label="t('companion.humor')" :tip="t('tips.companion.humor')" :disabled="ro" />
+              <UiSlider v-model="p.energy" :label="t('companion.energy')" :tip="t('tips.companion.energy')" :disabled="ro" />
+              <UiSlider v-model="p.snark" :label="t('companion.snark')" :tip="t('tips.companion.snark')" :disabled="ro" />
             </div>
-            <UiSlider v-model="p.maxLength" :label="t('companion.maxLength')" :min="60" :max="480" :step="10" :suffix="' ' + t('common.chars')" :disabled="ro" />
-            <UiField :label="t('companion.customInstructions')" :hint="t('companion.customInstructionsHint')">
+            <UiSlider v-model="p.maxLength" :label="t('companion.maxLength')" :tip="t('tips.companion.maxLength')" :min="60" :max="480" :step="10" :suffix="' ' + t('common.chars')" :disabled="ro" />
+            <UiField :label="t('companion.customInstructions')" :hint="t('companion.customInstructionsHint')" :tip="t('tips.companion.customInstructions')">
               <textarea v-model="p.customInstructions" rows="3" class="input" />
             </UiField>
-            <UiField :label="t('companion.avoidTopics')">
+            <UiField :label="t('companion.avoidTopics')" :tip="t('tips.companion.avoidTopics')">
               <textarea v-model="p.avoidTopics" rows="2" class="input" />
             </UiField>
           </div>
 
           <!-- Timing -->
           <div v-else-if="section === 'timing'" class="space-y-5">
-            <UiToggle v-model="p.intervalEnabled" :label="t('companion.intervalEnabled')" :disabled="ro" />
+            <UiToggle v-model="p.intervalEnabled" :label="t('companion.intervalEnabled')" :tip="t('tips.companion.interval')" :disabled="ro" />
             <div class="grid gap-5 md:grid-cols-2">
               <UiSlider
                 v-model="p.intervalMinSecs"
                 :label="`${t('companion.interval')} – ${t('companion.from')}`"
+                :tip="t('tips.companion.intervalRange')"
                 :min="30"
                 :max="1800"
                 :step="15"
@@ -162,18 +164,18 @@ const emoteLevels = computed(() => tm("companion.emoteLevels") as unknown as str
             </div>
             <p class="hint">{{ t("companion.intervalHint") }}</p>
             <div class="grid gap-5 md:grid-cols-2">
-              <UiToggle v-model="p.onlyWhenLive" :label="t('companion.onlyWhenLive')" :disabled="ro" />
+              <UiToggle v-model="p.onlyWhenLive" :label="t('companion.onlyWhenLive')" :tip="t('tips.companion.onlyWhenLive')" :disabled="ro" />
               <UiToggle v-model="p.adaptive" :label="t('companion.adaptive')" :hint="t('companion.adaptiveHint')" :disabled="ro" />
-              <UiNumber v-model="p.busyThreshold" :label="t('companion.busyThreshold')" :min="0" :max="1000" :disabled="ro || !p.adaptive" />
-              <UiNumber v-model="p.maxUnanswered" :label="t('companion.maxUnanswered')" :hint="t('companion.maxUnansweredHint')" :min="0" :max="50" :disabled="ro" />
-              <UiSlider v-model="p.contextMessages" :label="t('companion.contextMessages')" :min="0" :max="200" :step="5" :disabled="ro" />
-              <UiSlider v-model="p.contextMaxAgeMins" :label="t('companion.contextAge')" :min="1" :max="120" :suffix="' min'" :disabled="ro" />
+              <UiNumber v-model="p.busyThreshold" :label="t('companion.busyThreshold')" :tip="t('tips.companion.busyThreshold')" :min="0" :max="1000" :disabled="ro || !p.adaptive" />
+              <UiNumber v-model="p.maxUnanswered" :label="t('companion.maxUnanswered')" :tip="t('tips.companion.maxUnanswered')" :hint="t('companion.maxUnansweredHint')" :min="0" :max="50" :disabled="ro" />
+              <UiSlider v-model="p.contextMessages" :label="t('companion.contextMessages')" :tip="t('tips.companion.contextMessages')" :min="0" :max="200" :step="5" :disabled="ro" />
+              <UiSlider v-model="p.contextMaxAgeMins" :label="t('companion.contextAge')" :tip="t('tips.companion.contextAge')" :min="1" :max="120" :suffix="' min'" :disabled="ro" />
             </div>
           </div>
 
           <!-- Content mix -->
           <div v-else-if="section === 'content'" class="space-y-4">
-            <p class="hint mt-0">{{ t("companion.mixHint") }}</p>
+            <p class="hint mt-0">{{ t("companion.mixHint") }}<UiTip :text="t('tips.companion.mix')" /></p>
             <div class="grid gap-x-8 gap-y-4 md:grid-cols-2">
               <UiSlider v-for="k in mixKeys" :key="k" v-model="p.mix[k]" :label="t(`companion.mix.${k}`)" :min="0" :max="10" :disabled="ro" />
             </div>
@@ -181,16 +183,16 @@ const emoteLevels = computed(() => tm("companion.emoteLevels") as unknown as str
 
           <!-- Language -->
           <div v-else-if="section === 'language'" class="grid gap-5 md:grid-cols-2">
-            <UiField :label="t('companion.languageMode')">
+            <UiField :label="t('companion.languageMode')" :tip="t('tips.companion.languageMode')">
               <select v-model="p.language.mode" class="input">
                 <option v-for="m in ['stream', 'fixed', 'chat']" :key="m" :value="m">{{ t(`companion.languageModes.${m}`) }}</option>
               </select>
             </UiField>
-            <UiField :label="t('companion.fixedLanguage')">
+            <UiField :label="t('companion.fixedLanguage')" :tip="t('tips.companion.fixedLanguage')">
               <UiCombobox v-model="p.language.fixed" :options="languageOptions(languages, locale)" :disabled="ro" :label="t('companion.fixedLanguage')" />
             </UiField>
             <UiToggle v-model="p.language.replyInUserLanguage" :label="t('companion.replyInUserLanguage')" :hint="t('companion.replyInUserLanguageHint')" :disabled="ro" />
-            <UiToggle v-model="p.language.allowSlang" :label="t('companion.allowSlang')" :disabled="ro" />
+            <UiToggle v-model="p.language.allowSlang" :label="t('companion.allowSlang')" :tip="t('tips.companion.allowSlang')" :disabled="ro" />
           </div>
 
           <!-- Emotes -->
@@ -198,13 +200,14 @@ const emoteLevels = computed(() => tm("companion.emoteLevels") as unknown as str
             <UiSlider
               v-model="p.emoteLevel"
               :label="t('companion.emoteLevel')"
+              :tip="t('tips.companion.emoteLevel')"
               :min="0"
               :max="3"
               :display="emoteLevels[p.emoteLevel]"
               :disabled="ro"
             />
             <div>
-              <span class="label">{{ t("companion.emoteSources") }}</span>
+              <span class="label">{{ t("companion.emoteSources") }}<UiTip :text="t('tips.companion.emoteSources')" /></span>
               <div class="grid gap-3 sm:grid-cols-4">
                 <UiToggle v-model="p.emotes.twitch" label="Twitch" :disabled="ro" />
                 <UiToggle v-model="p.emotes.bttv" label="BetterTTV" :disabled="ro" />
@@ -213,21 +216,21 @@ const emoteLevels = computed(() => tm("companion.emoteLevels") as unknown as str
               </div>
             </div>
             <div class="grid gap-5 md:grid-cols-2">
-              <UiToggle v-model="p.emotes.preferPopular" :label="t('companion.preferPopular')" :disabled="ro" />
-              <UiNumber v-model="p.emotes.maxPerMessage" :label="t('companion.maxEmotes')" :min="0" :max="10" :disabled="ro" />
+              <UiToggle v-model="p.emotes.preferPopular" :label="t('companion.preferPopular')" :tip="t('tips.companion.preferPopular')" :disabled="ro" />
+              <UiNumber v-model="p.emotes.maxPerMessage" :label="t('companion.maxEmotes')" :tip="t('tips.companion.maxEmotes')" :min="0" :max="10" :disabled="ro" />
             </div>
           </div>
 
           <!-- Interactions -->
           <div v-else-if="section === 'interactions'" class="space-y-6">
             <div class="space-y-4">
-              <UiToggle v-model="p.mentions.enabled" :disabled="ro"><span class="font-semibold">{{ t("companion.mentions") }}</span></UiToggle>
+              <UiToggle v-model="p.mentions.enabled" :tip="t('tips.companion.mentions')" :disabled="ro"><span class="font-semibold">{{ t("companion.mentions") }}</span></UiToggle>
               <div class="grid gap-5 md:grid-cols-2" :class="!p.mentions.enabled && 'opacity-60'">
                 <UiTags v-model="p.mentions.triggerWords" :label="t('companion.triggerWords')" :hint="t('companion.triggerWordsHint')" :disabled="ro" />
-                <UiToggle v-model="p.mentions.replies" :label="t('companion.replies')" :disabled="ro" />
-                <UiNumber v-model="p.mentions.userCooldownSecs" :label="t('companion.userCooldown')" :suffix="t('common.seconds')" :max="3600" :disabled="ro" />
-                <UiNumber v-model="p.mentions.globalCooldownSecs" :label="t('companion.globalCooldown')" :suffix="t('common.seconds')" :max="3600" :disabled="ro" />
-                <UiField :label="t('companion.minRole')">
+                <UiToggle v-model="p.mentions.replies" :label="t('companion.replies')" :tip="t('tips.companion.replies')" :disabled="ro" />
+                <UiNumber v-model="p.mentions.userCooldownSecs" :label="t('companion.userCooldown')" :tip="t('tips.companion.userCooldown')" :suffix="t('common.seconds')" :max="3600" :disabled="ro" />
+                <UiNumber v-model="p.mentions.globalCooldownSecs" :label="t('companion.globalCooldown')" :tip="t('tips.companion.globalCooldown')" :suffix="t('common.seconds')" :max="3600" :disabled="ro" />
+                <UiField :label="t('companion.minRole')" :tip="t('tips.companion.minRole')">
                   <select v-model="p.mentions.minRole" class="input">
                     <option v-for="r in roles" :key="r" :value="r">{{ t(`roles.${r}`) }}</option>
                   </select>
@@ -236,24 +239,24 @@ const emoteLevels = computed(() => tm("companion.emoteLevels") as unknown as str
             </div>
             <hr class="border-line" />
             <div class="space-y-4">
-              <UiToggle v-model="p.welcome.enabled" :disabled="ro"><span class="font-semibold">{{ t("companion.welcome") }}</span></UiToggle>
+              <UiToggle v-model="p.welcome.enabled" :tip="t('tips.companion.welcome')" :disabled="ro"><span class="font-semibold">{{ t("companion.welcome") }}</span></UiToggle>
               <div class="grid gap-5 md:grid-cols-2" :class="!p.welcome.enabled && 'opacity-60'">
-                <UiField :label="t('companion.welcomeScope')" :hint="p.welcome.scope === 'firstEver' ? t('companion.welcomeLearning') : ''">
+                <UiField :label="t('companion.welcomeScope')" :tip="t('tips.companion.welcomeScope')" :hint="p.welcome.scope === 'firstEver' ? t('companion.welcomeLearning') : ''">
                   <select v-model="p.welcome.scope" class="input">
                     <option value="firstEver">{{ t("companion.welcomeScopes.firstEver") }}</option>
                     <option value="firstThisStream">{{ t("companion.welcomeScopes.firstThisStream") }}</option>
                   </select>
                 </UiField>
-                <UiField :label="t('companion.welcomeInstructions')">
+                <UiField :label="t('companion.welcomeInstructions')" :tip="t('tips.companion.welcomeInstructions')">
                   <input v-model="p.welcome.instructions" class="input" />
                 </UiField>
-                <UiNumber v-model="p.welcome.delaySecs" :label="t('companion.welcomeDelay')" :suffix="t('common.seconds')" :max="120" :disabled="ro" />
-                <UiNumber v-model="p.welcome.maxPerMinute" :label="t('companion.welcomeMax')" :min="1" :max="30" :disabled="ro" />
+                <UiNumber v-model="p.welcome.delaySecs" :label="t('companion.welcomeDelay')" :tip="t('tips.companion.welcomeDelay')" :suffix="t('common.seconds')" :max="120" :disabled="ro" />
+                <UiNumber v-model="p.welcome.maxPerMinute" :label="t('companion.welcomeMax')" :tip="t('tips.companion.welcomeMax')" :min="1" :max="30" :disabled="ro" />
               </div>
             </div>
             <hr class="border-line" />
             <div class="space-y-4">
-              <span class="font-semibold">{{ t("companion.events") }}</span>
+              <span class="font-semibold">{{ t("companion.events") }}<UiTip :text="t('tips.companion.events')" /></span>
               <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <UiToggle v-model="p.events.follow" :label="t('companion.eventFollow')" :disabled="ro" />
                 <UiToggle v-model="p.events.sub" :label="t('companion.eventSub')" :disabled="ro" />
@@ -264,8 +267,8 @@ const emoteLevels = computed(() => tm("companion.emoteLevels") as unknown as str
                 <UiToggle v-model="p.events.watchStreak" :label="t('companion.eventWatchStreak')" :disabled="ro" />
               </div>
               <div class="grid gap-5 md:grid-cols-2">
-                <UiNumber v-model="p.events.minCheerBits" :label="t('companion.minBits')" :min="1" :max="100000" :disabled="ro" />
-                <UiNumber v-model="p.events.followBatchSecs" :label="t('companion.followBatch')" :suffix="t('common.seconds')" :min="0" :max="600" :disabled="ro" />
+                <UiNumber v-model="p.events.minCheerBits" :label="t('companion.minBits')" :tip="t('tips.companion.minBits')" :min="1" :max="100000" :disabled="ro" />
+                <UiNumber v-model="p.events.followBatchSecs" :label="t('companion.followBatch')" :tip="t('tips.companion.followBatch')" :suffix="t('common.seconds')" :min="0" :max="600" :disabled="ro" />
               </div>
             </div>
           </div>
@@ -273,8 +276,8 @@ const emoteLevels = computed(() => tm("companion.emoteLevels") as unknown as str
           <!-- Commands -->
           <div v-else-if="section === 'commands'" class="space-y-5">
             <div class="flex flex-wrap items-end gap-5">
-              <UiToggle v-model="p.commands.enabled" :label="t('companion.commandsEnabled')" :disabled="ro" />
-              <UiField :label="t('companion.commandPrefix')">
+              <UiToggle v-model="p.commands.enabled" :label="t('companion.commandsEnabled')" :tip="t('tips.companion.commands')" :disabled="ro" />
+              <UiField :label="t('companion.commandPrefix')" :tip="t('tips.companion.commandPrefix')">
                 <input v-model="p.commands.prefix" class="input w-32 font-mono" />
               </UiField>
             </div>
@@ -311,11 +314,11 @@ const emoteLevels = computed(() => tm("companion.emoteLevels") as unknown as str
 
           <!-- Research -->
           <div v-else-if="section === 'research'" class="space-y-5">
-            <UiToggle v-model="p.research.enabled" :label="t('companion.researchEnabled')" :hint="t('companion.researchHint')" :disabled="ro" />
+            <UiToggle v-model="p.research.enabled" :label="t('companion.researchEnabled')" :hint="t('companion.researchHint')" :tip="t('tips.companion.research')" :disabled="ro" />
             <div class="grid gap-5 md:grid-cols-3" :class="!p.research.enabled && 'opacity-60'">
               <UiToggle v-model="p.research.webSearch" :label="t('companion.webSearch')" :hint="t('companion.webSearchHint')" :disabled="ro" />
-              <UiToggle v-model="p.research.wikipedia" :label="t('companion.wikipedia')" :disabled="ro" />
-              <UiNumber v-model="p.research.refreshDays" :label="t('companion.refreshDays')" :min="1" :max="365" :disabled="ro" />
+              <UiToggle v-model="p.research.wikipedia" :label="t('companion.wikipedia')" :tip="t('tips.companion.wikipedia')" :disabled="ro" />
+              <UiNumber v-model="p.research.refreshDays" :label="t('companion.refreshDays')" :tip="t('tips.companion.refreshDays')" :min="1" :max="365" :disabled="ro" />
             </div>
             <UiToggle v-model="p.research.answerSearch" :label="t('companion.answerSearch')" :hint="t('companion.answerSearchHint')" :disabled="ro" />
           </div>

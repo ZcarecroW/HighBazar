@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, defineAsyncComponent, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   Bot,
@@ -21,15 +21,18 @@ import { setLocale } from "./i18n";
 import { checkForUpdate } from "./lib/updater";
 import { applyUiZoom, clampZoom, CHAT_ZOOM, UI_ZOOM } from "./lib/zoom";
 import DashboardView from "./views/DashboardView.vue";
-import StreamView from "./views/StreamView.vue";
-import ChannelsView from "./views/ChannelsView.vue";
-import CompanionView from "./views/CompanionView.vue";
-import ModerationView from "./views/ModerationView.vue";
-import AiView from "./views/AiView.vue";
-import SettingsView from "./views/SettingsView.vue";
-import WizardView from "./views/WizardView.vue";
 import UpdateDialog from "./components/UpdateDialog.vue";
 import CommandPalette from "./components/CommandPalette.vue";
+import TipLayer from "./components/TipLayer.vue";
+// Only the dashboard is part of the start bundle; the other pages load on
+// their first visit (the window starts faster, also when reopened from the tray).
+const StreamView = defineAsyncComponent(() => import("./views/StreamView.vue"));
+const ChannelsView = defineAsyncComponent(() => import("./views/ChannelsView.vue"));
+const CompanionView = defineAsyncComponent(() => import("./views/CompanionView.vue"));
+const ModerationView = defineAsyncComponent(() => import("./views/ModerationView.vue"));
+const AiView = defineAsyncComponent(() => import("./views/AiView.vue"));
+const SettingsView = defineAsyncComponent(() => import("./views/SettingsView.vue"));
+const WizardView = defineAsyncComponent(() => import("./views/WizardView.vue"));
 
 const app = useApp();
 const { t } = useI18n();
@@ -67,7 +70,7 @@ media.addEventListener("change", applyTheme);
 applyTheme();
 
 watch(() => [app.config?.settings.theme, app.config?.settings.colorTheme], applyTheme);
-watch(() => app.config?.settings.language, (l) => setLocale(l ?? "auto"));
+watch(() => app.config?.settings.language, (l) => void setLocale(l ?? "auto"));
 
 // Zoom: Ctrl +/−/0 and Ctrl + mouse wheel change the UI size; over the live
 // chat the wheel changes the chat size instead.
@@ -112,7 +115,7 @@ onMounted(async () => {
   await app.load();
   applyTheme();
   applyUiZoom(app.config?.settings.uiZoom ?? 1).catch((e) => console.warn("zoom failed", e));
-  setLocale(app.config?.settings.language ?? "auto");
+  void setLocale(app.config?.settings.language ?? "auto");
   if (app.config?.settings.checkUpdatesOnStart) {
     checkForUpdate().catch((e) => console.warn("update check failed", e));
   }
@@ -188,6 +191,7 @@ const statusDot = computed(() => {
     <WizardView v-if="app.wizardOpen" />
     <UpdateDialog />
     <CommandPalette v-model="paletteOpen" />
+    <TipLayer />
 
     <!-- Toasts -->
     <div class="pointer-events-none fixed right-4 bottom-4 z-[60] flex w-96 max-w-[calc(100vw-2rem)] flex-col gap-2">

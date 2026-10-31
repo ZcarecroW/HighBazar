@@ -1,23 +1,36 @@
 import { createI18n } from "vue-i18n";
-import en from "./en";
-import de from "./de";
+import type en from "./en";
 
 export type Locale = "en" | "de";
+type Messages = typeof en;
 
 export function detectLocale(setting: string): Locale {
   if (setting === "en" || setting === "de") return setting;
   return navigator.language.toLowerCase().startsWith("de") ? "de" : "en";
 }
 
+// Only the language in use is loaded (each one is about 100 KB of text);
+// the other follows when the language is switched. Both have the same keys
+// (de.ts is typed against en.ts), so nothing needs a fallback.
+const loaders: Record<Locale, () => Promise<{ default: Messages }>> = {
+  en: () => import("./en"),
+  de: () => import("./de"),
+};
+
 export const i18n = createI18n({
   legacy: false,
-  locale: detectLocale("auto"),
+  locale: "en",
   fallbackLocale: "en",
-  messages: { en, de },
+  messages: {} as Record<Locale, Messages>,
 });
 
-export function setLocale(setting: string) {
+export async function loadLocale(l: Locale) {
+  if (!i18n.global.availableLocales.includes(l)) i18n.global.setLocaleMessage(l, (await loaders[l]()).default);
+}
+
+export async function setLocale(setting: string) {
   const l = detectLocale(setting);
+  await loadLocale(l);
   i18n.global.locale.value = l;
   document.documentElement.lang = l;
 }
@@ -32,7 +45,7 @@ interface Named {
 /** Localized name of a built-in profile (user profiles keep their own name). */
 export function pname(p: Named): string {
   const k = `presets.${p.id}.name`;
-  return p.builtin && i18n.global.te(k, "en") ? i18n.global.t(k) : p.name;
+  return p.builtin && i18n.global.te(k) ? i18n.global.t(k) : p.name;
 }
 
 // Reasons produced by the instant rules in the backend (English) → localized.
@@ -57,5 +70,5 @@ export function modReason(reason: string): string {
 
 export function pdesc(p: Named): string {
   const k = `presets.${p.id}.description`;
-  return p.builtin && i18n.global.te(k, "en") ? i18n.global.t(k) : (p.description ?? "");
+  return p.builtin && i18n.global.te(k) ? i18n.global.t(k) : (p.description ?? "");
 }

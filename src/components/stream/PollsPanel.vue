@@ -5,6 +5,7 @@ import { BarChart3, Plus, RefreshCw, Trophy, X, Lock, Survey } from "../../icons
 import { useTwitch } from "../../lib/twitch";
 import UiNumber from "../ui/UiNumber.vue";
 import UiToggle from "../ui/UiToggle.vue";
+import UiTip from "../ui/UiTip.vue";
 
 const { t } = useI18n();
 const { id, tw } = useTwitch();
@@ -118,7 +119,7 @@ onMounted(load);
     <div class="grid gap-6 lg:grid-cols-2">
       <!-- Poll -->
       <div class="space-y-3">
-        <h3 class="flex items-center gap-1.5 text-sm font-semibold"><BarChart3 :size="15" /> {{ t("stream.polls.poll") }}</h3>
+        <h3 class="flex items-center gap-1.5 text-sm font-semibold"><BarChart3 :size="15" /> {{ t("stream.polls.poll") }}<UiTip :text="t('tips.stream.poll')" /></h3>
         <div v-if="activePoll" class="rounded-lg border border-line bg-panel-2 p-3">
           <div class="mb-2 font-semibold">{{ activePoll.title }}</div>
           <div v-for="c in activePoll.choices" :key="c.id" class="mb-1.5">
@@ -147,7 +148,7 @@ onMounted(load);
 
       <!-- Prediction -->
       <div class="space-y-3">
-        <h3 class="flex items-center gap-1.5 text-sm font-semibold"><Trophy :size="15" /> {{ t("stream.polls.prediction") }}</h3>
+        <h3 class="flex items-center gap-1.5 text-sm font-semibold"><Trophy :size="15" /> {{ t("stream.polls.prediction") }}<UiTip :text="t('tips.stream.prediction')" /></h3>
         <div v-if="openPred" class="rounded-lg border border-line bg-panel-2 p-3">
           <div class="mb-1 font-semibold">{{ openPred.title }}</div>
           <div class="mb-2 text-xs text-muted">{{ t(`stream.polls.status.${openPred.status}`) }}</div>

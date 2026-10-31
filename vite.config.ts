@@ -17,9 +17,23 @@ export default defineConfig({
   },
   envPrefix: ["VITE_", "TAURI_ENV_*"],
   build: {
-    target: "es2022",
+    // Vite's default browser baseline (Chrome 111 / Safari 16.4) fits every
+    // webview Tauri 2 runs on; an older target only adds lab() fallbacks for
+    // every oklch() theme color (+2 kB CSS).
     minify: !process.env.TAURI_ENV_DEBUG,
     sourcemap: !!process.env.TAURI_ENV_DEBUG,
-    chunkSizeWarningLimit: 900,
+    rolldownOptions: {
+      // Pages other than the dashboard are loaded on their first visit; the
+      // libraries every page needs get a chunk with a clear name.
+      // Groups take their dependencies along: vendor must win over icons (Vue's h()).
+      output: {
+        codeSplitting: {
+          groups: [
+            { name: "vendor", test: /node_modules/, priority: 2 },
+            { name: "icons", test: /src[\\/]icons/, priority: 1 },
+          ],
+        },
+      },
+    },
   },
 });

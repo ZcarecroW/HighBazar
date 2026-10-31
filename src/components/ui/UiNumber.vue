@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import UiTip from "./UiTip.vue";
 const props = withDefaults(
-  defineProps<{ label?: string; hint?: string; min?: number; max?: number; step?: number; suffix?: string; disabled?: boolean }>(),
+  defineProps<{ label?: string; hint?: string; tip?: string; min?: number; max?: number; step?: number; suffix?: string; disabled?: boolean }>(),
   { min: 0, max: 1_000_000, step: 1 },
 );
 const model = defineModel<number>({ required: true });
@@ -14,7 +15,7 @@ function onInput(e: Event) {
 
 <template>
   <div class="min-w-0">
-    <span v-if="label" class="label">{{ label }}</span>
+    <span v-if="label" class="label">{{ label }}<UiTip v-if="tip" :text="tip" /></span>
     <div class="flex items-center gap-2">
       <input
         :value="model"

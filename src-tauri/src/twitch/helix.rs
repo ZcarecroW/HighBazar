@@ -274,18 +274,24 @@ impl Helix {
         Ok(r.map(|d| d.data).unwrap_or_default())
     }
 
-    /// All Twitch emotes a user may use – including those of channels they are
-    /// subscribed to (needs `user:read:emotes`). Pages through the whole list.
+    /// All Twitch emotes a user may use in their own channel – including those
+    /// of channels they are subscribed to (needs `user:read:emotes`). Pages
+    /// through the whole list. Follower emotes of other channels only work
+    /// there and are left out.
     pub async fn user_emotes(&self, user_id: &str) -> AppResult<Vec<Emote>> {
         let mut out = Vec::new();
         let mut after = String::new();
         for _ in 0..20 {
-            let mut q = vec![("user_id", user_id)];
+            // broadcaster_id: the list then surely contains the channel's own follower emotes.
+            let mut q = vec![("user_id", user_id), ("broadcaster_id", user_id)];
             if !after.is_empty() {
                 q.push(("after", after.as_str()));
             }
             let v = self.request::<Value>(Method::GET, "/chat/emotes/user", user_id, &q, None).await?.unwrap_or(Value::Null);
             out.extend(v["data"].as_array().into_iter().flatten().filter_map(|e| {
+                if e["emote_type"] == "follower" && e["owner_id"].as_str().is_some_and(|o| o != user_id) {
+                    return None;
+                }
                 Some(Emote { id: e["id"].as_str()?.to_string(), name: e["name"].as_str()?.to_string() })
             }));
             match v["pagination"]["cursor"].as_str() {

@@ -8,7 +8,7 @@ pub use types::*;
 use crate::error::AppResult;
 
 /// Version of the config file format; `Config::normalize` migrates older files.
-pub const CONFIG_VERSION: u32 = 2;
+pub const CONFIG_VERSION: u32 = 3;
 
 // Built-in Twitch application (public client, device code flow). The ID is
 // injected at build time from `HIGHBAZAR_TWITCH_CLIENT_ID` and stored masked,
@@ -72,6 +72,22 @@ impl Config {
             // the streamer can't follow those answers. It was never chosen on purpose.
             for p in self.companion_profiles.iter_mut() {
                 p.language.reply_in_user_language = false;
+            }
+        }
+        if self.version < 3 {
+            // 1.8.0: GPT-6 models know "none" instead of "minimal", and DeepSeek
+            // retired "deepseek-chat" / "deepseek-reasoner" (the Flash model without / with thinking).
+            for p in self.ai_profiles.iter_mut().filter(|p| !p.builtin) {
+                if p.provider == "openai" && p.reasoning == "minimal" && p.model.starts_with("gpt-6") {
+                    p.reasoning = "none".into();
+                }
+                if p.provider == "deepseek" {
+                    match p.model.trim() {
+                        "deepseek-chat" => (p.model, p.reasoning) = ("deepseek-flash".into(), "none".into()),
+                        "deepseek-reasoner" => p.model = "deepseek-flash".into(),
+                        _ => {}
+                    }
+                }
             }
         }
         self.version = CONFIG_VERSION;
@@ -203,6 +219,31 @@ mod tests {
         c.normalize();
         assert_ne!(c.companion_profiles[0].name, "hacked");
         assert!(c.companion_profiles.iter().any(|p| p.id == "mine"));
+    }
+
+    #[test]
+    fn migrates_retired_model_settings() {
+        let mut c = Config { version: 2, ..Default::default() };
+        let mk = |id: &str, provider: &str, model: &str, reasoning: &str| AiProfile {
+            id: id.into(),
+            provider: provider.into(),
+            model: model.into(),
+            reasoning: reasoning.into(),
+            ..Default::default()
+        };
+        c.ai_profiles = vec![
+            mk("a", "openai", "gpt-6-luna", "minimal"),
+            mk("b", "deepseek", "deepseek-chat", ""),
+            mk("c", "deepseek", "deepseek-reasoner", "high"),
+            mk("d", "openai", "gpt-5-mini", "minimal"),
+        ];
+        c.normalize();
+        let get = |id: &str| c.ai_profiles.iter().find(|p| p.id == id).unwrap();
+        assert_eq!(get("a").reasoning, "none");
+        assert_eq!((get("b").model.as_str(), get("b").reasoning.as_str()), ("deepseek-flash", "none"));
+        assert_eq!((get("c").model.as_str(), get("c").reasoning.as_str()), ("deepseek-flash", "high"));
+        assert_eq!(get("d").reasoning, "minimal");
+        assert_eq!(c.version, CONFIG_VERSION);
     }
 
     /// Writes the default config for the frontend's browser preview mock:

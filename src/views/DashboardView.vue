@@ -12,6 +12,7 @@ import { useTwitch } from "../lib/twitch";
 import { useApp } from "../stores/app";
 import type { FeedItem, PendingMessage } from "../lib/types";
 import UiToggle from "../components/ui/UiToggle.vue";
+import UiTip from "../components/ui/UiTip.vue";
 import ChatInput from "../components/ChatInput.vue";
 
 const app = useApp();
@@ -250,12 +251,12 @@ function modEntry(item: FeedItem) {
       <div class="ml-auto flex flex-wrap items-center gap-2">
         <button v-if="settings.performanceMode" class="btn" :title="t('dashboard.toTrayHint')" @click="toTray"><EyeOff :size="16" /> {{ t("dashboard.toTray") }}</button>
         <template v-if="!app.isRunning">
-          <button class="btn" :disabled="!canStart" @click="app.startBot(true)"><FlaskConical :size="16" /> {{ t("dashboard.startTest") }}</button>
-          <button class="btn-primary" :disabled="!canStartLive" :title="canStartLive ? undefined : t('dashboard.needAccount')" @click="app.startBot(false)"><Play :size="16" /> {{ t("dashboard.start") }}</button>
+          <button class="btn" :disabled="!canStart" :data-tip="t('tips.dashboard.testMode')" @click="app.startBot(true)"><FlaskConical :size="16" /> {{ t("dashboard.startTest") }}</button>
+          <button class="btn-primary" :disabled="!canStartLive" :data-tip="canStartLive ? t('tips.dashboard.start') : t('dashboard.needAccount')" @click="app.startBot(false)"><Play :size="16" /> {{ t("dashboard.start") }}</button>
         </template>
         <template v-else>
-          <button class="btn" :title="t('dashboard.refreshInfo')" @click="app.control('refresh')"><RefreshCw :size="16" /></button>
-          <button class="btn" @click="app.control('sayNow')"><MessageSquarePlus :size="16" /> {{ t("dashboard.sayNow") }}</button>
+          <button class="btn" :aria-label="t('dashboard.refreshInfo')" :data-tip="`${t('dashboard.refreshInfo')}: ${t('tips.dashboard.refresh')}`" @click="app.control('refresh')"><RefreshCw :size="16" /></button>
+          <button class="btn" :data-tip="t('tips.dashboard.sayNow')" @click="app.control('sayNow')"><MessageSquarePlus :size="16" /> {{ t("dashboard.sayNow") }}</button>
           <button class="btn-danger" @click="app.stopBot()"><Square :size="16" /> {{ t("dashboard.stop") }}</button>
         </template>
       </div>
@@ -278,7 +279,7 @@ function modEntry(item: FeedItem) {
       <!-- Feed -->
       <section class="card flex min-h-[420px] flex-col overflow-hidden">
         <div class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line px-4 py-2.5">
-          <h2 class="text-sm font-semibold">{{ t("dashboard.feed") }}</h2>
+          <h2 class="text-sm font-semibold">{{ t("dashboard.feed") }}<UiTip :text="t('tips.dashboard.feed')" /></h2>
           <div class="flex flex-wrap items-center gap-1 text-xs">
             <button
               v-for="k in (['chat', 'bot', 'mod', 'system'] as const)"
@@ -408,7 +409,7 @@ function modEntry(item: FeedItem) {
         <div v-if="s" class="card-pad grid grid-cols-2 gap-3">
           <div class="col-span-2">
             <div class="flex items-center justify-between text-xs text-muted">
-              <span class="flex items-center gap-1"><Clock :size="13" /> {{ t("dashboard.nextMessage") }}</span>
+              <span class="flex items-center gap-1"><Clock :size="13" /> {{ t("dashboard.nextMessage") }}<UiTip :text="t('tips.dashboard.nextMessage')" /></span>
               <span class="font-semibold text-fg tabular-nums">
                 <template v-if="s.pausedReason">{{ t(`dashboard.paused.${s.pausedReason}`) }}</template>
                 <template v-else-if="nextIn">{{ nextIn }}</template>
@@ -418,7 +419,7 @@ function modEntry(item: FeedItem) {
           </div>
           <div class="col-span-2">
             <div class="flex items-center justify-between text-xs text-muted">
-              <span class="flex items-center gap-1"><Coins :size="13" /> {{ t("dashboard.costToday") }}</span>
+              <span class="flex items-center gap-1"><Coins :size="13" /> {{ t("dashboard.costToday") }}<UiTip :text="t('tips.dashboard.costToday')" /></span>
               <span class="font-semibold text-fg tabular-nums">${{ s.costToday.toFixed(3) }}<template v-if="s.budget"> / ${{ s.budget.toFixed(2) }}</template></span>
             </div>
             <div v-if="s.budget" class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-panel-2">
@@ -430,15 +431,15 @@ function modEntry(item: FeedItem) {
             <div class="text-lg font-semibold tabular-nums">{{ s.messagesToday }}</div>
           </div>
           <div class="rounded-lg bg-panel-2 p-2.5">
-            <div class="flex items-center gap-1 text-[11px] text-muted"><Activity :size="12" /> {{ t("dashboard.chatRate") }}</div>
+            <div class="flex items-center gap-1 text-[11px] text-muted"><Activity :size="12" /> {{ t("dashboard.chatRate") }}<UiTip :text="t('tips.dashboard.chatRate')" /></div>
             <div class="text-lg font-semibold tabular-nums">{{ s.chatRate }}</div>
           </div>
           <div class="rounded-lg bg-panel-2 p-2.5">
-            <div class="flex items-center gap-1 text-[11px] text-muted"><Smile :size="12" /> {{ t("dashboard.emotes") }}</div>
+            <div class="flex items-center gap-1 text-[11px] text-muted"><Smile :size="12" /> {{ t("dashboard.emotes") }}<UiTip :text="t('tips.dashboard.emotes')" /></div>
             <div class="text-lg font-semibold tabular-nums">{{ s.emoteCount }}</div>
           </div>
           <div class="rounded-lg bg-panel-2 p-2.5">
-            <div class="flex items-center gap-1 text-[11px] text-muted"><Brain :size="12" /> {{ t("dashboard.knowledge") }}</div>
+            <div class="flex items-center gap-1 text-[11px] text-muted"><Brain :size="12" /> {{ t("dashboard.knowledge") }}<UiTip :text="t('tips.dashboard.knowledge')" /></div>
             <div class="text-lg font-semibold tabular-nums">{{ s.researching ? "…" : s.knowledgeItems }}</div>
           </div>
         </div>
@@ -446,10 +447,10 @@ function modEntry(item: FeedItem) {
         <!-- Quick controls -->
         <div v-if="channel" class="card-pad space-y-3">
           <h3 class="section-title mb-1 flex items-center gap-2"><Bolt :size="16" class="text-brand-500" /> {{ t("dashboard.quick") }}</h3>
-          <UiToggle v-model="channel.companionEnabled" :label="t('dashboard.companionOn')" />
-          <UiToggle v-model="channel.moderationEnabled" :label="t('dashboard.moderationOn')" />
+          <UiToggle v-model="channel.companionEnabled" :label="t('dashboard.companionOn')" :tip="t('tips.channels.companion')" />
+          <UiToggle v-model="channel.moderationEnabled" :label="t('dashboard.moderationOn')" :tip="t('tips.channels.moderation')" />
           <div>
-            <span class="label">{{ t("channels.sendMode") }}</span>
+            <span class="label">{{ t("channels.sendMode") }}<UiTip :text="t('tips.channels.sendMode')" /></span>
             <select v-model="channel.sendMode" class="input">
               <option value="auto">{{ t("channels.sendModes.auto") }}</option>
               <option value="preview">{{ t("channels.sendModes.preview") }}</option>
@@ -460,7 +461,7 @@ function modEntry(item: FeedItem) {
 
         <!-- Pending -->
         <div v-if="app.pending.length" class="card-pad space-y-2">
-          <h3 class="section-title mb-1 flex items-center gap-2"><Send :size="16" class="text-brand-500" /> {{ t("dashboard.pending") }} ({{ app.pending.length }})</h3>
+          <h3 class="section-title mb-1 flex items-center gap-2"><Send :size="16" class="text-brand-500" /> {{ t("dashboard.pending") }} ({{ app.pending.length }})<UiTip :text="t('tips.dashboard.pending')" /></h3>
           <div v-for="p in app.pending" :key="p.id" class="rounded-lg border border-line bg-panel-2 p-2.5">
             <textarea v-if="editing === p.id" v-model="editText" rows="3" class="input mb-2" />
             <p v-else class="selectable mb-2 text-sm"><EmoteText :text="p.text" /></p>

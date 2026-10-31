@@ -48,7 +48,7 @@ The bot writes with **your streamer account** by default (marked with a configur
 | **Context-aware** | Reads the last *N* chat messages (configurable), stream title, category, uptime and viewers, plus everything you tell it about your stream. |
 | **Personality** | Persona text plus humor / energy / teasing sliders, custom instructions and topics to avoid. Seven built-in presets. |
 | **Language** | Stream language, a fixed language, or whatever most chatters use. Optionally answers each chatter in *their* language. |
-| **Emotes** | Knows Twitch, **BetterTTV**, **FrankerFaceZ** and **7TV** emotes of your channel and prefers the ones your community actually uses. |
+| **Emotes** | Knows Twitch, **BetterTTV**, **FrankerFaceZ** and **7TV** emotes of your channel and prefers the ones your community actually uses. Changes to your 7TV emote set arrive live. |
 | **Reactions** | Replies when addressed, welcomes first-time chatters, thanks follows (batched), subs, resubs, gift subs, raids (mentions what the raider played) and cheers. |
 | **Commands** | `!hb ask <question>`, `!hb fact`, `!hb joke`, `!hb about` — cooldowns and role requirements per command. |
 | **Game research** | On category change: Wikipedia + a web search → 15 facts & 8 tips, cached per game. |
@@ -68,7 +68,7 @@ The bot writes with **your streamer account** by default (marked with a configur
 | Provider | Notes |
 |---|---|
 | **Anthropic Claude** | Messages API, prompt caching, web search. Presets: Opus 5.5, Sonnet 5.5, Haiku 5.5. |
-| **OpenAI** | Responses API (or Chat Completions). Presets: GPT‑6.1 Sol, GPT‑6 Luna. |
+| **OpenAI** | Responses API (or Chat Completions). Presets: GPT‑6.1 Sol, GPT‑6.1 Terra, GPT‑6 Luna. |
 | **Google Gemini** | Interactions API with automatic fallback to generateContent, Google Search grounding. |
 | **OpenRouter** | One key for hundreds of models, exact cost reporting, web search tool. |
 | **Mistral, Groq, xAI, DeepSeek, Perplexity, Together AI** | Via their OpenAI-compatible endpoints. |
@@ -113,8 +113,9 @@ Bazaar, Midnight, Ocean, Aurora, Forest, Gold, Sunset, Crimson, Sakura and Cyber
 - **Chat yourself** – in the app and, if you like, right in the Steam/OBS overlay (Shift+Tab, type, Enter, back to the game). Type `:` for emotes of **every provider** (Twitch incl. your subscriptions, BTTV, FFZ, 7TV) and **emojis** with English and German keywords (`:herz`, `:fire`); `:7 pog` searches only 7TV (`:b` BTTV, `:f` FFZ, `:t` Twitch, `:e` emoji). Your favorites and what you use most come first, `@` suggests people from chat, **Tab** completes the current word, ↑ brings back your last message. An emote picker with a tab per provider is one click away; right-click pins a favorite.
 - **Fuzzy search everywhere**: **Ctrl+K** jumps to any page, setting, profile or action; raid and shoutout targets are suggested while you type – live channels you follow, people in chat and Twitch's channel search, with avatar, title, category and viewers; profiles, models, languages and the moderation log are searchable too. Typos, umlauts and abbreviations are forgiven ("minecarft", "jc" → Just Chatting).
 - **Setup wizard** on first start (skippable, can be reopened any time).
+- **Explanations everywhere**: the small ⓘ next to a setting (or pointing at a button) explains it in plain words – including Twitch terms like raids, VIPs, AutoMod or channel points – so you can start without looking anything up.
 - **Test mode + chat simulator** — try everything without sending anything to Twitch.
-- **Live feed** with chat, bot messages, events and moderation; delete / timeout / ban with one click. Twitch, BetterTTV, FrankerFaceZ and 7TV **emotes are shown as images** (can be switched off).
+- **Live feed** with chat, bot messages, events and moderation; delete / timeout / ban with one click. Twitch, BetterTTV, FrankerFaceZ and 7TV **emotes are shown as images** (can be switched off), zero-width emotes such as 7TV's RainTime sit on top of the emote before them.
 - **Calm reading**: new chat messages **glide in** instead of jumping (speed and acceleration curve adjustable, with live preview), and the chat and the rest of the interface can be **zoomed separately** (Ctrl + mouse wheel, Ctrl + plus/minus).
 - **System, Dark and Light** themes, **English and German** UI, responsive layout optimized for 1920×1080.
 - **Automatic updates** from GitHub Releases (check on start, configurable).

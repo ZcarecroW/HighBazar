@@ -1,5 +1,6 @@
 <script setup lang="ts">
-defineProps<{ label?: string; hint?: string; disabled?: boolean }>();
+import UiTip from "./UiTip.vue";
+defineProps<{ label?: string; hint?: string; tip?: string; disabled?: boolean }>();
 const model = defineModel<boolean>({ required: true });
 </script>
 
@@ -21,7 +22,7 @@ const model = defineModel<boolean>({ required: true });
     </button>
     <span v-if="label || hint || $slots.default" class="min-w-0">
       <span class="block text-sm text-fg">
-        <slot>{{ label }}</slot>
+        <slot>{{ label }}</slot><UiTip v-if="tip" :text="tip" />
       </span>
       <span v-if="hint" class="hint block">{{ hint }}</span>
     </span>

@@ -6,6 +6,7 @@ import { useTwitch, scopesFor } from "../lib/twitch";
 import type { ChannelLevel } from "../lib/types";
 import TwitchLogin from "../components/TwitchLogin.vue";
 import UiField from "../components/ui/UiField.vue";
+import UiTip from "../components/ui/UiTip.vue";
 import UiSegmented from "../components/ui/UiSegmented.vue";
 import UiTags from "../components/ui/UiTags.vue";
 import UiToggle from "../components/ui/UiToggle.vue";
@@ -185,7 +186,7 @@ onMounted(load);
         <h1 class="flex items-center gap-2 text-xl font-bold"><MonitorPlay :size="22" class="text-brand-500" /> {{ t("stream.title") }}</h1>
         <p class="text-sm text-muted">{{ t("stream.intro") }}</p>
       </div>
-      <UiSegmented v-model="level" :label="t('stream.level')" :options="levelOptions" />
+      <UiSegmented v-model="level" :label="t('stream.level')" :tip="t('tips.stream.level')" :options="levelOptions" />
     </header>
     <p class="-mt-2 text-xs text-muted">{{ t(`stream.levelHints.${level}`) }}</p>
 
@@ -213,12 +214,12 @@ onMounted(load);
           </button>
         </div>
 
-        <UiField :label="t('stream.streamTitle')" :hint="`${title.length}/140`">
+        <UiField :label="t('stream.streamTitle')" :hint="`${title.length}/140`" :tip="t('tips.stream.streamTitle')">
           <input v-model="title" maxlength="140" class="input" />
         </UiField>
 
         <div class="grid gap-5 md:grid-cols-2">
-          <UiField :label="t('stream.category')">
+          <UiField :label="t('stream.category')" :tip="t('tips.stream.category')">
             <div class="relative">
               <div class="mb-2 flex items-center gap-2 text-sm">
                 <span class="font-semibold">{{ category?.name || t("stream.noCategory") }}</span>
@@ -260,21 +261,21 @@ onMounted(load);
         </div>
 
         <div>
-          <UiTags v-model="tags" :label="t('stream.tags')" :hint="t('stream.tagsHint')" :placeholder="t('stream.addTag')" />
+          <UiTags v-model="tags" :label="t('stream.tags')" :hint="t('stream.tagsHint')" :tip="t('tips.stream.tags')" :placeholder="t('stream.addTag')" />
           <p v-if="tagError || tags.length > 10" class="mt-1 text-xs text-red-500">{{ t("stream.tagInvalid") }}</p>
         </div>
 
         <template v-if="level !== 'simple'">
           <hr class="border-line" />
           <div>
-            <span class="label">{{ t("stream.ccl") }}</span>
+            <span class="label">{{ t("stream.ccl") }}<UiTip :text="t('tips.stream.ccl')" /></span>
             <p class="hint mb-3">{{ t("stream.cclHint") }}</p>
             <div class="grid gap-3 md:grid-cols-2">
               <UiToggle v-for="c in cclList" :key="c.id" :model-value="ccls.includes(c.id)" :label="c.name" :hint="c.description" @update:model-value="(v: boolean) => toggleCcl(c.id, v)" />
             </div>
           </div>
-          <UiToggle v-model="branded" :label="t('stream.branded')" :hint="t('stream.brandedHint')" />
-          <UiNumber v-if="partner" v-model="delay" :label="t('stream.streamDelay')" :hint="t('stream.streamDelayHint')" :min="0" :max="900" :suffix="t('stream.seconds')" />
+          <UiToggle v-model="branded" :label="t('stream.branded')" :hint="t('stream.brandedHint')" :tip="t('tips.stream.branded')" />
+          <UiNumber v-if="partner" v-model="delay" :label="t('stream.streamDelay')" :hint="t('stream.streamDelayHint')" :tip="t('tips.stream.streamDelay')" :min="0" :max="900" :suffix="t('stream.seconds')" />
         </template>
 
         <div class="flex items-center gap-3">

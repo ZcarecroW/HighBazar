@@ -12,6 +12,7 @@ import ProfileList from "../components/ProfileList.vue";
 import TwitchLogin from "../components/TwitchLogin.vue";
 import UiToggle from "../components/ui/UiToggle.vue";
 import UiField from "../components/ui/UiField.vue";
+import UiTip from "../components/ui/UiTip.vue";
 import UiNumber from "../components/ui/UiNumber.vue";
 import LanguagePicker from "../components/LanguagePicker.vue";
 
@@ -111,7 +112,7 @@ const bot = computed(() => app.account(ch.value?.botAccountId));
           <h2 class="section-title flex items-center gap-2"><Users :size="17" class="text-brand-500" /> {{ t("channels.accounts") }}</h2>
           <div class="grid gap-5 xl:grid-cols-2">
             <div>
-              <span class="label">{{ t("channels.streamer") }}</span>
+              <span class="label">{{ t("channels.streamer") }}<UiTip :text="t('tips.channels.streamer')" /></span>
               <div class="flex flex-wrap items-center gap-3 rounded-lg bg-panel-2 p-3">
                 <template v-if="streamer">
                   <img v-if="streamer.profileImageUrl" :src="streamer.profileImageUrl" class="h-9 w-9 rounded-full" alt="" />
@@ -131,7 +132,7 @@ const bot = computed(() => app.account(ch.value?.botAccountId));
               <p class="hint">{{ t("channels.streamerHint") }}</p>
             </div>
             <div>
-              <span class="label">{{ t("channels.botAccount") }} <span class="normal-case">({{ t("common.optional") }})</span></span>
+              <span class="label">{{ t("channels.botAccount") }} <span class="normal-case">({{ t("common.optional") }})</span><UiTip :text="t('tips.channels.botAccount')" /></span>
               <div class="flex flex-wrap items-center gap-3 rounded-lg bg-panel-2 p-3">
                 <template v-if="bot">
                   <img v-if="bot.profileImageUrl" :src="bot.profileImageUrl" class="h-9 w-9 rounded-full" alt="" />
@@ -155,17 +156,17 @@ const bot = computed(() => app.account(ch.value?.botAccountId));
         <section class="card-pad">
           <h2 class="section-title flex items-center gap-2"><Bolt :size="17" class="text-brand-500" /> {{ t("channels.features") }}</h2>
           <div class="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
-            <UiField :label="t('channels.botName')" :hint="t('channels.botNameHint')">
+            <UiField :label="t('channels.botName')" :hint="t('channels.botNameHint')" :tip="t('tips.channels.botName')">
               <input v-model="ch.botName" class="input" />
             </UiField>
             <div>
-              <UiToggle v-model="ch.prefixEnabled" :label="t('channels.prefix')" />
+              <UiToggle v-model="ch.prefixEnabled" :label="t('channels.prefix')" :tip="t('tips.channels.prefix')" />
               <input v-model="ch.prefix" class="input mt-2" :disabled="!ch.prefixEnabled" />
               <p class="hint">{{ t("channels.prefixHint") }}</p>
             </div>
             <div class="space-y-3">
-              <UiToggle v-model="ch.companionEnabled" :label="t('channels.companionEnabled')" />
-              <UiToggle v-model="ch.moderationEnabled" :label="t('channels.moderationEnabled')" />
+              <UiToggle v-model="ch.companionEnabled" :label="t('channels.companionEnabled')" :tip="t('tips.channels.companion')" />
+              <UiToggle v-model="ch.moderationEnabled" :label="t('channels.moderationEnabled')" :tip="t('tips.channels.moderation')" />
             </div>
           </div>
         </section>
@@ -174,19 +175,19 @@ const bot = computed(() => app.account(ch.value?.botAccountId));
         <section class="card-pad">
           <h2 class="section-title flex items-center gap-2"><Layers :size="17" class="text-brand-500" /> {{ t("channels.profilesSection") }}</h2>
           <div class="grid gap-5 md:grid-cols-2">
-            <UiField :label="t('channels.companionProfile')">
+            <UiField :label="t('channels.companionProfile')" :tip="t('tips.channels.companionProfile')">
               <div class="flex gap-2">
                 <UiCombobox v-model="ch.companionProfileId" class="min-w-0 flex-1" :options="profileOptions(cfg.companionProfiles, t)" :label="t('channels.companionProfile')" stacked />
                 <button class="btn" @click="app.view = 'companion'">{{ t("common.edit") }}</button>
               </div>
             </UiField>
-            <UiField :label="t('channels.moderationProfile')">
+            <UiField :label="t('channels.moderationProfile')" :tip="t('tips.channels.moderationProfile')">
               <div class="flex gap-2">
                 <UiCombobox v-model="ch.moderationProfileId" class="min-w-0 flex-1" :options="profileOptions(cfg.moderationProfiles, t)" :label="t('channels.moderationProfile')" stacked />
                 <button class="btn" @click="app.view = 'moderation'">{{ t("common.edit") }}</button>
               </div>
             </UiField>
-            <UiField :label="t('channels.aiProfile')">
+            <UiField :label="t('channels.aiProfile')" :tip="t('tips.channels.aiProfile')">
               <UiCombobox
                 v-model="ch.aiProfileId"
                 :options="[{ value: '', label: `— ${t('common.none')} —` }, ...aiProfileOptions(app, cfg.aiProfiles, t)]"
@@ -194,7 +195,7 @@ const bot = computed(() => app.account(ch.value?.botAccountId));
                 stacked
               />
             </UiField>
-            <UiField :label="t('channels.moderationAiProfile')">
+            <UiField :label="t('channels.moderationAiProfile')" :tip="t('tips.channels.moderationAi')">
               <UiCombobox
                 v-model="ch.moderationAiProfileId"
                 :options="[{ value: '', label: t('channels.sameAsMain') }, ...aiProfileOptions(app, cfg.aiProfiles, t)]"
@@ -229,7 +230,7 @@ const bot = computed(() => app.account(ch.value?.botAccountId));
         <section class="card-pad">
           <h2 class="section-title flex items-center gap-2"><Send :size="17" class="text-brand-500" /> {{ t("channels.behavior") }}</h2>
           <div class="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
-            <UiField :label="t('channels.sendMode')">
+            <UiField :label="t('channels.sendMode')" :tip="t('tips.channels.sendMode')">
               <select v-model="ch.sendMode" class="input">
                 <option value="auto">{{ t("channels.sendModes.auto") }}</option>
                 <option value="preview">{{ t("channels.sendModes.preview") }}</option>
@@ -237,9 +238,9 @@ const bot = computed(() => app.account(ch.value?.botAccountId));
               </select>
             </UiField>
             <UiNumber v-if="ch.sendMode === 'preview'" v-model="ch.previewDelaySecs" :label="t('channels.previewDelay')" :min="1" :max="300" :suffix="t('common.seconds')" />
-            <UiNumber v-model="ch.dailyBudgetUsd" :label="t('channels.budget')" :hint="t('channels.budgetHint')" :min="0" :max="1000" :step="0.5" suffix="USD" />
+            <UiNumber v-model="ch.dailyBudgetUsd" :label="t('channels.budget')" :hint="t('channels.budgetHint')" :tip="t('tips.channels.budget')" :min="0" :max="1000" :step="0.5" suffix="USD" />
           </div>
-          <UiField :label="t('channels.aboutStream')" :hint="t('channels.aboutStreamHint')" class="mt-5">
+          <UiField :label="t('channels.aboutStream')" :hint="t('channels.aboutStreamHint')" :tip="t('tips.channels.aboutStream')" class="mt-5">
             <textarea v-model="ch.aboutStream" rows="4" class="input" />
           </UiField>
         </section>
