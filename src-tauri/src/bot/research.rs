@@ -112,7 +112,7 @@ pub async fn research(
     own: &ai::OwnSearch<'_>,
 ) -> Result<(Knowledge, f64, u32), String> {
     let wiki = if use_wiki { wikipedia(http, game).await } else { None };
-    let (system, user) = super::prompt::research_prompt(game, wiki.as_ref().map(|w| w.0.as_str()).unwrap_or(""));
+    let (system, user) = super::prompt::research_prompt(game, wiki.as_ref().map(|w| w.0.as_str()).unwrap_or(""), use_web);
     let req = AiRequest {
         system,
         user,
@@ -120,8 +120,10 @@ pub async fn research(
         web_search: use_web,
         // Not triggered by chat, so reading patch notes etc. is fine.
         web_fetch: true,
-        // Without the provider's own search, HighBazar looks this up first.
-        search_query: Some(format!("{game} game latest update patch news")),
+        // Without the provider's own search, HighBazar looks this up first;
+        // the year keeps old patch notes from ranking first.
+        search_query: Some(format!("{game} game latest update patch notes {}", chrono::Local::now().format("%Y"))),
+        background: true,
     };
     let resp = ai::complete_searching(http, profile, key, &req, own).await.map_err(|e| e.to_string())?;
     let cost = resp.cost(profile);
@@ -163,5 +165,77 @@ mod tests {
     fn non_games() {
         assert!(is_non_game("Just Chatting"));
         assert!(!is_non_game("Elden Ring"));
+    }
+
+    // Live tests with a real AI – they use your subscription or key:
+    //   cargo test live_ -- --ignored --nocapture --test-threads 1
+    // HIGHBAZAR_LIVE_PROVIDER (default claudeCli), HIGHBAZAR_LIVE_MODEL (default
+    // haiku, like the built-in Claude CLI profile), HIGHBAZAR_LIVE_GAME.
+
+    fn live_profile() -> AiProfile {
+        AiProfile {
+            provider: std::env::var("HIGHBAZAR_LIVE_PROVIDER").unwrap_or_else(|_| "claudeCli".into()),
+            model: std::env::var("HIGHBAZAR_LIVE_MODEL").unwrap_or_else(|_| "haiku".into()),
+            ..Default::default()
+        }
+    }
+
+    fn live_game() -> String {
+        std::env::var("HIGHBAZAR_LIVE_GAME").unwrap_or_else(|_| "ELDEN RING NIGHTREIGN".into())
+    }
+
+    /// A chatter @mentions the bot with a question that needs a search.
+    #[tokio::test]
+    #[ignore]
+    async fn live_chat_question() {
+        use crate::bot::context::Line;
+        use crate::bot::prompt::{self, ContextBlock, StreamFacts};
+        use crate::config::{ChannelProfile, CompanionProfile, WebSearchSettings};
+        let game = live_game();
+        // HIGHBAZAR_LIVE_QUESTION / HIGHBAZAR_LIVE_LANG for other questions and stream languages.
+        let text = std::env::var("HIGHBAZAR_LIVE_QUESTION").unwrap_or_else(|_| "what was in the latest patch?".into());
+        let lang = std::env::var("HIGHBAZAR_LIVE_LANG").unwrap_or_else(|_| "en".into());
+        let c = CompanionProfile::default();
+        let line = Line { ts: chrono::Utc::now().timestamp_millis(), user_id: "1".into(), login: "viewer42".into(), name: "viewer42".into(), text: format!("@HighBazar {text}"), role: "" };
+        let block = ContextBlock {
+            stream: StreamFacts { channel_name: "ZcarecroW", live: true, uptime: Some("1h 5m".into()), game: &game, title: "chill runs", language: &lang, viewers: Some(12) },
+            knowledge: Vec::new(),
+            emotes: Vec::new(),
+            bot_recent: Vec::new(),
+            chat: vec![&line],
+            language_rule: prompt::language_rule(&c, &lang),
+        };
+        let task = prompt::finish_task(&prompt::mention_task("viewer42", &text, false, true), true, c.max_length);
+        let req = AiRequest {
+            system: prompt::system_prompt(&ChannelProfile::default(), &c, "ZcarecroW", false),
+            user: prompt::user_prompt(&block, &task),
+            web_search: true,
+            ..Default::default()
+        };
+        let cfg = WebSearchSettings::default();
+        let own = ai::OwnSearch { cfg: &cfg, key: None, lang: "en".into() };
+        let start = std::time::Instant::now();
+        let r = ai::complete_searching(&reqwest::Client::new(), &live_profile(), None, &req, &own).await.expect("answer");
+        println!("{:.1} s, {} search(es): {}", start.elapsed().as_secs_f32(), r.searches, r.text);
+        assert!(r.searches > 0, "a patch question must be looked up");
+    }
+
+    /// The game research at stream start.
+    #[tokio::test]
+    #[ignore]
+    async fn live_research() {
+        let dir = std::env::temp_dir().join(format!("highbazar-research-{}", uuid::Uuid::new_v4().simple()));
+        let cfg = crate::config::WebSearchSettings::default();
+        let own = ai::OwnSearch { cfg: &cfg, key: None, lang: "en".into() };
+        let http = reqwest::Client::builder().user_agent("HighBazar-test").build().unwrap();
+        let start = std::time::Instant::now();
+        let res = research(&http, &dir, &live_game(), &live_profile(), None, true, true, &own).await;
+        let _ = std::fs::remove_dir_all(&dir);
+        let (k, _, searches) = res.expect("research");
+        println!("{:.1} s, {searches} search(es), {} facts, {} tips", start.elapsed().as_secs_f32(), k.facts.len(), k.tips.len());
+        for f in k.facts.iter().filter(|f| f.chars().any(|c| c.is_ascii_digit())) {
+            println!("  - {f}");
+        }
+        assert!(searches > 0 && k.facts.len() >= 10);
     }
 }

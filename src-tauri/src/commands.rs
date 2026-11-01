@@ -121,9 +121,12 @@ pub struct AiTestResult {
 pub async fn ai_test(st: St<'_>, profile: AiProfile, prompt: Option<String>, web_search: Option<bool>) -> AppResult<AiTestResult> {
     let key = st.ai_key(&profile);
     let web_search = web_search.unwrap_or(false);
-    let mut system = String::from("You are HighBazar, a friendly Twitch chat companion. Reply with one short, fun chat message (max 150 characters).");
+    let mut system = format!(
+        "You are HighBazar, a friendly Twitch chat companion. Today is {}. Reply with one short, fun chat message (max 150 characters).",
+        crate::bot::prompt::today()
+    );
     if web_search {
-        system.push_str(" Look up current facts on the web when the message needs them. No links or source lists.");
+        system.push_str(" Look up current or specific facts on the web when the message needs them; the newest results are the current state. No links or source lists.");
     }
     let req = AiRequest {
         system,

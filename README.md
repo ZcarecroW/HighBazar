@@ -12,9 +12,9 @@ It chats, welcomes newcomers, celebrates your community, knows your game — and
 ![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20macOS%20%7C%20Linux-555)
 ![Built with Tauri](https://img.shields.io/badge/built%20with-Tauri%202-24c8db)
 
-[**⬇ Download**](https://github.com/ZcarecroW/HighBazar/releases/latest) · [Features](#features) · [Installation](#installation) · [Quick start](#quick-start) · [FAQ](#faq) · [🇩🇪 Deutsch](README.de.md)
+[**⬇ Download**](https://github.com/ZcarecroW/HighBazar/releases/latest) · [**📖 Documentation**](https://zcarecrow.github.io/HighBazar/) · [Features](#features) · [Installation](#installation) · [Quick start](#quick-start) · [FAQ](#faq) · [🇩🇪 Deutsch](README.de.md)
 
-<img src="docs/screenshots/dashboard-dark.png" alt="HighBazar dashboard" width="900" />
+<img src="docs/screenshots/dashboard.webp" alt="HighBazar dashboard" width="900" />
 
 </div>
 
@@ -98,7 +98,7 @@ HighBazar only asks Twitch for the permissions of the level you pick; switching 
 ### 🎨 10 themes, light and dark
 Bazaar, Midnight, Ocean, Aurora, Forest, Gold, Sunset, Crimson, Sakura and Cyber — each in a light and a dark version (or following your system). All themes are checked for readable contrast (WCAG AA). Two-tone icons pick up the theme's colors.
 
-<img src="docs/screenshots/themes.png" alt="Theme picker" width="700" />
+<img src="docs/screenshots/themes.webp" alt="Theme picker" width="700" />
 
 ### 🧩 Profiles everywhere
 - **Channel profiles** (global profiles) — one per Twitch channel or setup, each with its own accounts, prefix, companion, moderation and AI profiles. Switch any time.
@@ -126,10 +126,10 @@ Bazaar, Midnight, Ocean, Aurora, Forest, Gold, Sunset, Crimson, Sakura and Cyber
 
 | | |
 |---|---|
-| ![Companion](docs/screenshots/companion.png) | ![Moderation](docs/screenshots/moderation.png) |
-| ![AI](docs/screenshots/ai.png) | ![Channels](docs/screenshots/channels.png) |
-| ![Light mode, German](docs/screenshots/dashboard-light.png) | ![Setup wizard](docs/screenshots/wizard.png) |
-| ![Stream & channel manager](docs/screenshots/stream.png) | ![Themes](docs/screenshots/themes.png) |
+| ![Companion](docs/screenshots/companion.webp) | ![Moderation](docs/screenshots/moderation.webp) |
+| ![AI](docs/screenshots/ai.webp) | ![Channels](docs/screenshots/channels.webp) |
+| ![Light mode, German](docs/screenshots/dashboard-de.webp) | ![Setup wizard](docs/screenshots/wizard.webp) |
+| ![Stream & channel manager](docs/screenshots/stream-expert.webp) | ![Themes](docs/screenshots/themes.webp) |
 
 </details>
 
@@ -302,6 +302,6 @@ Issues and pull requests are welcome! Please describe what you changed and run t
 
 [MIT](LICENSE) © ZcarecroW. HighBazar is not affiliated with Twitch, Anthropic, OpenAI, Google or any other provider.
 
-Icons: [Nucleo](https://nucleoapp.com) — licensed to the author for use in HighBazar and **not** covered by the MIT license; they may not be extracted or reused as an icon set (src/icons/nucleo.ts).
+Icons: [Nucleo](https://nucleoapp.com) — licensed to the author for use in HighBazar and **not** covered by the MIT license; they may not be extracted or reused as an icon set (src/icons/nucleo.ts, docs/site/icons).
 
 Emoji names and keywords: [emojibase](https://emojibase.dev) (MIT), based on Unicode CLDR data (src-tauri/data/emoji.tsv, rebuilt with `node scripts/emoji/build.mjs`).

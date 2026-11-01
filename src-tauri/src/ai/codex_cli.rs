@@ -237,7 +237,7 @@ fn args(p: &AiProfile, req: &AiRequest, prompt_file: &Path, workdir: &Path) -> V
 async fn run(exe: &Path, p: &AiProfile, req: &AiRequest, prompt_file: &Path) -> AppResult<AiResponse> {
     let mut cmd = command_for(exe);
     cmd.args(args(p, req, prompt_file, &std::env::temp_dir()));
-    let out = output(cmd, Some(&req.user), timeout(p)).await?;
+    let out = output(cmd, Some(&req.user), timeout(p, req)).await?;
     let stdout = String::from_utf8_lossy(&out.stdout);
     parse(&stdout).map_err(|e| {
         let m = e.to_string();

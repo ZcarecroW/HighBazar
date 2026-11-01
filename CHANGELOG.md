@@ -4,6 +4,23 @@ All notable changes to HighBazar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.8.1] – 2026-11-01
+
+Web search that actually gets used, game research that recovers from hiccups, and a few chat fixes. Tested with Claude Code: the real chat and research prompts were run against the Claude Code CLI (Haiku, as in the built-in profile) in English and German, plus all Rust and frontend tests and the UI checks. Builds for Windows, macOS and Linux. New: documentation at [zcarecrow.github.io/HighBazar](https://zcarecrow.github.io/HighBazar/).
+
+### Fixed
+- **The bot often said it couldn't look something up** – especially with the Claude Code CLI. The AI never learned today's date (the CLI's own system prompt, which has it, is replaced by HighBazar's), so it didn't know how recent "latest" had to be, and the reply instructions told it to say so playfully when it "can't know" something. Every request now carries today's date and time, questions tell the model to search instead of giving up, and search queries for recent things include the month and year. Measured with the same question: the answer went from "the latest I can confirm is from January … there could be a newer patch" to a concrete patch with its date.
+- **Game research didn't search for the latest patch**: it only asked the model to mention one "if you know of" it. With web search on, research now looks up the current update, season or DLC first and records it with its date (live test: the September 2026 patch was found).
+- Questions asked in chat without @mentioning the bot (picked up by its "react to chat" messages) can now be looked up too.
+- A failed game research (timeout, network) was never retried until the category changed, so a whole stream could run without game knowledge. It is retried after 15 minutes, up to three times per game; research with the Claude Code CLI gets more steps and time.
+- After a category change, facts about the previous game were still used until the new research finished; a category change during a running research left the new game without research.
+- Claude (API) answers with web search could include the lead-in "Let me look that up" before the answer, and a long search turn that the API paused was cut off. Only the final answer goes to chat now, and paused turns are resumed. OpenAI answers likewise use only the final message.
+- A @mention that hit the global cooldown still started the person's own cooldown (they got no answer and had to wait); a chat command used by someone on their own cooldown blocked the command for everyone.
+- AI errors of channel point rewards were swallowed (the points were refunded without a note); bot errors and failed research are now also written to the log file, and the log says why an answer was not posted.
+
+### Changed
+- Updated: zip 9.2.
+
 ## [1.8.0] – 2026-10-31
 
 Smoother chat and emotes, explanations for every setting, current AI models and a faster start. Tested with Claude Code (Rust and frontend tests, suggestion speed measured before and after on an optimized build, live 7TV, BetterTTV and FrankerFaceZ data and 7TV's event stream checked against the real services, the release build started in test mode). Windows build.

@@ -150,8 +150,13 @@ async fn run(exe: &std::path::Path, p: &AiProfile, req: &AiRequest, prompt_file:
         .arg(tools)
         .arg("--no-session-persistence")
         .arg("--max-turns")
-        // Each search round trip is one turn.
-        .arg(if tools.is_empty() { "1" } else { "8" });
+        // Each search or page read is one turn; research measured 6 turns with
+        // 5 searches (CLI 2.1.316, Haiku), so it gets headroom.
+        .arg(match (tools.is_empty(), req.background) {
+            (true, _) => "1",
+            (false, false) => "8",
+            (false, true) => "16",
+        });
     if !tools.is_empty() {
         cmd.arg("--allowedTools").arg(tools);
     }
@@ -173,7 +178,7 @@ async fn run(exe: &std::path::Path, p: &AiProfile, req: &AiRequest, prompt_file:
         stdin.write_all(req.user.as_bytes()).await?;
         drop(stdin);
     }
-    let out = tokio::time::timeout(timeout(p), child.wait_with_output())
+    let out = tokio::time::timeout(timeout(p, req), child.wait_with_output())
         .await
         .map_err(|_| AppError::msg("Claude Code CLI timed out"))??;
     let stdout = String::from_utf8_lossy(&out.stdout);

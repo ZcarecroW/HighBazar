@@ -50,7 +50,7 @@ pub async fn complete(http: &reqwest::Client, p: &AiProfile, key: &str, req: &Ai
     }
     let mut rb = http
         .post(format!("{base}/chat/completions"))
-        .timeout(timeout(p))
+        .timeout(timeout(p, req))
         .json(&b);
     if !key.is_empty() {
         rb = rb.bearer_auth(key);

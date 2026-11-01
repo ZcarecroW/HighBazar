@@ -38,7 +38,7 @@ async fn interactions(http: &reqwest::Client, p: &AiProfile, key: &str, req: &Ai
     }
     let resp = apply_headers(
         http.post(format!("{}/interactions", base_url(p)))
-            .timeout(timeout(p))
+            .timeout(timeout(p, req))
             .header("x-goog-api-key", key)
             .json(&b),
         p,
@@ -109,7 +109,7 @@ async fn generate_content(http: &reqwest::Client, p: &AiProfile, key: &str, req:
     let model = p.model.trim_start_matches("models/");
     let resp = apply_headers(
         http.post(format!("{}/models/{model}:generateContent", base_url(p)))
-            .timeout(timeout(p))
+            .timeout(timeout(p, req))
             .header("x-goog-api-key", key)
             .json(&b),
         p,

@@ -7,9 +7,9 @@
 **Ein KI-Begleiter und fairer Moderator für deinen Twitch-Chat.**
 Er chattet, begrüßt Neue, feiert deine Community, kennt dein Spiel – und hält den Chat sicher.
 
-[**⬇ Download**](https://github.com/ZcarecroW/HighBazar/releases/latest) · [Funktionen](#funktionen) · [Installation](#installation) · [Schnellstart](#schnellstart) · [FAQ](#faq) · [🇬🇧 English](README.md)
+[**⬇ Download**](https://github.com/ZcarecroW/HighBazar/releases/latest) · [**📖 Dokumentation**](https://zcarecrow.github.io/HighBazar/) (englisch) · [Funktionen](#funktionen) · [Installation](#installation) · [Schnellstart](#schnellstart) · [FAQ](#faq) · [🇬🇧 English](README.md)
 
-<img src="docs/screenshots/dashboard-light.png" alt="HighBazar Dashboard" width="900" />
+<img src="docs/screenshots/dashboard-de.webp" alt="HighBazar Dashboard" width="900" />
 
 </div>
 
@@ -172,6 +172,6 @@ npm run tauri dev
 
 [MIT](LICENSE) © ZcarecroW. HighBazar steht in keiner Verbindung zu Twitch, Anthropic, OpenAI, Google oder anderen Anbietern.
 
-Icons: [Nucleo](https://nucleoapp.com) – für HighBazar lizenziert und **nicht** Teil der MIT-Lizenz; sie dürfen nicht herausgelöst oder als Icon-Set weiterverwendet werden (src/icons/nucleo.ts).
+Icons: [Nucleo](https://nucleoapp.com) – für HighBazar lizenziert und **nicht** Teil der MIT-Lizenz; sie dürfen nicht herausgelöst oder als Icon-Set weiterverwendet werden (src/icons/nucleo.ts, docs/site/icons).
 
 Emoji-Namen und -Stichwörter: [emojibase](https://emojibase.dev) (MIT), basierend auf Unicode-CLDR-Daten (src-tauri/data/emoji.tsv, neu erzeugt mit `node scripts/emoji/build.mjs`).

@@ -39,12 +39,18 @@ fn supports_temperature(model: &str) -> bool {
         .any(|m| model.starts_with(m))
 }
 
-fn body(p: &AiProfile, req: &AiRequest, with_fallbacks: bool, with_fetch: bool) -> Value {
+/// `paused`: the content of a turn that stopped with `pause_turn`; sent back
+/// unchanged, the server continues it.
+fn body(p: &AiProfile, req: &AiRequest, with_fallbacks: bool, with_fetch: bool, paused: Option<&Value>) -> Value {
+    let mut messages = vec![json!({ "role": "user", "content": req.user })];
+    if let Some(content) = paused {
+        messages.push(json!({ "role": "assistant", "content": content }));
+    }
     let mut b = json!({
         "model": p.model,
         "max_tokens": max_tokens(p, req),
         "system": [{ "type": "text", "text": req.system, "cache_control": { "type": "ephemeral" } }],
-        "messages": [{ "role": "user", "content": req.user }],
+        "messages": messages,
     });
     if !p.reasoning.is_empty() {
         b["output_config"] = json!({ "effort": p.reasoning });
@@ -73,13 +79,16 @@ pub async fn complete(http: &reqwest::Client, p: &AiProfile, key: &str, req: &Ai
     let url = format!("{}/v1/messages", base_url(p));
     let mut use_fallbacks = supports_fallbacks(&p.model) && p.base_url.trim().is_empty();
     let mut use_fetch = req.web_search && req.web_fetch;
+    let mut paused: Option<Value> = None;
+    let mut earlier = AiResponse::default();
+    let mut resumes = 0;
     loop {
         let mut rb = http
             .post(&url)
-            .timeout(timeout(p))
+            .timeout(timeout(p, req))
             .header("x-api-key", key)
             .header("anthropic-version", VERSION)
-            .json(&body(p, req, use_fallbacks, use_fetch));
+            .json(&body(p, req, use_fallbacks, use_fetch, paused.as_ref()));
         if use_fallbacks {
             rb = rb.header("anthropic-beta", FALLBACK_BETA);
         }
@@ -102,7 +111,18 @@ pub async fn complete(http: &reqwest::Client, p: &AiProfile, key: &str, req: &Ai
             return Err(err);
         }
         let v: Value = resp.json().await?;
-        return parse(&v);
+        // A long server-tool turn (several searches and page reads) can pause;
+        // resuming it a few times is cheaper than losing the answer.
+        if v["stop_reason"].as_str() == Some("pause_turn") && resumes < 3 {
+            let part = parse(&v)?;
+            earlier.add_usage(&part);
+            paused = Some(v["content"].clone());
+            resumes += 1;
+            continue;
+        }
+        let mut r = parse(&v)?;
+        r.add_usage(&earlier);
+        return Ok(r);
     }
 }
 
@@ -110,17 +130,15 @@ pub fn parse(v: &Value) -> AppResult<AiResponse> {
     if v["stop_reason"].as_str() == Some("refusal") {
         return Err(AppError::msg("The model declined this request (refusal)."));
     }
-    let text = v["content"]
-        .as_array()
-        .map(|blocks| {
-            blocks
-                .iter()
-                .filter(|b| b["type"] == "text")
-                .filter_map(|b| b["text"].as_str())
-                .collect::<Vec<_>>()
-                .join("")
-        })
-        .unwrap_or_default();
+    let blocks = v["content"].as_array().map(Vec::as_slice).unwrap_or_default();
+    let text_of = |blocks: &[Value]| blocks.iter().filter(|b| b["type"] == "text").filter_map(|b| b["text"].as_str()).collect::<String>();
+    // With web search the answer follows the last tool result; text before it
+    // is a lead-in ("Let me look that up") that must not reach the chat.
+    let answer_from = blocks.iter().rposition(|b| b["type"].as_str().is_some_and(|t| t.ends_with("_tool_result"))).map_or(0, |i| i + 1);
+    let mut text = text_of(&blocks[answer_from..]);
+    if text.trim().is_empty() {
+        text = text_of(blocks);
+    }
     // Thinking counts toward max_tokens on the 5.x models: it can use up the
     // whole budget before any text is written.
     if text.trim().is_empty() && v["stop_reason"].as_str() == Some("max_tokens") {
@@ -197,14 +215,42 @@ mod tests {
     fn fetch_only_with_search_and_capped() {
         let p = AiProfile { model: "claude-opus-5-5".into(), ..Default::default() };
         let req = AiRequest { web_search: true, web_fetch: true, ..Default::default() };
-        let b = body(&p, &req, false, true);
+        let b = body(&p, &req, false, true, None);
         let tools = b["tools"].as_array().unwrap();
         assert_eq!(tools.len(), 2);
         assert_eq!(tools[1]["type"], "web_fetch_20260209");
         assert_eq!(tools[1]["max_content_tokens"], 8000);
-        assert_eq!(body(&p, &req, false, false)["tools"].as_array().unwrap().len(), 1);
+        assert_eq!(body(&p, &req, false, false, None)["tools"].as_array().unwrap().len(), 1);
         // No sampling parameters for current models, effort only when set.
         assert!(b.get("temperature").is_none() && b.get("output_config").is_none());
+    }
+
+    #[test]
+    fn answer_is_the_text_after_the_last_search() {
+        let v = json!({
+            "stop_reason": "end_turn",
+            "content": [
+                {"type": "text", "text": "Let me look that up."},
+                {"type": "server_tool_use", "id": "s1", "name": "web_search", "input": {"query": "nightreign patch"}},
+                {"type": "web_search_tool_result", "tool_use_id": "s1", "content": []},
+                {"type": "text", "text": "@viewer Patch 1.23 came out on "},
+                {"type": "text", "text": "18 September.", "citations": [{"type": "web_search_result_location"}]}
+            ],
+            "usage": {"input_tokens": 1, "output_tokens": 1, "server_tool_use": {"web_search_requests": 1}}
+        });
+        assert_eq!(parse(&v).unwrap().text, "@viewer Patch 1.23 came out on 18 September.");
+    }
+
+    #[test]
+    fn a_paused_turn_is_sent_back_unchanged() {
+        let p = AiProfile { model: "claude-sonnet-5-5".into(), ..Default::default() };
+        let req = AiRequest { user: "q".into(), web_search: true, ..Default::default() };
+        let content = json!([{"type": "server_tool_use", "id": "s1", "name": "web_search", "input": {"query": "x"}}]);
+        let b = body(&p, &req, false, false, Some(&content));
+        let m = b["messages"].as_array().unwrap();
+        assert_eq!(m.len(), 2);
+        assert_eq!(m[1]["role"], "assistant");
+        assert_eq!(m[1]["content"], content);
     }
 
     #[test]

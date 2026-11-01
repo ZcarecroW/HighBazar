@@ -25,7 +25,7 @@ pub async fn complete(http: &reqwest::Client, p: &AiProfile, key: &str, req: &Ai
     }
     let resp = apply_headers(
         http.post(format!("{}/responses", base_url(p)))
-            .timeout(timeout(p))
+            .timeout(timeout(p, req))
             .bearer_auth(key)
             .json(&b),
         p,
@@ -52,6 +52,9 @@ pub fn parse(v: &Value) -> AppResult<AiResponse> {
         for item in items {
             match item["type"].as_str() {
                 Some("message") => {
+                    // Only the last message is the answer; earlier ones are
+                    // commentary around tool calls ("Let me look that up").
+                    text.clear();
                     if let Some(parts) = item["content"].as_array() {
                         for part in parts {
                             match part["type"].as_str() {
@@ -99,6 +102,8 @@ mod tests {
             "model": "gpt-6-luna",
             "output": [
                 {"type": "reasoning", "summary": []},
+                {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "Let me check. "}]},
+                {"type": "web_search_call", "status": "completed"},
                 {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "GG chat"}]}
             ],
             "usage": {"input_tokens": 50, "output_tokens": 4}

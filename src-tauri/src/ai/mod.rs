@@ -30,6 +30,9 @@ pub struct AiRequest {
     /// Known search query: HighBazar's own search runs it up front instead of
     /// letting the model ask for one.
     pub search_query: Option<String>,
+    /// Not waited for by chat (game research): may take longer than the
+    /// profile's timeout, several searches and page reads add up.
+    pub background: bool,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -53,6 +56,19 @@ pub struct AiResponse {
 }
 
 impl AiResponse {
+    /// Adds the tokens and costs of another call that belongs to the same
+    /// answer (a resumed turn, the first step of a two-step search). A cost
+    /// stays reported only if both calls reported one.
+    pub fn add_usage(&mut self, o: &AiResponse) {
+        self.input_tokens += o.input_tokens;
+        self.cache_read_tokens += o.cache_read_tokens;
+        self.cache_write_tokens += o.cache_write_tokens;
+        self.output_tokens += o.output_tokens;
+        self.reported_cost_usd = self.reported_cost_usd.zip(o.reported_cost_usd).map(|(a, b)| a + b);
+        self.tool_cost_usd += o.tool_cost_usd;
+        self.searches += o.searches;
+    }
+
     pub fn cost(&self, p: &AiProfile) -> f64 {
         if let Some(c) = self.reported_cost_usd {
             return c;
@@ -176,20 +192,10 @@ pub async fn complete_searching(
     };
     let block = run_search(q).await;
     let user = format!("{}\n\n{block}\n\nNow write your answer using these results where they help. Do not ask for another search.", req.user);
-    let second = complete(http, p, key, &AiRequest { user, ..plain }).await?;
-    Ok(AiResponse {
-        input_tokens: first.input_tokens + second.input_tokens,
-        cache_read_tokens: first.cache_read_tokens + second.cache_read_tokens,
-        cache_write_tokens: first.cache_write_tokens + second.cache_write_tokens,
-        output_tokens: first.output_tokens + second.output_tokens,
-        reported_cost_usd: match (first.reported_cost_usd, second.reported_cost_usd) {
-            (Some(a), Some(b)) => Some(a + b),
-            _ => None,
-        },
-        tool_cost_usd: first.tool_cost_usd + second.tool_cost_usd,
-        searches: 1,
-        ..second
-    })
+    let mut second = complete(http, p, key, &AiRequest { user, ..plain }).await?;
+    second.add_usage(&first);
+    second.searches = 1;
+    Ok(second)
 }
 
 /// "SEARCH: query" as the model's whole answer.
@@ -285,8 +291,9 @@ pub(crate) fn openai_reasoning_model(model: &str) -> bool {
     m.len() > 1 && m.starts_with('o') && m.as_bytes()[1].is_ascii_digit()
 }
 
-pub(crate) fn timeout(p: &AiProfile) -> Duration {
-    Duration::from_secs(p.timeout_secs.clamp(10, 600) as u64)
+pub(crate) fn timeout(p: &AiProfile, req: &AiRequest) -> Duration {
+    let secs = p.timeout_secs.clamp(10, 600);
+    Duration::from_secs(if req.background { secs.max(240) } else { secs } as u64)
 }
 
 pub(crate) fn max_tokens(p: &AiProfile, req: &AiRequest) -> u32 {
