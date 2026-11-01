@@ -1015,7 +1015,8 @@ export default {
     secretsFile: "Local file (no system credential store available)",
     about: "About",
     version: "Version {v}",
-    github: "GitHub & documentation",
+    docs: "Documentation",
+    github: "GitHub",
     issues: "Report a problem",
   },
   presets: {

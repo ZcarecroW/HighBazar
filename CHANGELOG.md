@@ -4,6 +4,12 @@ All notable changes to HighBazar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- The documentation is now also in German, with German screenshots: [zcarecrow.github.io/HighBazar/de](https://zcarecrow.github.io/HighBazar/de/). Every page has a language switch, and German-speaking visitors of the English pages get a hint.
+- *Settings → About* has a **Documentation** button that opens the documentation in the app's language.
+
 ## [1.8.1] – 2026-11-01
 
 Web search that actually gets used, game research that recovers from hiccups, and a few chat fixes. Tested with Claude Code: the real chat and research prompts were run against the Claude Code CLI (Haiku, as in the built-in profile) in English and German, plus all Rust and frontend tests and the UI checks. Builds for Windows, macOS and Linux. New: documentation at [zcarecrow.github.io/HighBazar](https://zcarecrow.github.io/HighBazar/).

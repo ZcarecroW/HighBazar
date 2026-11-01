@@ -128,7 +128,7 @@ Bazaar, Midnight, Ocean, Aurora, Forest, Gold, Sunset, Crimson, Sakura and Cyber
 |---|---|
 | ![Companion](docs/screenshots/companion.webp) | ![Moderation](docs/screenshots/moderation.webp) |
 | ![AI](docs/screenshots/ai.webp) | ![Channels](docs/screenshots/channels.webp) |
-| ![Light mode, German](docs/screenshots/dashboard-de.webp) | ![Setup wizard](docs/screenshots/wizard.webp) |
+| ![Light mode, German](docs/screenshots/de/dashboard-light.webp) | ![Setup wizard](docs/screenshots/wizard.webp) |
 | ![Stream & channel manager](docs/screenshots/stream-expert.webp) | ![Themes](docs/screenshots/themes.webp) |
 
 </details>

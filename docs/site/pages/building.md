@@ -77,10 +77,10 @@ docs/site/            this documentation
 
 ## This documentation
 
-The site is generated from Markdown files in `docs/site/pages`:
+The site is generated from Markdown files – English in `docs/site/pages`, German in `docs/site/pages/de`:
 
 ```bash
-node docs/site/shots.mjs            # screenshots from the browser preview (needs Microsoft Edge)
+node docs/site/shots.mjs            # screenshots from the browser preview, English and German (needs Microsoft Edge)
 node docs/site/build.mjs --serve    # build and preview on http://localhost:4173/HighBazar/
 ```
 

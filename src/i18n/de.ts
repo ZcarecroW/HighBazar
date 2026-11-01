@@ -1017,7 +1017,8 @@ const de: typeof en = {
     secretsFile: "Lokale Datei (kein System-Anmeldespeicher verfügbar)",
     about: "Über",
     version: "Version {v}",
-    github: "GitHub & Dokumentation",
+    docs: "Dokumentation",
+    github: "GitHub",
     issues: "Problem melden",
   },
   presets: {

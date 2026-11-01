@@ -21,7 +21,7 @@ import type { ScrollEasing } from "../lib/types";
 import { useJump } from "../lib/jump";
 
 const app = useApp();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const s = computed(() => app.config!.settings);
 const checking = ref(false);
 useJump("settings");
@@ -47,6 +47,8 @@ async function clearResearch() {
 }
 
 const repo = "https://github.com/ZcarecroW/HighBazar";
+// The documentation in the interface language (German under /de/).
+const docsUrl = computed(() => `https://zcarecrow.github.io/HighBazar/${locale.value.startsWith("de") ? "de/" : ""}`);
 
 // ------------------------------------------------------------- chat display
 const uiZoomPct = computed({
@@ -214,6 +216,7 @@ function resetChatDisplay() {
         </div>
       </div>
       <div class="flex flex-wrap gap-2">
+        <button class="btn" @click="openUrl(docsUrl)"><ExternalLink :size="15" /> {{ t("settings.docs") }}</button>
         <button class="btn" @click="openUrl(repo)"><ExternalLink :size="15" /> {{ t("settings.github") }}</button>
         <button class="btn" @click="openUrl(repo + '/issues')"><ExternalLink :size="15" /> {{ t("settings.issues") }}</button>
       </div>

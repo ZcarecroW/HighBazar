@@ -7,9 +7,9 @@
 **Ein KI-Begleiter und fairer Moderator für deinen Twitch-Chat.**
 Er chattet, begrüßt Neue, feiert deine Community, kennt dein Spiel – und hält den Chat sicher.
 
-[**⬇ Download**](https://github.com/ZcarecroW/HighBazar/releases/latest) · [**📖 Dokumentation**](https://zcarecrow.github.io/HighBazar/) (englisch) · [Funktionen](#funktionen) · [Installation](#installation) · [Schnellstart](#schnellstart) · [FAQ](#faq) · [🇬🇧 English](README.md)
+[**⬇ Download**](https://github.com/ZcarecroW/HighBazar/releases/latest) · [**📖 Dokumentation**](https://zcarecrow.github.io/HighBazar/de/) · [Funktionen](#funktionen) · [Installation](#installation) · [Schnellstart](#schnellstart) · [FAQ](#faq) · [🇬🇧 English](README.md)
 
-<img src="docs/screenshots/dashboard-de.webp" alt="HighBazar Dashboard" width="900" />
+<img src="docs/screenshots/de/dashboard-light.webp" alt="HighBazar Dashboard" width="900" />
 
 </div>
 

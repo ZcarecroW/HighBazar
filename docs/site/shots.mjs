@@ -1,8 +1,10 @@
 // Takes the screenshots for the documentation and the README from the browser
-// preview (mocked backend, nothing touches Twitch or an AI):
-//   node docs/site/shots.mjs            all shots
-//   node docs/site/shots.mjs ai stream  only these
-// Needs Microsoft Edge (or set HB_BROWSER=chrome); writes docs/screenshots/*.webp.
+// preview (mocked backend, nothing touches Twitch or an AI), in English and German:
+//   node docs/site/shots.mjs                 all shots, both languages
+//   node docs/site/shots.mjs --lang de       only German
+//   node docs/site/shots.mjs ai stream       only these
+// Needs Microsoft Edge (or set HB_BROWSER=chrome). Writes docs/screenshots/*.webp
+// (English) and docs/screenshots/de/*.webp (German).
 import { createServer } from "vite";
 import { chromium } from "playwright-core";
 import { mkdirSync, statSync } from "node:fs";
@@ -10,11 +12,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
-const out = join(root, "docs/screenshots");
-mkdirSync(out, { recursive: true });
-
 const W = 1600, H = 1000;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Visible texts the shots click on or look for, per interface language.
+const L = {
+  en: { next: /^Next$/, timing: /^Timing$/, reactions: /^Reactions$/, research: /^Research & web search$/, rules: /^Instant rules$/, log: /^Log$/, webSearch: /^Web search$/, usage: /^Usage$/, translation: "Languages & translation", chatSettings: "Chat settings", rewards: "Channel point rewards", colorTheme: "Color theme", message: /^Message/, palette: "web search" },
+  de: { next: /^Weiter$/, timing: /^Timing$/, reactions: /^Reaktionen$/, research: /^Recherche & Websuche$/, rules: /^Sofort-Regeln$/, log: /^Protokoll$/, webSearch: /^Websuche$/, usage: /^Verbrauch$/, translation: "Sprachen & Übersetzung", chatSettings: "Chat-Einstellungen", rewards: "Kanalpunkte-Belohnungen", colorTheme: "Farbschema", message: /^Nachricht/, palette: "websuche" },
+};
 
 /** Clicks the first button whose text matches. */
 const click = (re) => async (p) => {
@@ -42,38 +47,37 @@ async function box(p, selectors, pad = 24) {
 }
 
 // name → query string, steps, optional crop
-const SHOTS = {
+const shots = (t) => ({
   dashboard: { q: "view=dashboard" },
   "dashboard-light": { q: "view=dashboard&theme=light" },
-  "dashboard-de": { q: "view=dashboard&theme=light&lang=de" }, // README.de
   wizard: { q: "view=dashboard&wizard" },
-  "wizard-ai": { q: "view=dashboard&wizard", steps: [click(/^Next$/), click(/^Next$/), click(/^Next$/)] },
+  "wizard-ai": { q: "view=dashboard&wizard", steps: [click(t.next), click(t.next), click(t.next)] },
   channels: { q: "view=channels" },
-  translation: { q: "view=channels", steps: [scrollTo("Languages & translation")] },
+  translation: { q: "view=channels", steps: [scrollTo(t.translation)] },
   companion: { q: "view=companion" },
-  "companion-timing": { q: "view=companion", steps: [click(/^Timing$/)] },
-  "companion-reactions": { q: "view=companion", steps: [click(/^Reactions$/)] },
-  "companion-research": { q: "view=companion", steps: [click(/^Research & web search$/)] },
+  "companion-timing": { q: "view=companion", steps: [click(t.timing)] },
+  "companion-reactions": { q: "view=companion", steps: [click(t.reactions)] },
+  "companion-research": { q: "view=companion", steps: [click(t.research)] },
   moderation: { q: "view=moderation" },
-  "moderation-rules": { q: "view=moderation", steps: [click(/^Instant rules$/)] },
-  "moderation-log": { q: "view=moderation", steps: [click(/^Log$/)] },
+  "moderation-rules": { q: "view=moderation", steps: [click(t.rules)] },
+  "moderation-log": { q: "view=moderation", steps: [click(t.log)] },
   ai: { q: "view=ai" },
-  "ai-websearch": { q: "view=ai", steps: [click(/^Web search$/)] },
-  "ai-usage": { q: "view=ai", steps: [click(/^Usage$/)] },
+  "ai-websearch": { q: "view=ai", steps: [click(t.webSearch)] },
+  "ai-usage": { q: "view=ai", steps: [click(t.usage)] },
   stream: { q: "view=stream&level=simple" },
-  "stream-advanced": { q: "view=stream&level=advanced", steps: [scrollTo("Chat settings")] },
-  "stream-expert": { q: "view=stream&level=expert", steps: [scrollTo("Channel point rewards")] },
+  "stream-advanced": { q: "view=stream&level=advanced", steps: [scrollTo(t.chatSettings)] },
+  "stream-expert": { q: "view=stream&level=expert", steps: [scrollTo(t.rewards)] },
   settings: { q: "view=settings" },
   overlay: { q: "view=settings", steps: [async (p) => { await p.locator("#jump-overlay").evaluate((el) => el.scrollIntoView({ block: "start" })); await wait(300); }] },
-  themes: { q: "view=settings", crop: async (p) => box(p, ["text=Color theme >> xpath=ancestor::*[contains(@class,'card')][1]"], 0) },
+  themes: { q: "view=settings", crop: async (p) => box(p, [`text=${t.colorTheme} >> xpath=ancestor::*[contains(@class,'card')][1]`], 0) },
   "chat-input": {
     q: "view=dashboard",
-    steps: [async (p) => { const i = p.getByPlaceholder(/Message/).first(); await i.click(); await i.pressSequentially(":pog", { delay: 40 }); await wait(500); }],
-    crop: async (p) => box(p, ["[role=listbox]", "textarea, input[placeholder^='Message']"], 16),
+    steps: [async (p) => { const i = p.getByPlaceholder(t.message).first(); await i.click(); await i.pressSequentially(":pog", { delay: 40 }); await wait(500); }],
+    crop: async (p) => box(p, ["[role=listbox]", "textarea, input[placeholder]"], 16),
   },
   palette: {
     q: "view=dashboard",
-    steps: [async (p) => { await p.keyboard.press("Control+k"); await wait(300); await p.keyboard.type("web search", { delay: 30 }); await wait(400); }],
+    steps: [async (p) => { await p.keyboard.press("Control+k"); await wait(300); await p.keyboard.type(t.palette, { delay: 30 }); await wait(400); }],
     crop: async (p) => box(p, ["[role=dialog]"], 16),
   },
   tooltip: {
@@ -82,36 +86,44 @@ const SHOTS = {
     steps: [async (p) => { await p.locator(".tip-btn").first().hover(); await wait(900); }],
     crop: async (p) => box(p, [".tip-btn >> nth=0", "#hb-tip"], 20),
   },
-};
+});
 
-const only = process.argv.slice(2);
+const args = process.argv.slice(2);
+const langArg = args.indexOf("--lang");
+const langs = langArg >= 0 ? [args[langArg + 1]] : ["en", "de"];
+const only = args.filter((a, i) => i !== langArg && i !== langArg + 1);
+
 const server = await createServer({ root, logLevel: "error", server: { port: 1430, strictPort: false } });
 await server.listen();
 const base = server.resolvedUrls.local[0];
 const browser = await chromium.launch({ channel: process.env.HB_BROWSER ?? "msedge", headless: true });
 let failed = 0;
 try {
-  for (const [name, s] of Object.entries(SHOTS)) {
-    if (only.length && !only.includes(name)) continue;
-    const theme = s.q.includes("theme=light") ? "light" : "dark";
-    const page = await browser.newPage({ viewport: { width: W, height: H }, colorScheme: theme });
-    const errors = [];
-    page.on("pageerror", (e) => errors.push(String(e)));
-    try {
-      await page.goto(`${base}?demo&${s.q.includes("theme=") ? s.q : `${s.q}&theme=dark`}`);
-      await page.waitForSelector("aside nav button");
-      await wait(1200); // feed, emotes and fonts settle
-      for (const step of s.steps ?? []) await step(page);
-      if (!s.keepPointer) await page.mouse.move(W - 2, H - 2);
-      const file = join(out, `${name}.webp`);
-      const clip = s.crop ? await s.crop(page) : undefined;
-      await page.screenshot({ path: file, type: "webp", quality: 82, clip });
-      console.log(`${name}.webp ${(statSync(file).size / 1024).toFixed(0)} KB${errors.length ? ` – page errors: ${errors.join("; ")}` : ""}`);
-    } catch (e) {
-      failed++;
-      console.error(`${name}: ${e.message.split("\n")[0]}`);
-    } finally {
-      await page.close();
+  for (const lang of langs) {
+    const out = join(root, "docs/screenshots", lang === "en" ? "" : lang);
+    mkdirSync(out, { recursive: true });
+    for (const [name, s] of Object.entries(shots(L[lang]))) {
+      if (only.length && !only.includes(name)) continue;
+      const theme = s.q.includes("theme=light") ? "light" : "dark";
+      const page = await browser.newPage({ viewport: { width: W, height: H }, colorScheme: theme, locale: lang === "de" ? "de-DE" : "en-US" });
+      const errors = [];
+      page.on("pageerror", (e) => errors.push(String(e)));
+      try {
+        await page.goto(`${base}?demo&lang=${lang}&${s.q.includes("theme=") ? s.q : `${s.q}&theme=dark`}`);
+        await page.waitForSelector("aside nav button");
+        await wait(1200); // feed, emotes and fonts settle
+        for (const step of s.steps ?? []) await step(page);
+        if (!s.keepPointer) await page.mouse.move(W - 2, H - 2);
+        const file = join(out, `${name}.webp`);
+        const clip = s.crop ? await s.crop(page) : undefined;
+        await page.screenshot({ path: file, type: "webp", quality: 82, clip });
+        console.log(`${lang}/${name}.webp ${(statSync(file).size / 1024).toFixed(0)} KB${errors.length ? ` – page errors: ${errors.join("; ")}` : ""}`);
+      } catch (e) {
+        failed++;
+        console.error(`${lang}/${name}: ${e.message.split("\n")[0]}`);
+      } finally {
+        await page.close();
+      }
     }
   }
 } finally {
